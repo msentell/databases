@@ -28,21 +28,27 @@ INSERT INTO user_profile (user_profileId,userUUID,user_preferenceJSON) VALUES (3
 
 -- ================ ASSETS
 truncate location;
-insert into location (locationUUID,location_customerUUID,location_type,location_name,location_hotSpotJSON)
-values (1,1,'SITE','Main Hatchery','{hotspots:[ {shape:"rect",coords:"0,0,82,126",alt:"area1",type:"location",forward:"2"},{shape:"circle",coords:"90,58,3",alt:"area2",type:"location",forward:"3"} ]}');
-insert into location (locationUUID,location_customerUUID,location_type,location_name,location_hotSpotJSON)
-values (2,1,'FLOOR','South Hallway','{hotspots:[ {shape:"rect",coords:"0,0,82,126",alt:"area1",type:"location",forward:"4"} ]}');
-insert into location (locationUUID,location_customerUUID,location_type,location_name,location_hotSpotJSON)
-values (3,1,'ROOM','Hatch Room','{hotspots:[ {shape:"rect",coords:"0,0,82,126",alt:"area1",type:"purchase",forward:"CART"} ]}');
-insert into location (locationUUID,location_customerUUID,location_type,location_name,location_hotSpotJSON)
-values (4,1,'ROOM','Incubator Room','{hotspots:[ {shape:"rect",coords:"0,0,82,126",alt:"area1",type:"purchase",forward:"CART"} ]}');
+insert into location (locationUUID,location_customerUUID,location_type,location_name,location_hotSpotJSON,location_imageUrl)
+values (1,1,'SITE','Main Hatchery','{hotspots:[ {shape:"rect",coords:"0,0,82,126",alt:"area1",type:"location",forward:"2"},{shape:"circle",coords:"90,58,3",alt:"area2",type:"location",forward:"3"} ]}','http://');
+insert into location (locationUUID,location_customerUUID,location_type,location_name,location_hotSpotJSON,location_imageUrl)
+values (2,1,'FLOOR','South Hallway','{hotspots:[ {shape:"rect",coords:"0,0,82,126",alt:"area1",type:"location",forward:"4"} ]}','http://');
+insert into location (locationUUID,location_customerUUID,location_type,location_name,location_hotSpotJSON,location_imageUrl)
+values (3,1,'ROOM','Hatch Room','{hotspots:[ {shape:"rect",coords:"0,0,82,126",alt:"area1",type:"purchase",forward:"CART"} ]}','http://');
+insert into location (locationUUID,location_customerUUID,location_type,location_name,location_hotSpotJSON,location_imageUrl)
+values (4,1,'ROOM','Incubator Room','{hotspots:[ {shape:"rect",coords:"0,0,82,126",alt:"area1",type:"purchase",forward:"CART"} ]}','http://');
+
+truncate asset;
+insert into asset (assetUUID,asset_customerUUID,asset_locationUUID,asset_partUUID,asset_name)
+values (1,1,1,3,'Fan Assembly #1');
+insert into asset (assetUUID,asset_customerUUID,asset_locationUUID,asset_partUUID,asset_name)
+values (2,1,1,3,'Fan Assembly #2');
 
 truncate asset_part;
-insert into asset_part (asset_partUUID,asset_template_partUUID,asset_part_customerUUID,asset_part_name,asset_part_diagnosticUUID)
+insert into asset_part (asset_partUUID,asset_part_template_part_sku,asset_part_customerUUID,asset_part_name,asset_part_diagnosticUUID)
 values (1,1,1,'Avida Symphone A18',1);
-insert into asset_part (asset_partUUID,asset_template_partUUID,asset_part_customerUUID,asset_part_name,asset_part_diagnosticUUID)
+insert into asset_part (asset_partUUID,asset_part_template_part_sku,asset_part_customerUUID,asset_part_name,asset_part_diagnosticUUID)
 values (2,2,1,'Electrical Assembly',1);
-insert into asset_part (asset_partUUID,asset_template_partUUID,asset_part_customerUUID,asset_part_name,asset_part_diagnosticUUID)
+insert into asset_part (asset_partUUID,asset_part_template_part_sku,asset_part_customerUUID,asset_part_name,asset_part_diagnosticUUID)
 values (3,3,1,'Fan Assembly',1);
 
 truncate asset_part_join;

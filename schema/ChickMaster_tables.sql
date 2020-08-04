@@ -64,13 +64,14 @@ insert into att_privilege(category,`key`,bitwise) values ('license','CANACCESSHM
 DROP TABLE IF EXISTS customer_brand;
 
 CREATE TABLE `customer_brand` (
-    brandUUID CHAR(32)  NOT NULL,
+    brandId INT  NOT NULL,
     brand_name varchar(50)  NULL,
     brand_logo varchar(255)  NULL,
     brand_securityBitwise BIGINT  NULL, 
+    brand_preferenceJSON text  NULL, -- JSON PAYLOAD
     brand_createdByUUID CHAR(32)  NULL,
    	brand_created datetime  NULL default now(),
-   	PRIMARY KEY (brandUUID))
+   	PRIMARY KEY (brandId))
 ENGINE = InnoDB;
 
 
@@ -79,7 +80,7 @@ DROP TABLE IF EXISTS customer;
 CREATE TABLE `customer` (
     customerUUID CHAR(32)  NOT NULL,
     customer_externalName INT   NULL,
-    customer_brandUUID CHAR(32)   NULL,
+    -- customer_brandId INT   NULL,
     customer_statusId INT   NULL DEFAULT 1,
     customer_name varchar(50)  NULL,
     customer_logo varchar(255)  NULL,
@@ -108,6 +109,18 @@ CREATE TABLE `customer_xref` (
    	PRIMARY KEY (customerXrefId),
    	INDEX customerId_idx (customerUUID))
 ENGINE = InnoDB   AUTO_INCREMENT=1000;
+
+
+DROP TABLE IF EXISTS customer_attachment_join;
+
+CREATE TABLE `customer_attachment_join` (
+    caj_customerUUID CHAR(32)  NOT NULL,
+    caj_attachmentUUID CHAR(32)  NOT NULL,
+    caj_createdTS datetime  NULL default now(),
+
+    PRIMARY KEY (caj_customerUUID,caj_attachmentUUID))
+ENGINE = InnoDB ;
+
 
 DROP TABLE IF EXISTS user;
 
@@ -431,11 +444,15 @@ ENGINE = InnoDB ;
 DROP TABLE IF EXISTS part_template;
 
 CREATE TABLE `part_template` (
-    part_partUUID CHAR(32)  NOT NULL,
+    -- part_partUUID CHAR(32)  NOT NULL,
+    part_sku varchar(100) NOT NULL, 
+    part_brandId INT NULL,
    	part_statusId INT NULL DEFAULT 1,
 
     part_name varchar(255) NOT NULL, 
     part_shortName varchar(100) NULL, 
+    part_description varchar(1000) NULL, 
+    part_userInstruction varchar(255) NULL, 
     part_imageURL varchar(255) NULL, 
     part_imageThumbURL varchar(255) NULL, 
     part_hotSpotJSON text NULL, -- JSON payload
@@ -452,20 +469,25 @@ CREATE TABLE `part_template` (
   	part_createdTS datetime  NULL default now(),
    	part_deleteTS datetime  NULL,
 
-  	PRIMARY KEY (part_partUUID))
+    -- PRIMARY KEY (part_partUUID),
+    PRIMARY KEY (part_sku))
+    -- UNIQUE index part_sku_unique (part_sku))
 ENGINE = InnoDB ;
 
 
 DROP TABLE IF EXISTS part_join_template;
 
 CREATE TABLE `part_join_template` (
-    pj_parent_partUUID CHAR(32)  NOT NULL,
-    pj_child_partUUID CHAR(32)  NOT NULL,
-  	pj_createdTS datetime  NULL default now(),
+    -- pj_parent_partUUID CHAR(32)  NOT NULL,
+    -- pj_child_partUUID CHAR(32)  NOT NULL,
+    pj_parent_part_sku varchar(100)  NOT NULL,
+    pj_child_part_sku varchar(100)  NOT NULL,  	
+    pj_createdTS datetime  NULL default now(),
 
   	PRIMARY KEY (pj_parent_partUUID,pj_child_partUUID))
 ENGINE = InnoDB ;
 
+-- TODO revisit
 DROP TABLE IF EXISTS part_knowledge_join;
 
 CREATE TABLE `part_knowledge_join` (
@@ -482,11 +504,15 @@ DROP TABLE IF EXISTS asset_part;
 
 CREATE TABLE `asset_part` (
     asset_partUUID CHAR(32)  NOT NULL, -- this is a new id and not = to template part
-    asset_template_partUUID CHAR(32)  NULL, -- reference back to a part in a template if needed.
+--    asset_template_partUUID CHAR(32)  NULL, -- reference back to a part in a template if needed.
+    asset_part_template_part_sku varchar(100)  NULL, -- reference back to a part in a template if needed.
     asset_part_customerUUID CHAR(32)  NOT NULL,
    	asset_part_statusId INT NULL DEFAULT 1,
 
+    asset_part_sku varchar(100) NULL,  -- can be null if their own part, but will take the original
     asset_part_name varchar(255) NOT NULL, 
+    asset_part_description varchar(1000) NULL, 
+    asset_part_userInstruction varchar(255) NULL, 
     asset_part_shortName varchar(100) NULL, 
     asset_part_imageURL varchar(255) NULL, 
     asset_part_imageThumbURL varchar(255) NULL, 
