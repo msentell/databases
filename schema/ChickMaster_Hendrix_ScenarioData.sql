@@ -134,6 +134,12 @@ INSERT INTO `diagnostic_node` (`diagnostic_nodeUUID`,`diagnostic_node_diagnostic
 INSERT INTO `diagnostic_node` (`diagnostic_nodeUUID`,`diagnostic_node_diagnosticUUID`,`diagnostic_node_statusId`,`diagnostic_node_title`,`diagnostic_node_prompt`,`diagnostic_node_optionPrompt`,`diagnostic_node_hotSpotJSON`,`diagnostic_node_imageSetJSON`,`diagnostic_node_optionSetJSON`,`diagnostic_node_createdByUUID`,`diagnostic_node_updatedByUUID`,`diagnostic_node_updatedTS`,`diagnostic_node_createdTS`,`diagnostic_node_deleteTS`) VALUES ('63c22622ec754a618917ee26b7f60804','633a54011d76432b9fa18b0b6308c189',1,'Heating Element Troubleshooting','Please check the heating element for continuity. Use the resistance (OHM) setting on a multimeter. ','If this is an open circuit (no resistance on the multimeter), please replace the heating element. - Would you like to order  the part ?','','https://jcmi.sfo2.digitaloceanspaces.com/demodata/Hendrix/diagnostics/Heating4.JPG','{\"Yes : Order Part,  \"Finished\": Node 6\")','','',NULL,'2020-07-31 12:22:14',NULL);
 INSERT INTO `diagnostic_node` (`diagnostic_nodeUUID`,`diagnostic_node_diagnosticUUID`,`diagnostic_node_statusId`,`diagnostic_node_title`,`diagnostic_node_prompt`,`diagnostic_node_optionPrompt`,`diagnostic_node_hotSpotJSON`,`diagnostic_node_imageSetJSON`,`diagnostic_node_optionSetJSON`,`diagnostic_node_createdByUUID`,`diagnostic_node_updatedByUUID`,`diagnostic_node_updatedTS`,`diagnostic_node_createdTS`,`diagnostic_node_deleteTS`) VALUES ('a5117edef40f4b319adc81b7bbe9fc06','633a54011d76432b9fa18b0b6308c189',1,'Heating Element Troubleshooting','Please check the supply breakers to the heating elements - these are CB15 and CB16.','Were the Breakers Tripped ?','','https://jcmi.sfo2.digitaloceanspaces.com/demodata/Hendrix/diagnostics/Heating3.JPG','{\"Yes\": Node 6, \"No\":  Node 4','','',NULL,'2020-07-31 12:22:09',NULL);
 
+insert into translations (translation_languageCode,translation_uuid,translation_field,translation_text)
+values ('fr-FR','06302360b8c248fe84109d2a0f9fbd49','diagnostic_node_title','French diagnostic title for 06302360b8c248fe84109d2a0f9fbd49');
+
+insert into translations (translation_languageCode,translation_uuid,translation_field,translation_text)
+values ('de-DE','06302360b8c248fe84109d2a0f9fbd49','diagnostic_node_title','German diagnostic title for 06302360b8c248fe84109d2a0f9fbd49');
+
 -- ============== Checklist
 
 truncate checklist;

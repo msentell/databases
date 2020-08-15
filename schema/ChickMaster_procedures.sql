@@ -173,3 +173,106 @@ ELSEIF (_action='ACKNOWLEDGE') THEN
 END IF;
 
 END$$
+
+
+-- ==================================================================
+-- call CLIENT_getDetails(null,null, 6770);
+
+
+DROP procedure IF EXISTS `CLIENT_getDetails`;
+
+DELIMITER $$
+CREATE PROCEDURE `CLIENT_getDetails`(
+IN _action varchar(100),
+IN _clientId INT,
+IN _recruitId INT
+)
+CLIENT_getDetails: BEGIN
+
+IF (_clientId is NULL and _recruitId is null) THEN
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid value arguments';
+    leave CLIENT_getDetails;
+END IF;
+
+
+if (_recruitId is null and _clientId is not null) THEN
+	
+	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid value arguments';
+    leave CLIENT_getDetails;
+	
+    
+elseif (_recruitId is not null ) THEN
+	
+    
+    SELECT 
+        `cnt`.`contractId` AS `contract_number`,
+        `cnt`.`contract_clientId` AS `contract_clientId`,
+        `c`.`client_clientName` AS `contract_clientName`,
+        `cnt`.`contract_expirationDate` AS `contract_expirationDate`,
+        `cnt`.`contract_executionDate` AS `contract_executionDate`,
+        `cnt`.`contract_startDate` AS `contract_startDate`,
+        `cnt`.`contract_endDate` AS `contract_endDate`,
+        `cnt`.`contract_statusId` AS `contract_statusId`,
+        `stat`.`contract_status` AS `contract_status`,
+        `cnt`.`contract_billingAddressId` AS `contract_billingAddressId`,
+        `cnt`.`att_lt_dh` AS `contract_att_lt_dh`,
+        `cnt`.`contract_pocId` AS `contract_pocId`,
+        (SELECT 
+                ENTITY_FORMATNAME(`poc`.`entity_firstName`,
+                            `poc`.`entity_middleName`,
+                            `poc`.`entity_lastName`,
+                            NULL,
+                            NULL)
+            FROM
+                `entity` `poc`
+            WHERE
+                (`poc`.`entityId` = `cnt`.`contract_pocId`)) AS `contract_pocName`,
+        (SELECT 
+                GROUP_CONCAT(`contract_specialty`.`att_specialties`
+                        SEPARATOR ',')
+            FROM
+                `contract_specialty`
+            WHERE
+                (`contract_specialty`.`contract_specialty_contractId` = `cnt`.`contractId`)) AS `contract_specialty`,
+                
+        -- need to get the address
+        
+        -- `prez`.`presentation_orderId` AS `presentation_orderId`,
+        max(`prez`.`presentation_entityId`) AS `presentation_entityId`,
+        (SELECT 
+                ENTITY_FORMATNAME(`entity`.`entity_firstName`,
+                            `entity`.`entity_middleName`,
+                            `entity`.`entity_lastName`,
+                            NULL,
+                            NULL)
+            FROM
+                `entity`
+            WHERE
+                (`entity`.`entityId` = max(`prez`.`presentation_entityId`))) AS `presentation_recruitName`,
+		addr.*
+        -- `prez`.`att_order_presentation_status` AS `att_order_presentation_status`,
+        -- `prez`.`att_lt_dh` AS `presentation_lt_dh`,
+        -- `prez`.`presentation_presentedDate` AS `presentation_presentedDate`,
+        -- `prez`.`presentation_executionDate` AS `presentation_executionDate`,
+        -- `prez`.`presentation_startDate` AS `presentation_startDate`,
+        -- `prez`.`presentation_endDate` AS `presentation_endDate`
+    FROM
+        `contract` `cnt`
+        LEFT JOIN `client` `c` ON (`c`.`clientId` = `cnt`.`contract_clientId`)
+        LEFT JOIN `att_contract_status` `stat` ON (`stat`.`contract_statisId` = `cnt`.`contract_statusId`)
+        LEFT JOIN `order_presentation` `prez` ON (`prez`.`presentation_clientId` = `cnt`.`contract_clientId` and prez.att_order_presentation_status='Accepted')
+        left join global_address addr on (addr.addressId  =c.client_addressId_work)
+        where `prez`.`presentation_entityId`=_recruitId
+		group by cnt.contractId;
+
+    
+END IF;
+
+
+
+END$$
+
+DELIMITER ; 
+
+
+

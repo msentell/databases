@@ -805,6 +805,33 @@ CREATE TABLE `privilege_bitwise` (
     )
 ENGINE = InnoDB ;
 
+
+
+DROP TABLE IF EXISTS translations;
+
+CREATE TABLE `translations` (
+    translationId INT   NOT NULL   AUTO_INCREMENT,
+    translation_languageCode varchar(10) NOT NULL, 
+    translation_uuid char(32) NOT NULL, 
+    translation_field varchar(50) NOT NULL, 
+    translation_text text  NULL,
+    PRIMARY KEY (translationId),
+    index uuid_idx (translation_uuid,translation_field,translation_languageCode)
+    )
+ENGINE = InnoDB   AUTO_INCREMENT=1000;
+
+DROP TABLE IF EXISTS languages;
+
+CREATE TABLE `languages` (
+    languageCode varchar(10) NOT NULL,
+    PRIMARY KEY (languageCode)
+    )
+ENGINE = InnoDB ;
+
+insert into languages (languageCode) values ('en-IN');
+insert into languages (languageCode) values ('fr-FR');
+insert into languages (languageCode) values ('de-DE');
+
 insert into privilege_bitwise (privilege_key,privilege_category,privilege_bitWise) values ('ADMIN','ACCESS',1);
 insert into privilege_bitwise (privilege_key,privilege_category,privilege_bitWise) values ('CANACCESSHMS','ACCESS',2);
 insert into privilege_bitwise (privilege_key,privilege_category,privilege_bitWise) values ('CANCREATEWORKORDER','WORKORDER',4);
