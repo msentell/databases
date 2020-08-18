@@ -274,5 +274,39 @@ END$$
 
 DELIMITER ; 
 
+-- ==================================================================
 
+-- call WORKORDER_workOrder(_action, _customerId); 
+-- call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f');
 
+DROP procedure IF EXISTS `WORKORDER_workOrder`;
+
+DELIMITER $$
+CREATE PROCEDURE `WORKORDER_workOrder` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100)
+)
+WORKORDER_workOrder: BEGIN
+
+IF(_action IS NULL or _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action can not be empty';
+	LEAVE WORKORDER_workOrder;
+END IF;
+
+IF(_customerId IS NULL or _customerId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
+	LEAVE WORKORDER_workOrder;
+END IF;
+
+IF(_action ='GET') THEN
+	SELECT wo.* FROM workorder wo WHERE wo.workorder_customerUUID = _customerId;
+ELSE
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action is of type invalid';
+	LEAVE WORKORDER_workOrder;
+END IF;
+
+END$$
+
+DELIMITER ; 
+
+-- ==================================================================
