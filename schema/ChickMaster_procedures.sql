@@ -310,3 +310,81 @@ END$$
 DELIMITER ; 
 
 -- ==================================================================
+
+-- call CUSTOMER_getCustomerDetails(_action, _customerId); 
+-- call CUSTOMER_getCustomerDetails('GET-LIST', NULL);
+
+DROP procedure IF EXISTS `CUSTOMER_getCustomerDetails`;
+
+DELIMITER $$
+CREATE PROCEDURE `CUSTOMER_getCustomerDetails` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100)
+)
+CUSTOMER_getCustomerDetails: BEGIN
+
+IF(_action IS NULL or _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CUSTOMER_getCustomerDetails: _action can not be empty';
+	LEAVE CUSTOMER_getCustomerDetails;
+END IF;
+
+IF(_action ='GET-LIST') THEN
+	SELECT * FROM cm_hms.customer;
+ELSE
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CUSTOMER_getCustomerDetails: _action is of type invalid';
+	LEAVE CUSTOMER_getCustomerDetails;
+END IF;
+
+END$$
+
+DELIMITER ;
+
+-- ==================================================================
+
+-- call LOCATION_location(_action, _customerId, _locationId, _isPrimary); 
+-- call LOCATION_location('GET', 'a30af0ce5e07474487c39adab6269d5f', NULL, 1);
+
+DROP procedure IF EXISTS `LOCATION_location`;
+
+DELIMITER $$
+CREATE PROCEDURE `LOCATION_location` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100),
+IN _locationId VARCHAR(100),
+IN _isPrimary INT
+)
+LOCATION_location: BEGIN
+
+IF(_action IS NULL OR _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_location: _action can not be empty';
+	LEAVE LOCATION_location;
+END IF;
+
+IF(_action = 'GET') THEN
+	SET @l_SQL = 'SELECT l.* FROM location l';
+	IF(_customerId IS NULL OR _customerId = '') THEN
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_location: _customerId can not be empty';
+		LEAVE LOCATION_location;
+	ELSE
+        SET @l_SQL = CONCAT(@l_SQL, '  WHERE l.location_customerUUID =\'', _customerId,'\'');
+        
+		IF(_locationId IS NOT NULL AND _locationId!='') THEN
+			SET @l_SQL = CONCAT(@l_SQL, '  AND l.locationUUID =\'', _locationId,'\'');
+		END IF;
+		IF(_isPrimary IS NOT NULL) THEN
+			SET @l_SQL = CONCAT(@l_SQL, '  AND l.location_isPrimary =', _isPrimary);
+		END IF;
+        PREPARE stmt FROM @l_SQL;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+	END IF;
+ELSE
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_location: _action is of type invalid';
+	LEAVE LOCATION_location;
+END IF;
+
+END$$
+
+DELIMITER ;
+
+-- ==================================================================
