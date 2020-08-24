@@ -494,3 +494,215 @@ END IF;
 END$$
 
 DELIMITER ;
+
+-- ==================================================================
+
+-- call ASSETPART_deleteAssetPart(_action, _customerId, _assetPartId);
+-- actionType - DELETE
+
+DROP procedure IF EXISTS `ASSETPART_deleteAssetPart`;
+
+DELIMITER $$
+CREATE PROCEDURE `ASSETPART_deleteAssetPart` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100),
+In _assetPartId VARCHAR(100)
+)
+ASSETPART_deleteAssetPart: BEGIN
+
+IF(_action IS NULL OR _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_deleteAssetPart: _action can not be empty';
+	LEAVE ASSETPART_deleteAssetPart;
+END IF;
+
+IF(_customerId IS NULL OR _customerId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_deleteAssetPart: _customerId can not be empty';
+	LEAVE ASSETPART_deleteAssetPart;
+END IF;
+
+IF(_assetPartId IS NULL OR _assetPartId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_deleteAssetPart: _assetPartId can not be empty';
+	LEAVE ASSETPART_deleteAssetPart;
+END IF;
+
+
+END$$
+
+DELIMITER ;
+
+-- ==================================================================
+
+-- call ASSET_deleteAsset(_action, _customerId, _assetId);
+-- actionType - DELETE
+
+DROP procedure IF EXISTS `ASSET_deleteAsset`;
+
+DELIMITER $$
+CREATE PROCEDURE `ASSET_deleteAsset` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100),
+In _assetId VARCHAR(100)
+)
+ASSET_deleteAsset: BEGIN
+
+IF(_action IS NULL OR _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_deleteAsset: _action can not be empty';
+	LEAVE ASSET_deleteAsset;
+END IF;
+
+IF(_customerId IS NULL OR _customerId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_deleteAsset: _customerId can not be empty';
+	LEAVE ASSET_deleteAsset;
+END IF;
+
+IF(_assetId IS NULL OR _assetId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_deleteAsset: _assetId can not be empty';
+	LEAVE ASSET_deleteAsset;
+END IF;
+
+
+END$$
+
+DELIMITER ;
+
+
+-- ==================================================================
+
+-- call LOCATION_deleteLocation(_action, _customerId, _locationId, _isPrimary);
+-- actionType - DELETE
+
+DROP procedure IF EXISTS `LOCATION_deleteLocation`;
+
+DELIMITER $$
+CREATE PROCEDURE `LOCATION_deleteLocation` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100),
+In _locationId VARCHAR(100)
+)
+LOCATION_deleteLocation: BEGIN
+
+IF(_action IS NULL OR _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_deleteLocation: _action can not be empty';
+	LEAVE LOCATION_deleteLocation;
+END IF;
+
+IF(_customerId IS NULL OR _customerId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_deleteLocation: _customerId can not be empty';
+	LEAVE LOCATION_deleteLocation;
+END IF;
+
+IF(_locationId IS NULL OR _locationId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_deleteLocation: _locationId can not be empty';
+	LEAVE LOCATION_deleteLocation;
+END IF;
+
+
+END$$
+
+DELIMITER ;
+
+
+-- ==================================================================
+
+-- call LOCATION_createLocation(_action, _customerId, _locationId, _isPrimary);
+-- actionType - CREATE
+
+DROP procedure IF EXISTS `LOCATION_createLocation`;
+
+DELIMITER $$
+CREATE PROCEDURE `LOCATION_createLocation` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100),
+In _locationId VARCHAR(100)
+)
+LOCATION_createLocation: BEGIN
+
+IF(_action IS NULL OR _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_createLocation: _action can not be empty';
+	LEAVE LOCATION_createLocation;
+END IF;
+
+IF(_customerId IS NULL OR _customerId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_createLocation: _customerId can not be empty';
+	LEAVE LOCATION_createLocation;
+END IF;
+
+IF(_locationId IS NULL OR _locationId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_createLocation: _locationId can not be empty';
+	LEAVE LOCATION_createLocation;
+END IF;
+
+
+END$$
+
+DELIMITER ;
+
+-- ==================================================================
+
+-- call ASSETPART_createAssetPart(_action, _customerId, _assetPartId);
+-- actionType - CREATE
+
+DROP procedure IF EXISTS `ASSETPART_createAssetPart`;
+
+DELIMITER $$
+CREATE PROCEDURE `ASSETPART_createAssetPart` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100),
+In _assetPartId VARCHAR(100)
+)
+ASSETPART_createAssetPart: BEGIN
+
+IF(_action IS NULL OR _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_createAssetPart: _action can not be empty';
+	LEAVE ASSETPART_createAssetPart;
+END IF;
+
+IF(_customerId IS NULL OR _customerId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_createAssetPart: _customerId can not be empty';
+	LEAVE ASSETPART_createAssetPart;
+END IF;
+
+IF(_assetPartId IS NULL OR _assetPartId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_createAssetPart: _assetPartId can not be empty';
+	LEAVE ASSETPART_createAssetPart;
+END IF;
+
+
+END$$
+
+DELIMITER ;
+
+-- ==================================================================
+
+-- call ASSET_createAsset(_action, _customerId, _assetId);
+-- actionType - CREATE
+
+DROP procedure IF EXISTS `ASSET_createAsset`;
+
+DELIMITER $$
+CREATE PROCEDURE `ASSET_createAsset` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100),
+In _assetId VARCHAR(100)
+)
+ASSET_createAsset: BEGIN
+
+IF(_action IS NULL OR _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_createAsset: _action can not be empty';
+	LEAVE ASSET_createAsset;
+END IF;
+
+IF(_customerId IS NULL OR _customerId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_createAsset: _customerId can not be empty';
+	LEAVE ASSET_createAsset;
+END IF;
+
+IF(_assetId IS NULL OR _assetId = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_createAsset: _assetId can not be empty';
+	LEAVE ASSET_createAsset;
+END IF;
+
+
+END$$
+
+DELIMITER ;
