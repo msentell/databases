@@ -339,370 +339,514 @@ END$$
 
 DELIMITER ;
 
+
+
+
+
 -- ==================================================================
 
--- call LOCATION_getLocation(_action, _customerId, _locationId, _isPrimary); 
--- call LOCATION_getLocation('GET', 'a30af0ce5e07474487c39adab6269d5f', NULL, 1);
+-- call LOCATION_Location(action, _location_userUUID, location_customerUUID, locationUUID, location_statusId,location_type, location_name, location_description, location_isPrimary, location_imageUrl, location_hotSpotJSON, location_addressTypeId, location_address, location_address_city, location_address_state, location_address_zip, location_country, location_contact_name, location_contact_email, location_contact_phone); 
+-- call LOCATION_Location('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', null, null,null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);   -- GET ALL LOCATIONS
+-- call LOCATION_Location('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', '179d6406ac1241e0bd148d3f1ccabf36', null,null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null);   -- GET SINGLE LOCATIONS
+-- call LOCATION_Location('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null,'LOCATION', 'location_name', 'location_description', 1, 'location_imageUrl', 'location_hotSpotJSON', 1, 'location_address', 'location_address_city', 'location_address_state', 'location_address_zip', 'location_country', 'location_contact_name', 'location_contact_email', 'location_contact_phone'); 
+-- call LOCATION_Location('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null,'LOCATION', 'location_name2', 'location_description2', 1, 'location_imageUrl2', 'location_hotSpotJSON', 1, 'location_address', 'location_address_city', 'location_address_state', 'location_address_zip', 'location_country', 'location_contact_name', 'location_contact_email', 'location_contact_phone'); 
+-- call LOCATION_Location('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null,null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);   -- GET ALL LOCATIONS
 
-DROP procedure IF EXISTS `LOCATION_getLocation`;
+
+DROP procedure IF EXISTS `LOCATION_Location`;
 
 DELIMITER $$
-CREATE PROCEDURE `LOCATION_getLocation` (
+CREATE PROCEDURE `LOCATION_Location` (
 IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-IN _locationId VARCHAR(100),
-IN _isPrimary INT
+IN _location_userUUID VARCHAR(100),
+IN _location_customerUUID VARCHAR(100),
+IN _locationUUID VARCHAR(100),
+IN _location_statusId INT,
+IN _location_type VARCHAR(255),
+IN _location_name VARCHAR(255),
+IN _location_description VARCHAR(1000),
+IN _location_isPrimary INT,
+IN _location_imageUrl  VARCHAR(1000),
+IN _location_hotSpotJSON TEXT,
+IN _location_addressTypeId INT,
+IN _location_address VARCHAR(255), 
+IN _location_address_city VARCHAR(255), 
+IN _location_address_state VARCHAR(25),
+IN _location_address_zip VARCHAR(25),
+IN _location_country VARCHAR(25),
+IN _location_contact_name VARCHAR(100),
+IN _location_contact_email VARCHAR(100),
+IN _location_contact_phone VARCHAR(50)
 )
-LOCATION_getLocation: BEGIN
+LOCATION_Location: BEGIN
+DECLARE commaNeeded INT DEFAULT 0;
+
+DECLARE DEBUG INT DEFAULT 0;
+
 
 IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_getLocation: _action can not be empty';
-	LEAVE LOCATION_getLocation;
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_Location: _action can not be empty';
+	LEAVE LOCATION_Location;
+END IF;
+
+IF(_location_userUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_Location: _location_userUUID missing';
+	LEAVE LOCATION_Location;
+END IF;
+
+IF(_location_customerUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_Location: _location_customerUUID missing';
+	LEAVE LOCATION_Location;
 END IF;
 
 IF(_action = 'GET') THEN
+
 	SET @l_SQL = 'SELECT l.* FROM location l';
-	IF(_customerId IS NULL OR _customerId = '') THEN
-		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_getLocation: _customerId can not be empty';
-		LEAVE LOCATION_getLocation;
+	IF(_location_customerUUID IS NULL OR _location_customerUUID = '') THEN
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_Location: _location_customerUUID can not be empty';
+		LEAVE LOCATION_Location;
 	ELSE
-        SET @l_SQL = CONCAT(@l_SQL, '  WHERE l.location_customerUUID =\'', _customerId,'\'');
+        SET @l_SQL = CONCAT(@l_SQL, '  WHERE l.location_customerUUID =\'', _location_customerUUID,'\'');
         
-		IF(_locationId IS NOT NULL AND _locationId!='') THEN
-			SET @l_SQL = CONCAT(@l_SQL, '  AND l.locationUUID =\'', _locationId,'\'');
+		IF(_locationUUID IS NOT NULL AND _locationUUID!='') THEN
+			SET @l_SQL = CONCAT(@l_SQL, '  AND l.locationUUID =\'', _locationUUID,'\'');
 		END IF;
-		IF(_isPrimary IS NOT NULL) THEN
-			SET @l_SQL = CONCAT(@l_SQL, '  AND l.location_isPrimary =', _isPrimary);
+		IF(_location_isPrimary IS NOT NULL) THEN
+			SET @l_SQL = CONCAT(@l_SQL, '  AND l.location_isPrimary =', _location_isPrimary);
 		END IF;
+        
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+        
         PREPARE stmt FROM @l_SQL;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
 	END IF;
-ELSE
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_getLocation: _action is of type invalid';
-	LEAVE LOCATION_getLocation;
+
+ELSEIF(_action = 'CREATE') THEN
+
+	IF (DEBUG=1) THEN select _action,_locationUUID, _location_customerUUID, 1, _location_type, _location_name, _location_description, _location_isPrimary, _location_imageUrl, _location_hotSpotJSON, _location_addressTypeId, _location_address, _location_address_city, _location_address_state, _location_address_zip, _location_country, _location_contact_name, _location_contact_email, _location_contact_phone; END IF;
+    
+	IF(_locationUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_Location: _location_customerUUID missing';
+		LEAVE LOCATION_Location;
+	END IF;
+    
+    insert into location 
+    (locationUUID, location_customerUUID, location_statusId, location_type, location_name, location_description, location_isPrimary, location_imageUrl, location_hotSpotJSON, location_addressTypeId, location_address, location_address_city, location_address_state, location_address_zip, location_country, location_contact_name, location_contact_email, location_contact_phone,
+    location_createdByUUID, location_updatedByUUID, location_updatedTS, location_createdTS, location_deleteTS)
+	values
+    (_locationUUID, _location_customerUUID, 1, _location_type, _location_name, _location_description, _location_isPrimary, _location_imageUrl, _location_hotSpotJSON, _location_addressTypeId, _location_address, _location_address_city, _location_address_state, _location_address_zip, _location_country, _location_contact_name, _location_contact_email, _location_contact_phone,
+    _location_userUUID, _location_userUUID, now(), now(), null);
+
+ELSEIF(_action = 'UPDATE') THEN
+
+
+	IF(_locationUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_Location: _location_customerUUID missing';
+		LEAVE LOCATION_Location;
+	END IF;
+
+		set  @l_sql = CONCAT('update location set location_updatedTS=now(), location_updatedByUUID=\'', _location_userUUID,'\'');		
+                
+        if (_location_statusId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_statusId = ', _location_statusId);
+        END IF;
+        if (_location_type is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_type = \'', _location_type,'\'');
+        END IF;
+        if (_location_name is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_name = \'', _location_name,'\'');
+        END IF;
+        if (_location_description is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_description = \'', _location_description,'\'');
+        END IF;
+        if (_location_isPrimary is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_isPrimary = ', _location_isPrimary);
+        END IF;
+        if (_location_imageUrl is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_imageUrl = \'', _location_imageUrl,'\'');
+        END IF;
+        if (_location_hotSpotJSON is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_hotSpotJSON = \'', _location_hotSpotJSON,'\'');
+        END IF;
+        if (_location_addressTypeId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_addressTypeId = ', _location_addressTypeId);
+        END IF;
+        if (_location_address is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_address = \'', _location_address,'\'');
+        END IF;
+        if (_location_address_city is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_address_city = \'', _location_address_city,'\'');
+        END IF;
+        if (_location_address_state is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_address_state = \'', _location_address_state,'\'');
+        END IF;
+        if (_location_address_zip is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_address_zip = \'', _location_address_zip,'\'');
+        END IF;
+        if (_location_country is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_country = \'', _location_country,'\'');
+        END IF;
+        if (_location_contact_name is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_contact_name = \'', _location_contact_name,'\'');
+        END IF;
+        if (_location_contact_email is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_contact_email = \'', _location_contact_email,'\'');
+        END IF;
+        if (_location_contact_phone is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',location_contact_phone = \'', _location_contact_phone,'\'');
+        END IF;
+
+		set @l_sql = CONCAT(@l_sql,' where locationUUID = \'', _locationUUID,'\';');
+       
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+        
+
+ELSEIF(_action = 'DELETE') THEN
+
+	IF (DEBUG=1) THEN select _action,_locationUUID; END IF;
+    
+	IF(_locationUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_Location: _location_customerUUID missing';
+		LEAVE LOCATION_Location;
+	END IF;
+
+	update location set location_deleteTS=now(), location_statusId=2, location_updatedByUUID=_location_userUUID where locationUUID = _locationUUID and location_customerUUID=_location_customerUUID;
+	-- TBD, figure out what cleanup may be involved
+    -- ? user profiles
+
 END IF;
 
 END$$
 
-DELIMITER ;
-
--- ==================================================================
-
-
--- call LOCATION_updateLocation(_action, _customerId, _locationId, _locationName, _isPrimary); 
--- 'actionType', 'customerUUID', 'newlocationUUID/locationUUID', 'locationName', boolean
--- actionType - CREATE/UPDATE-IMAGE/UPDATE-NAME/UPDATE-HOTSPOT/DELETE
-
-DROP procedure IF EXISTS `LOCATION_updateLocation`;
-
-DELIMITER $$
-CREATE PROCEDURE `LOCATION_updateLocation` (
-IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-In _locationId VARCHAR(100),
-IN _locationName VARCHAR(100),
-IN _isPrimary INT
-)
-LOCATION_updateLocation: BEGIN
-
-IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_updateLocation: _action can not be empty';
-	LEAVE LOCATION_updateLocation;
-END IF;
-
-IF(_customerId IS NULL OR _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_updateLocation: _customerId can not be empty';
-	LEAVE LOCATION_updateLocation;
-END IF;
-
-
-END$$
-
-DELIMITER ;
-
--- ==================================================================
-
--- call ASSET_updateAsset(_action, _customerId, _assetId, _assetName);
--- 'actionType', 'customerUUID', 'newassetUUID/assetUUID', 'assetName', boolean
--- actionType - CREATE/UPDATE-IMAGE/UPDATE-NAME/UPDATE-HOTSPOT/DELETE
-
-DROP procedure IF EXISTS `ASSET_updateAsset`;
-
-DELIMITER $$
-CREATE PROCEDURE `ASSET_updateAsset` (
-IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-In _assetId VARCHAR(100),
-IN _assetName VARCHAR(100)
-)
-ASSET_updateAsset: BEGIN
-
-IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_updateAsset: _action can not be empty';
-	LEAVE ASSET_updateAsset;
-END IF;
-
-IF(_customerId IS NULL OR _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_updateAsset: _customerId can not be empty';
-	LEAVE ASSET_updateAsset;
-END IF;
-
-IF(_assetId IS NULL OR _assetId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_updateAsset: _assetId can not be empty';
-	LEAVE ASSET_updateAsset;
-END IF;
-
-
-END$$
-
-DELIMITER ;
-
--- ==================================================================
-
--- call ASSETPART_updateAssetPart(_action, _customerId, _assetPartId, _assetPartName);
--- 'actionType', 'customerUUID', 'newassetPartUUID/assetPartUUID', 'assetPartName', boolean
--- actionType - CREATE/UPDATE-IMAGE/UPDATE-NAME/UPDATE-HOTSPOT/DELETE
-
-DROP procedure IF EXISTS `ASSETPART_updateAssetPart`;
-
-DELIMITER $$
-CREATE PROCEDURE `ASSETPART_updateAssetPart` (
-IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-In _assetPartId VARCHAR(100),
-IN _assetPartName VARCHAR(100)
-)
-ASSETPART_updateAssetPart: BEGIN
-
-IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_updateAssetPart: _action can not be empty';
-	LEAVE ASSETPART_updateAssetPart;
-END IF;
-
-IF(_customerId IS NULL OR _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_updateAssetPart: _customerId can not be empty';
-	LEAVE ASSETPART_updateAssetPart;
-END IF;
-
-IF(_assetPartId IS NULL OR _assetPartId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_updateAssetPart: _assetPartId can not be empty';
-	LEAVE ASSETPART_updateAssetPart;
-END IF;
-
-
-END$$
-
-DELIMITER ;
-
--- ==================================================================
-
--- call ASSETPART_deleteAssetPart(_action, _customerId, _assetPartId);
--- actionType - DELETE
-
-DROP procedure IF EXISTS `ASSETPART_deleteAssetPart`;
-
-DELIMITER $$
-CREATE PROCEDURE `ASSETPART_deleteAssetPart` (
-IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-In _assetPartId VARCHAR(100)
-)
-ASSETPART_deleteAssetPart: BEGIN
-
-IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_deleteAssetPart: _action can not be empty';
-	LEAVE ASSETPART_deleteAssetPart;
-END IF;
-
-IF(_customerId IS NULL OR _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_deleteAssetPart: _customerId can not be empty';
-	LEAVE ASSETPART_deleteAssetPart;
-END IF;
-
-IF(_assetPartId IS NULL OR _assetPartId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_deleteAssetPart: _assetPartId can not be empty';
-	LEAVE ASSETPART_deleteAssetPart;
-END IF;
-
-
-END$$
-
-DELIMITER ;
-
--- ==================================================================
-
--- call ASSET_deleteAsset(_action, _customerId, _assetId);
--- actionType - DELETE
-
-DROP procedure IF EXISTS `ASSET_deleteAsset`;
-
-DELIMITER $$
-CREATE PROCEDURE `ASSET_deleteAsset` (
-IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-In _assetId VARCHAR(100)
-)
-ASSET_deleteAsset: BEGIN
-
-IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_deleteAsset: _action can not be empty';
-	LEAVE ASSET_deleteAsset;
-END IF;
-
-IF(_customerId IS NULL OR _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_deleteAsset: _customerId can not be empty';
-	LEAVE ASSET_deleteAsset;
-END IF;
-
-IF(_assetId IS NULL OR _assetId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_deleteAsset: _assetId can not be empty';
-	LEAVE ASSET_deleteAsset;
-END IF;
-
-
-END$$
 
 DELIMITER ;
 
 
+
+
+
+
+
 -- ==================================================================
 
--- call LOCATION_deleteLocation(_action, _customerId, _locationId, _isPrimary);
--- actionType - DELETE
+-- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate); 
+-- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  null, null, null, null, null, null, null); 
+-- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null, null); 
+-- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now())); 
+-- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now())); 
+-- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null); 
 
-DROP procedure IF EXISTS `LOCATION_deleteLocation`;
+
+DROP procedure IF EXISTS `ASSET_asset`;
 
 DELIMITER $$
-CREATE PROCEDURE `LOCATION_deleteLocation` (
+CREATE PROCEDURE `ASSET_asset` (
 IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-In _locationId VARCHAR(100)
+IN _userUUID VARCHAR(100),
+IN _customerUUID VARCHAR(100),
+IN _assetUUID VARCHAR(100),
+IN _asset_locationUUID VARCHAR(100),
+IN _asset_partUUID VARCHAR(100),
+IN _asset_statusId INT,
+IN _asset_name VARCHAR(255),
+IN _asset_shortName VARCHAR(255),
+IN _asset_installDate  Date
 )
-LOCATION_deleteLocation: BEGIN
+ASSET_asset: BEGIN
+
+DECLARE DEBUG INT DEFAULT 0;
 
 IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_deleteLocation: _action can not be empty';
-	LEAVE LOCATION_deleteLocation;
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_asset: _action can not be empty';
+	LEAVE ASSET_asset;
 END IF;
 
-IF(_customerId IS NULL OR _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_deleteLocation: _customerId can not be empty';
-	LEAVE LOCATION_deleteLocation;
+IF(_userUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _userUUID missing';
+	LEAVE ASSET_asset;
 END IF;
 
-IF(_locationId IS NULL OR _locationId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_deleteLocation: _locationId can not be empty';
-	LEAVE LOCATION_deleteLocation;
+IF(_customerUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _customerUUID missing';
+	LEAVE ASSET_asset;
 END IF;
 
+IF(_action = 'GET') THEN
+
+	SET @l_SQL = 'SELECT * FROM asset ';
+	
+        SET @l_SQL = CONCAT(@l_SQL, '  WHERE asset_customerUUID =\'', _customerUUID,'\'');
+        
+		IF(_assetUUID IS NOT NULL AND _assetUUID!='') THEN
+			SET @l_SQL = CONCAT(@l_SQL, '  AND assetUUID =\'', _assetUUID,'\'');
+		END IF;
+		IF(_asset_partUUID IS NOT NULL AND _asset_partUUID!='') THEN
+			SET @l_SQL = CONCAT(@l_SQL, '  AND asset_partUUID =\'', _asset_partUUID,'\'');
+		END IF;
+        
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+        
+        PREPARE stmt FROM @l_SQL;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+ELSEIF(_action = 'CREATE') THEN
+
+	IF (DEBUG=1) THEN select _action, _userUUID, _customerUUID, _assetUUID, _asset_locationUUID, _asset_partUUID, _asset_statusId, _asset_name, _asset_shortName, _asset_installDate; END IF;
+    
+	IF(_assetUUID IS NULL or asset_partUUID is null) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID or asset_partUUID missing';
+		LEAVE ASSET_asset;
+	END IF;
+    
+    insert into asset 
+    (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate,
+    asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS)
+	values
+    (_assetUUID, _asset_locationUUID, _asset_partUUID, _customerUUID, _asset_statusId, _asset_name, _asset_shortName, _asset_installDate,
+    _userUUID, _userUUID, now(), now(), null);
+
+ELSEIF(_action = 'UPDATE') THEN
+
+
+	IF(_assetUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID missing';
+		LEAVE ASSET_asset;
+	END IF;
+
+		set  @l_sql = CONCAT('update asset set asset_updatedTS=now(), asset_updatedByUUID=\'', _userUUID,'\'');		
+
+        if (_asset_locationUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_locationUUID = \'', _asset_locationUUID,'\'');
+        END IF;
+        if (_asset_partUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_partUUID = \'', _asset_partUUID,'\'');
+        END IF;
+        if (_asset_shortName is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_shortName = \'', _asset_shortName,'\'');
+        END IF;
+        if (_asset_statusId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_statusId = ', _asset_statusId);
+        END IF;
+        if (_asset_installDate is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_installDate = \'', _asset_installDate,'\'');
+        END IF;
+        if (_asset_name is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_name = \'', _asset_name,'\'');
+        END IF;
+        
+
+		set @l_sql = CONCAT(@l_sql,' where assetUUID = \'', _assetUUID,'\';');
+       
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+        
+
+ELSEIF(_action = 'DELETE') THEN
+
+	IF (DEBUG=1) THEN select _action,_assetUUID; END IF;
+    
+	IF(_assetUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID missing';
+		LEAVE ASSET_asset;
+	END IF;
+
+	update asset set asset_deleteTS=now(), asset_statusId=2, asset_updatedByUUID=_userUUID where  assetUUID= _assetUUID and asset_customerUUID=_customerUUID;
+	-- TBD, figure out what cleanup may be involved
+
+END IF;
 
 END$$
+
 
 DELIMITER ;
 
 
--- ==================================================================
-
--- call LOCATION_createLocation(_action, _customerId, _locationId, _isPrimary);
--- actionType - CREATE
-
-DROP procedure IF EXISTS `LOCATION_createLocation`;
-
-DELIMITER $$
-CREATE PROCEDURE `LOCATION_createLocation` (
-IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-In _locationId VARCHAR(100)
-)
-LOCATION_createLocation: BEGIN
-
-IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_createLocation: _action can not be empty';
-	LEAVE LOCATION_createLocation;
-END IF;
-
-IF(_customerId IS NULL OR _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_createLocation: _customerId can not be empty';
-	LEAVE LOCATION_createLocation;
-END IF;
-
-IF(_locationId IS NULL OR _locationId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_createLocation: _locationId can not be empty';
-	LEAVE LOCATION_createLocation;
-END IF;
 
 
-END$$
 
-DELIMITER ;
 
 -- ==================================================================
 
--- call ASSETPART_createAssetPart(_action, _customerId, _assetPartId);
--- actionType - CREATE
+-- call ASSETPART_assetpart(action, _userUUID, _customerUUID, asset_partUUID, asset_part_template_part_sku,asset_part_statusId, asset_part_sku,asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor); 
+-- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5', null, null,null, null, null, null, null, null, null, null, null, null, null, null, null); 
+-- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5',  '0090d1d3b414471485c5e8b6f390a150', null,null, null, null, null, null, null, null, null, null, null, null, null, null); 
+-- call ASSETPART_assetpart('CREATE', '1', '3792f636d9a843d190b8425cc06257f5',  10, 'asset_part_template_part_sku',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 1, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor'); 
+-- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, 'asset_part_template_part_sku2',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 0, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor'); 
+-- call ASSETPART_assetpart('DELETE', '1', '3792f636d9a843d190b8425cc06257f5',  10, null,null, null, null,null,null,null,null,null,null,null,null, null,null); 
 
-DROP procedure IF EXISTS `ASSETPART_createAssetPart`;
+
+DROP procedure IF EXISTS `ASSETPART_assetpart`;
 
 DELIMITER $$
-CREATE PROCEDURE `ASSETPART_createAssetPart` (
+CREATE PROCEDURE `ASSETPART_assetpart` (
 IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-In _assetPartId VARCHAR(100)
+IN _userUUID VARCHAR(100),
+IN _customerUUID VARCHAR(100),
+IN _asset_partUUID VARCHAR(100),
+IN _asset_part_template_part_sku VARCHAR(100),
+IN _asset_part_statusId INT,
+IN _asset_part_sku VARCHAR(100),
+IN _asset_part_name VARCHAR(255),
+IN _asset_part_description VARCHAR(255),
+IN _asset_part_userInstruction  VARCHAR(255),
+IN _asset_part_shortName  VARCHAR(255),
+IN _asset_part_imageURL  VARCHAR(255),
+IN _asset_part_imageThumbURL  VARCHAR(255),
+IN _asset_part_hotSpotJSON  VARCHAR(255),
+IN _asset_part_isPurchasable  VARCHAR(255),
+IN _asset_part_diagnosticUUID  VARCHAR(255),
+IN _asset_part_magentoUUID  VARCHAR(255),
+IN _asset_part_vendor VARCHAR(255)
 )
-ASSETPART_createAssetPart: BEGIN
+ASSETPART_assetpart: BEGIN
+
+
+
+DECLARE DEBUG INT DEFAULT 1;
+
+
 
 IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_createAssetPart: _action can not be empty';
-	LEAVE ASSETPART_createAssetPart;
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _action can not be empty';
+	LEAVE ASSETPART_assetpart;
 END IF;
 
-IF(_customerId IS NULL OR _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_createAssetPart: _customerId can not be empty';
-	LEAVE ASSETPART_createAssetPart;
+IF(_userUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _userUUID missing';
+	LEAVE ASSETPART_assetpart;
 END IF;
 
-IF(_assetPartId IS NULL OR _assetPartId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSETPART_createAssetPart: _assetPartId can not be empty';
-	LEAVE ASSETPART_createAssetPart;
+IF(_customerUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _customerUUID missing';
+	LEAVE ASSETPART_assetpart;
 END IF;
 
+IF(_action = 'GET') THEN
+
+
+
+	SET @l_SQL = 'SELECT * FROM asset_part ';
+	
+        SET @l_SQL = CONCAT(@l_SQL, '  WHERE asset_part_customerUUID =\'', _customerUUID,'\'');
+        
+		IF(_asset_partUUID IS NOT NULL AND _asset_partUUID!='') THEN
+			SET @l_SQL = CONCAT(@l_SQL, '  AND asset_partUUID =\'', _asset_partUUID,'\'');
+		END IF;
+       
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+        
+        PREPARE stmt FROM @l_SQL;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+ELSEIF(_action = 'CREATE') THEN
+
+	IF (DEBUG=1) THEN select _action, _userUUID, _customerUUID, _asset_partUUID, _asset_part_template_part_sku,_asset_part_statusId, _asset_part_sku, _asset_part_name, _asset_part_description, _asset_part_userInstruction, _asset_part_shortName, _asset_part_imageURL, _asset_part_imageThumbURL, _asset_part_hotSpotJSON, _asset_part_isPurchasable, _asset_part_diagnosticUUID, _asset_part_magentoUUID, _asset_part_vendor; END IF;
+    
+	IF(_asset_partUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
+		LEAVE ASSETPART_assetpart;
+	END IF;
+    
+    if (_asset_part_isPurchasable is null) then set _asset_part_isPurchasable=0; end if;
+    
+    insert into asset_part 
+    (asset_partUUID, asset_part_template_part_sku,asset_part_customerUUID,asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor,
+    asset_part_createdByUUID, asset_part_updatedByUUID, asset_part_updatedTS, asset_part_createdTS, asset_part_deleteTS)
+	values
+    (_asset_partUUID, _asset_part_template_part_sku, _customerUUID, _asset_part_statusId, _asset_part_sku, _asset_part_name, _asset_part_description, _asset_part_userInstruction, _asset_part_shortName, _asset_part_imageURL, _asset_part_imageThumbURL, _asset_part_hotSpotJSON, _asset_part_isPurchasable, _asset_part_diagnosticUUID, _asset_part_magentoUUID, _asset_part_vendor,
+    _userUUID, _userUUID, now(), now(), null);
+
+ELSEIF(_action = 'UPDATE') THEN
+
+
+	IF(_asset_partUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
+		LEAVE ASSETPART_assetpart;
+	END IF;
+
+		set  @l_sql = CONCAT('update asset_part set asset_part_updatedTS=now(), asset_part_updatedByUUID=\'', _userUUID,'\'');		
+
+        if (_asset_partUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_partUUID = \'', _asset_partUUID,'\'');
+        END IF;
+        if (_asset_part_template_part_sku is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_template_part_sku = \'', _asset_part_template_part_sku,'\'');
+        END IF;
+        if (_asset_part_sku is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_sku = \'', _asset_part_sku,'\'');
+        END IF;
+        if (_asset_part_statusId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_statusId = ', _asset_part_statusId);
+        END IF;
+        if (_asset_part_name is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_name = \'', _asset_part_name,'\'');
+        END IF;
+        if (_asset_part_description is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_description = \'', _asset_part_description,'\'');
+        END IF;
+		if (_asset_part_userInstruction is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_userInstruction = \'', _asset_part_userInstruction,'\'');
+        END IF;
+        if (_asset_part_shortName is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_shortName = \'', _asset_part_shortName,'\'');
+        END IF;
+        if (_asset_part_imageURL is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_imageURL = \'', _asset_part_imageURL,'\'');
+        END IF;
+        if (_asset_part_imageThumbURL is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_imageThumbURL = \'', _asset_part_imageThumbURL,'\'');
+        END IF;
+        if (_asset_part_hotSpotJSON is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_hotSpotJSON = \'', _asset_part_hotSpotJSON,'\'');
+        END IF;
+        if (_asset_part_diagnosticUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_diagnosticUUID = \'', _asset_part_diagnosticUUID,'\'');
+        END IF;
+        if (_asset_part_magentoUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_magentoUUID = \'', _asset_part_magentoUUID,'\'');
+        END IF;
+        if (_asset_part_vendor is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_vendor = \'', _asset_part_vendor,'\'');
+        END IF;
+        if (_asset_part_isPurchasable is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',asset_part_isPurchasable = ', _asset_part_isPurchasable);
+        END IF;
+
+
+		set @l_sql = CONCAT(@l_sql,' where asset_partUUID = \'', _asset_partUUID,'\';');
+       
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+        
+
+ELSEIF(_action = 'DELETE') THEN
+
+	IF (DEBUG=1) THEN select _action,_asset_partUUID; END IF;
+    
+	IF(_asset_partUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
+		LEAVE ASSETPART_assetpart;
+	END IF;
+
+	update asset_part set asset_part_deleteTS=now(), asset_part_statusId=2, asset_part_updatedByUUID=_userUUID where  asset_partUUID= _asset_partUUID and asset_part_customerUUID=_customerUUID;
+	-- TBD, figure out what cleanup may be involved
+
+END IF;
 
 END$$
 
-DELIMITER ;
-
--- ==================================================================
-
--- call ASSET_createAsset(_action, _customerId, _assetId);
--- actionType - CREATE
-
-DROP procedure IF EXISTS `ASSET_createAsset`;
-
-DELIMITER $$
-CREATE PROCEDURE `ASSET_createAsset` (
-IN _action VARCHAR(100),
-IN _customerId VARCHAR(100),
-In _assetId VARCHAR(100)
-)
-ASSET_createAsset: BEGIN
-
-IF(_action IS NULL OR _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_createAsset: _action can not be empty';
-	LEAVE ASSET_createAsset;
-END IF;
-
-IF(_customerId IS NULL OR _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_createAsset: _customerId can not be empty';
-	LEAVE ASSET_createAsset;
-END IF;
-
-IF(_assetId IS NULL OR _assetId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ASSET_createAsset: _assetId can not be empty';
-	LEAVE ASSET_createAsset;
-END IF;
-
-
-END$$
 
 DELIMITER ;

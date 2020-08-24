@@ -420,7 +420,7 @@ CREATE TABLE `attachment` (
     attachment_customerUUID CHAR(32)  NOT NULL,
  
     attachment_createdByUUID CHAR(32)  NULL,
-    attachment_acknowledgedByUUID CHAR(32)  NULL,
+    attachment_updatedByUUID CHAR(32)  NULL,
    	attachment_updatedTS datetime  NULL,
   	attachment_createdTS datetime  NULL default now(),
    	attachment_deleteTS datetime  NULL,
@@ -464,7 +464,7 @@ CREATE TABLE `part_template` (
     part_vendor varchar(255)   NULL,
 
     part_createdByUUID CHAR(32)  NULL,
-    part_acknowledgedByUUID CHAR(32)  NULL,
+    part_updatedByUUID CHAR(32)  NULL,
    	part_updatedTS datetime  NULL,
   	part_createdTS datetime  NULL default now(),
    	part_deleteTS datetime  NULL,
@@ -525,7 +525,7 @@ CREATE TABLE `asset_part` (
     asset_part_vendor varchar(255)   NULL,
 
     asset_part_createdByUUID CHAR(32)  NULL,
-    asset_part_acknowledgedByUUID CHAR(32)  NULL,
+    asset_part_updatedByUUID CHAR(32)  NULL,
    	asset_part_updatedTS datetime  NULL,
   	asset_part_createdTS datetime  NULL default now(),
    	asset_part_deleteTS datetime  NULL,
@@ -573,7 +573,7 @@ CREATE TABLE `knowledge_base` (
     knowledge_dislikes int NULL DEFAULT 0,
  
     knowledge_createdByUUID CHAR(32)  NULL,
-    knowledge_acknowledgedByUUID CHAR(32)  NULL,
+    knowledge_updatedByUUID CHAR(32)  NULL,
    	knowledge_updatedTS datetime  NULL,
   	knowledge_createdTS datetime  NULL default now(),
    	knowledge_deleteTS datetime  NULL,
