@@ -13,7 +13,7 @@ IN _action VARCHAR(100),
 IN _customerId VARCHAR(32),
 IN _userId VARCHAR(32),
 IN _startingPoint INT,
-IN _id INT
+IN _id VARCHAR(32)
 )
 IMAGES_getImageLayer: BEGIN
 
@@ -43,7 +43,7 @@ If (_action = 'LOCATION') THEN
 
 		SELECT loc.*
 		from location loc 
-        where loc.location_customerUUID = _customerId AND loc.location_isPrimary = _startingPoint;
+        where loc.location_customerUUID = _customerId AND loc.location_isPrimary = _startingPoint AND loc.locationUUID = _id;
 	
 	ELSE
 
