@@ -68,6 +68,317 @@ END$$
 
 
 -- ==================================================================
+
+-- call DIAGNOSTIC_tree(action,userId,diagnosticUUID, diagnostic_statusId, diagnostic_name, diagnostic_description, diagnostic_startNodeUUID); 
+-- call DIAGNOSTIC_tree('GET', '1', null, null, null, null, null); 
+-- call DIAGNOSTIC_tree('CREATE', '1', '10', null, 'diagnostic_name', 'diagnostic_description', null); 
+-- call DIAGNOSTIC_tree('UPDATE', '1', '10', null, 'diagnostic_name2', 'diagnostic_description2', 10); 
+-- call DIAGNOSTIC_tree('DELETE', '1',  '10', null, null, null,null); 
+
+DROP procedure IF EXISTS `DIAGNOSTIC_tree`;
+
+DELIMITER $$
+CREATE PROCEDURE `DIAGNOSTIC_tree` (
+IN _action VARCHAR(100),
+IN _userUUID VARCHAR(100),
+IN _diagnosticUUID VARCHAR(100),
+IN _diagnostic_statusId INT,
+IN _diagnostic_name VARCHAR(100),
+IN _diagnostic_description VARCHAR(255),
+IN _diagnostic_startNodeUUID VARCHAR(255)
+)
+DIAGNOSTIC_tree: BEGIN
+DECLARE commaNeeded INT DEFAULT 0;
+
+DECLARE DEBUG INT DEFAULT 0;
+
+IF(_action IS NULL ) THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call DIAGNOSTIC_tree: _action can not be empty';
+	LEAVE DIAGNOSTIC_tree;
+END IF;
+
+IF(_userUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_tree: _userUUID missing';
+	LEAVE DIAGNOSTIC_tree;
+END IF;
+
+IF(_action = 'GET') THEN
+
+	SET @l_SQL = 'SELECT * FROM diagnostic_tree ';
+	
+		IF(_diagnosticUUID IS NOT NULL or _diagnostic_startNodeUUID IS NOT NULL or _diagnostic_name IS NOT NULL) THEN
+			SET @l_SQL = CONCAT(@l_SQL, '  WHERE ');
+		END IF;
+
+		IF(_diagnosticUUID IS NOT NULL) THEN
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			SET @l_SQL = CONCAT(@l_SQL, ' diagnosticUUID =\'', _diagnosticUUID,'\'');
+			set commaNeeded =1;			
+		END IF;
+
+		IF(_diagnostic_startNodeUUID IS NOT NULL) THEN
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_startNodeUUID =\'', _diagnostic_startNodeUUID,'\'');
+			set commaNeeded =1;			
+		END IF;
+        
+		IF(_diagnostic_name IS NOT NULL) THEN
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_name =\'', _diagnostic_name,'\'');
+			set commaNeeded =1;			
+		END IF;
+        
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+        
+        PREPARE stmt FROM @l_SQL;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+ELSEIF(_action = 'CREATE') THEN
+
+	IF (DEBUG=1) THEN select _action, _userUUID, _diagnosticUUID, _diagnostic_statusId, _diagnostic_name, _diagnostic_description, _diagnostic_startNodeUUID; END IF;
+    
+	IF(_diagnosticUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_tree: diagnosticUUID missing';
+		LEAVE DIAGNOSTIC_tree;
+	END IF;
+    
+    insert into diagnostic_tree 
+    (diagnosticUUID, diagnostic_statusId, diagnostic_name, diagnostic_description, diagnostic_startNodeUUID,
+    diagnostic_createdByUUID, diagnostic_updatedByUUID, diagnostic_updatedTS, diagnostic_createdTS, diagnostic_deleteTS)
+	values
+    (_diagnosticUUID, 1, _diagnostic_name, _diagnostic_description, _diagnostic_startNodeUUID,
+    _userUUID, _userUUID, now(), now(), null);
+
+ELSEIF(_action = 'UPDATE') THEN
+
+	IF(_diagnosticUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_tree: diagnosticUUID missing';
+		LEAVE DIAGNOSTIC_tree;
+	END IF;
+
+
+		set  @l_sql = CONCAT('update diagnostic_tree set diagnostic_updatedTS=now(), diagnostic_updatedByUUID=\'', _userUUID,'\'');		
+
+        if (_diagnostic_name is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_name = \'', _diagnostic_name,'\'');
+        END IF;
+        if (_diagnostic_description is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_description = \'', _diagnostic_description,'\'');
+        END IF;
+        if (_diagnostic_startNodeUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_startNodeUUID = \'', _diagnostic_startNodeUUID,'\'');
+        END IF;
+        if (_diagnostic_statusId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_statusId = ', _diagnostic_statusId);
+        END IF;
+
+		set @l_sql = CONCAT(@l_sql,' where diagnosticUUID = \'', _diagnosticUUID,'\';');
+       
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+        
+
+ELSEIF(_action = 'DELETE') THEN
+
+	IF (DEBUG=1) THEN select _action,_diagnosticUUID; END IF;
+    
+	IF(_diagnosticUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_tree: _diagnosticUUID missing';
+		LEAVE DIAGNOSTIC_tree;
+	END IF;
+
+	update diagnostic_tree set diagnostic_deleteTS=now(), diagnostic_statusId=2, diagnostic_updatedByUUID=_userUUID where  diagnosticUUID= _diagnosticUUID;
+	-- TBD, figure out what cleanup may be involved
+
+END IF;
+
+END$$
+
+
+DELIMITER ;
+
+-- ==================================================================
+
+-- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON); 
+-- call DIAGNOSTIC_node('GETNODE', '1', null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null); 
+-- call DIAGNOSTIC_node('GET', '1', null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null); 
+-- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON'); 
+-- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON'); 
+-- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null); 
+
+DROP procedure IF EXISTS `DIAGNOSTIC_node`;
+
+diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON
+
+DELIMITER $$
+CREATE PROCEDURE `DIAGNOSTIC_node` (
+IN _action VARCHAR(100),
+IN _userUUID VARCHAR(100),
+IN _diagnostic_nodeUUID VARCHAR(100),
+IN _diagnostic_node_diagnosticUUID VARCHAR(100),
+IN _diagnostic_node_statusId INT,
+IN _diagnostic_node_title VARCHAR(100),
+IN _diagnostic_node_prompt VARCHAR(255),
+IN _diagnostic_node_optionPrompt VARCHAR(255),
+IN _diagnostic_node_hotSpotJSON text,
+IN _diagnostic_node_imageSetJSON text,
+IN _diagnostic_node_optionSetJSON text
+)
+DIAGNOSTIC_node: BEGIN
+DECLARE commaNeeded INT DEFAULT 0;
+
+DECLARE DEBUG INT DEFAULT 0;
+
+IF(_action IS NULL ) THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _action can not be empty';
+	LEAVE DIAGNOSTIC_node;
+END IF;
+
+IF(_userUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _userUUID missing';
+	LEAVE DIAGNOSTIC_node;
+END IF;
+
+IF(_action = 'GETNODE') THEN
+
+	If (_diagnostic_node_diagnosticUUID is not null and _diagnostic_nodeUUID is null) THEN
+
+			SELECT n.*,d.* from diagnostic_tree d
+			left join diagnostic_node n on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID and d.diagnostic_startNodeUUID = n.diagnostic_nodeUUID) 
+			where diagnosticUUID = _diagnostic_node_diagnosticUUID;
+
+	ELSEIF (_diagnostic_nodeUUID is not null) THEN
+
+			SELECT n.* from diagnostic_node n
+			-- left join diagnostic_tree d on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID) 
+			where diagnostic_nodeUUID = _diagnostic_nodeUUID;
+
+	END IF;
+
+ELSEIF(_action = 'GET') THEN
+
+		SET @l_SQL = 'SELECT * FROM diagnostic_node ';
+	
+		IF(_diagnostic_nodeUUID IS NOT NULL or _diagnostic_node_diagnosticUUID IS NOT NULL or _diagnostic_node_title IS NOT NULL) THEN
+			SET @l_SQL = CONCAT(@l_SQL, '  WHERE ');
+		END IF;
+
+		IF(_diagnostic_nodeUUID IS NOT NULL) THEN
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_nodeUUID =\'', _diagnostic_nodeUUID,'\'');
+			set commaNeeded =1;			
+		END IF;
+
+		IF(_diagnostic_node_diagnosticUUID IS NOT NULL) THEN
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_node_diagnosticUUID =\'', _diagnostic_node_diagnosticUUID,'\'');
+			set commaNeeded =1;			
+		END IF;
+        
+		IF(_diagnostic_node_title IS NOT NULL) THEN
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_node_title =\'', _diagnostic_node_title,'\'');
+			set commaNeeded =1;			
+		END IF;
+        
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+        
+        PREPARE stmt FROM @l_SQL;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+    
+ELSEIF(_action = 'CREATE') THEN
+
+	IF (DEBUG=1) THEN select _action, _userUUID, _diagnostic_nodeUUID, _diagnostic_node_diagnosticUUID, 1, 
+	_diagnostic_node_title, _diagnostic_node_prompt, _diagnostic_node_optionPrompt, 
+	_diagnostic_node_hotSpotJSON, _diagnostic_node_imageSetJSON, _diagnostic_node_optionSetJSON; END IF;
+    
+	IF(_diagnostic_nodeUUID IS NULL or _diagnostic_node_diagnosticUUID is null) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call _diagnostic_nodeUUID: _diagnostic_nodeUUID or _diagnostic_node_diagnosticUUID missing';
+		LEAVE DIAGNOSTIC_node;
+	END IF;
+    
+    insert ignore into diagnostic_node 
+    (diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId, 
+	diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, 
+	diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON,
+    diagnostic_node_createdByUUID, diagnostic_node_updatedByUUID, diagnostic_node_updatedTS, diagnostic_node_createdTS, diagnostic_node_deleteTS)
+	values
+    (_diagnostic_nodeUUID, _diagnostic_node_diagnosticUUID, 1, 
+	_diagnostic_node_title, _diagnostic_node_prompt, _diagnostic_node_optionPrompt, 
+	_diagnostic_node_hotSpotJSON, _diagnostic_node_imageSetJSON, _diagnostic_node_optionSetJSON,
+    _userUUID, _userUUID, now(), now(), null);
+
+ELSEIF(_action = 'UPDATE') THEN
+
+	IF(_diagnostic_nodeUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _diagnostic_nodeUUID missing';
+		LEAVE DIAGNOSTIC_node;
+	END IF;
+
+		set  @l_sql = CONCAT('update diagnostic_node set diagnostic_node_updatedTS=now(), diagnostic_node_updatedByUUID=\'', _userUUID,'\'');		
+
+        if (_diagnostic_node_diagnosticUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_node_diagnosticUUID = \'', _diagnostic_node_diagnosticUUID,'\'');
+        END IF;
+        if (_diagnostic_node_title is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_node_title = \'', _diagnostic_node_title,'\'');
+        END IF;
+        if (_diagnostic_node_prompt is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_node_prompt = \'', _diagnostic_node_prompt,'\'');
+        END IF;
+        if (_diagnostic_node_statusId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_node_statusId = ', _diagnostic_node_statusId);
+        END IF;
+        if (_diagnostic_node_optionPrompt is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_node_optionPrompt = \'', _diagnostic_node_optionPrompt,'\'');
+        END IF;
+        if (_diagnostic_node_hotSpotJSON is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_node_hotSpotJSON = \'', _diagnostic_node_hotSpotJSON,'\'');
+        END IF;
+        if (_diagnostic_node_imageSetJSON is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_node_imageSetJSON = \'', _diagnostic_node_imageSetJSON,'\'');
+        END IF;
+        if (_diagnostic_node_optionSetJSON is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',diagnostic_node_optionSetJSON = \'', _diagnostic_node_optionSetJSON,'\'');
+        END IF;
+
+		set @l_sql = CONCAT(@l_sql,' where diagnostic_nodeUUID = \'', _diagnostic_nodeUUID,'\';');
+       
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+        
+
+ELSEIF(_action = 'DELETE') THEN
+
+	IF (DEBUG=1) THEN select _action,_diagnostic_nodeUUID; END IF;
+    
+	IF(_diagnostic_nodeUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _diagnostic_nodeUUID missing';
+		LEAVE DIAGNOSTIC_node;
+	END IF;
+
+	update diagnostic_node set diagnostic_node_deleteTS=now(), diagnostic_node_statusId=2, diagnostic_node_updatedByUUID=_userUUID where  diagnostic_nodeUUID= _diagnostic_nodeUUID;
+	-- TBD, figure out what cleanup may be involved
+
+END IF;
+
+END$$
+
+
+DELIMITER ;
+
+
+
+-- ==================================================================
 -- call DIAGNOSTIC_getNode(null,1,1,'633a54011d76432b9fa18b0b6308c189',null); -- will get the starting tree node
 -- call DIAGNOSTIC_getNode(null,1,1,null,'1834487471bb4cccbaa8b0dc1cedc463'); -- will get the next node
 
@@ -84,8 +395,11 @@ IN _nodeId char(32)
 )
 DIAGNOSTIC_getNode: BEGIN
 
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call DIAGNOSTIC_getNode: deprecated use: call DIAGNOSTIC_node(GET, 1, null, 633a54011d76432b9fa18b0b6308c189, null,null, null, null, null, null, null); ';
+	LEAVE DIAGNOSTIC_getNode;
 
 
+/*
 -- isPrimary may be enumerated (i.e 1,2,3 )  
 --   where 1=top most
 -- 			2 = layer down
@@ -114,6 +428,7 @@ ELSEIF (_nodeId is not null) THEN
         where diagnostic_nodeUUID = _nodeId;
 
 END IF;
+*/
 
 END$$
 
@@ -175,104 +490,6 @@ END IF;
 END$$
 
 
--- ==================================================================
--- call CLIENT_getDetails(null,null, 6770);
-
-
-DROP procedure IF EXISTS `CLIENT_getDetails`;
-
-DELIMITER $$
-CREATE PROCEDURE `CLIENT_getDetails`(
-IN _action varchar(100),
-IN _clientId INT,
-IN _recruitId INT
-)
-CLIENT_getDetails: BEGIN
-
-IF (_clientId is NULL and _recruitId is null) THEN
-	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid value arguments';
-    leave CLIENT_getDetails;
-END IF;
-
-
-if (_recruitId is null and _clientId is not null) THEN
-	
-	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid value arguments';
-    leave CLIENT_getDetails;
-	
-    
-elseif (_recruitId is not null ) THEN
-	
-    
-    SELECT 
-        `cnt`.`contractId` AS `contract_number`,
-        `cnt`.`contract_clientId` AS `contract_clientId`,
-        `c`.`client_clientName` AS `contract_clientName`,
-        `cnt`.`contract_expirationDate` AS `contract_expirationDate`,
-        `cnt`.`contract_executionDate` AS `contract_executionDate`,
-        `cnt`.`contract_startDate` AS `contract_startDate`,
-        `cnt`.`contract_endDate` AS `contract_endDate`,
-        `cnt`.`contract_statusId` AS `contract_statusId`,
-        `stat`.`contract_status` AS `contract_status`,
-        `cnt`.`contract_billingAddressId` AS `contract_billingAddressId`,
-        `cnt`.`att_lt_dh` AS `contract_att_lt_dh`,
-        `cnt`.`contract_pocId` AS `contract_pocId`,
-        (SELECT 
-                ENTITY_FORMATNAME(`poc`.`entity_firstName`,
-                            `poc`.`entity_middleName`,
-                            `poc`.`entity_lastName`,
-                            NULL,
-                            NULL)
-            FROM
-                `entity` `poc`
-            WHERE
-                (`poc`.`entityId` = `cnt`.`contract_pocId`)) AS `contract_pocName`,
-        (SELECT 
-                GROUP_CONCAT(`contract_specialty`.`att_specialties`
-                        SEPARATOR ',')
-            FROM
-                `contract_specialty`
-            WHERE
-                (`contract_specialty`.`contract_specialty_contractId` = `cnt`.`contractId`)) AS `contract_specialty`,
-                
-        -- need to get the address
-        
-        -- `prez`.`presentation_orderId` AS `presentation_orderId`,
-        max(`prez`.`presentation_entityId`) AS `presentation_entityId`,
-        (SELECT 
-                ENTITY_FORMATNAME(`entity`.`entity_firstName`,
-                            `entity`.`entity_middleName`,
-                            `entity`.`entity_lastName`,
-                            NULL,
-                            NULL)
-            FROM
-                `entity`
-            WHERE
-                (`entity`.`entityId` = max(`prez`.`presentation_entityId`))) AS `presentation_recruitName`,
-		addr.*
-        -- `prez`.`att_order_presentation_status` AS `att_order_presentation_status`,
-        -- `prez`.`att_lt_dh` AS `presentation_lt_dh`,
-        -- `prez`.`presentation_presentedDate` AS `presentation_presentedDate`,
-        -- `prez`.`presentation_executionDate` AS `presentation_executionDate`,
-        -- `prez`.`presentation_startDate` AS `presentation_startDate`,
-        -- `prez`.`presentation_endDate` AS `presentation_endDate`
-    FROM
-        `contract` `cnt`
-        LEFT JOIN `client` `c` ON (`c`.`clientId` = `cnt`.`contract_clientId`)
-        LEFT JOIN `att_contract_status` `stat` ON (`stat`.`contract_statisId` = `cnt`.`contract_statusId`)
-        LEFT JOIN `order_presentation` `prez` ON (`prez`.`presentation_clientId` = `cnt`.`contract_clientId` and prez.att_order_presentation_status='Accepted')
-        left join global_address addr on (addr.addressId  =c.client_addressId_work)
-        where `prez`.`presentation_entityId`=_recruitId
-		group by cnt.contractId;
-
-    
-END IF;
-
-
-
-END$$
-
-DELIMITER ; 
 
 -- ==================================================================
 
@@ -329,10 +546,9 @@ IF(_action IS NULL or _action = '') THEN
 END IF;
 
 IF(_action ='GET-LIST') THEN
-	SELECT * FROM cm_hms.customer;
-ELSE
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CUSTOMER_getCustomerDetails: _action is of type invalid';
-	LEAVE CUSTOMER_getCustomerDetails;
+	SELECT * FROM customer;
+ELSEIF(_action ='GET') THEN
+	SELECT * FROM customer where customerUUID = _customerId;
 END IF;
 
 END$$
@@ -535,8 +751,7 @@ DELIMITER ;
 -- ==================================================================
 
 -- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate); 
--- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  null, null, null, null, null, null, null); 
--- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null, null); 
+-- call ASSET_asset('GET', '1', 'a30af'GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null, null); 
 -- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now())); 
 -- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now())); 
 -- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null); 
