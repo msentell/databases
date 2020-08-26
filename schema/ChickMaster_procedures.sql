@@ -378,6 +378,7 @@ DELIMITER ;
 
 
 
+
 -- ==================================================================
 -- call DIAGNOSTIC_getNode(null,1,1,'633a54011d76432b9fa18b0b6308c189',null); -- will get the starting tree node
 -- call DIAGNOSTIC_getNode(null,1,1,null,'1834487471bb4cccbaa8b0dc1cedc463'); -- will get the next node
