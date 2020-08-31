@@ -212,7 +212,6 @@ DELIMITER ;
 
 DROP procedure IF EXISTS `DIAGNOSTIC_node`;
 
-diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON
 
 DELIMITER $$
 CREATE PROCEDURE `DIAGNOSTIC_node` (
