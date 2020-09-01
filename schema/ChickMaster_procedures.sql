@@ -200,7 +200,6 @@ END$$
 
 
 DELIMITER ;
-
 -- ==================================================================
 
 -- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON); 
@@ -557,7 +556,192 @@ DELIMITER ;
 
 
 
+-- ==================================================================
 
+-- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID); 
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null); 
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null); 
+-- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSETPART', 'Avida Symphony',null); 
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55); 
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55); 
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSETPART', 'ASSETPARTDAVID',22); 
+
+
+DROP procedure IF EXISTS `LOCATION_action`;
+
+DELIMITER $$
+CREATE PROCEDURE `LOCATION_action` (
+IN _action VARCHAR(100),
+IN _userUUID VARCHAR(100),
+IN _customerUUID VARCHAR(100),
+IN _type VARCHAR(100),
+IN _name VARCHAR(100),
+IN _objUUID VARCHAR(100)
+)
+LOCATION_action: BEGIN
+
+DECLARE _itemFound varchar(100);
+
+DECLARE DEBUG INT DEFAULT 0;
+
+IF(_action IS NULL OR _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_action: _action can not be empty';
+	LEAVE LOCATION_action;
+END IF;
+
+IF(_userUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _userUUID missing';
+	LEAVE LOCATION_action;
+END IF;
+
+IF(_customerUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _customerUUID missing';
+	LEAVE LOCATION_action;
+END IF;
+
+IF(_action = 'SEARCH') THEN
+
+
+	set _name = concat('%',_name,'%');
+    
+	if (_type = 'ASSET') THEN
+
+		-- SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type` 
+		-- 	FROM asset where asset_name like _name and  asset_customerUUID=_customerUUID;
+
+        SET @l_SQL = CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',_type,'\' as `Type`
+			FROM asset where asset_name like \'', _name,'\'  and  asset_customerUUID= \'',_customerUUID,'\'');
+    
+    ELSEif (_type = 'ASSETPART') THEN
+    
+		-- SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type` 
+		-- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
+
+        SET @l_SQL = CONCAT('SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`, \'',_type,'\' as `Type` 
+			FROM asset_part where asset_part_name like \'', _name,'\'  and  asset_part_customerUUID= \'',_customerUUID,'\'');
+    
+    ELSEif (_type = 'LOCATION') THEN 
+
+		-- SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type` 
+		-- 	FROM location where location_name like _name and location_customerUUID =_customerUUID;
+
+        SET @l_SQL = CONCAT('SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`, \'',_type,'\' as `Type` 
+			FROM location where location_name like \'', _name,'\'  and  location_customerUUID= \'',_customerUUID,'\'');
+
+	else
+    
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _type not valid';
+	LEAVE LOCATION_action;
+
+	END IF;
+
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+        
+        PREPARE stmt FROM @l_SQL;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+
+
+ELSEIF(_action = 'CREATE') THEN
+
+	IF (DEBUG=1) THEN select _action, _userUUID, _customerUUID, _type, _name,_objUUID; END IF;
+    
+	IF(_name IS NULL or _type is null or _objUUID is null ) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _name or _type or _objUUID missing';
+		LEAVE LOCATION_action;
+	END IF;
+
+	if (_type = 'ASSET') THEN
+
+		select assetUUID into _itemFound from asset where asset_name = _name and asset_customerUUID = _customerUUID;
+
+
+		if ( _itemFound is not null) THEN
+		
+			SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type` 
+			FROM asset where assetUUID = _itemFound;
+            			
+		ELSE
+		
+			-- location,part required?
+            
+			insert into asset 
+			(assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate,
+			asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS)
+			values
+			(_objUUID, null, null, _customerUUID, 1, _name, _name, null,
+			_userUUID, _userUUID, now(), now(), null);
+
+			SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type` 
+			FROM asset where assetUUID = _objUUID;
+
+		END IF;
+
+
+    
+    ELSEif (_type = 'ASSETPART') THEN
+    
+		select asset_partUUID into _itemFound from asset_part where asset_part_name = _name and asset_part_customerUUID = _customerUUID;
+			
+		if ( _itemFound is not null) THEN
+		
+			SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type` 
+				FROM asset_part where asset_partUUID = _itemFound;
+			
+		ELSE
+		
+			insert into asset_part 
+			(asset_partUUID, asset_part_template_part_sku,asset_part_customerUUID,asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor,
+			asset_part_createdByUUID, asset_part_updatedByUUID, asset_part_updatedTS, asset_part_createdTS, asset_part_deleteTS)
+			values
+			(_objUUID, null, _customerUUID, 1, null, _name, _name, null, _name, null, null, null, null, null, null, null,
+			_userUUID, _userUUID, now(), now(), null);
+
+			SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type` 
+				FROM asset_part where asset_partUUID = _objUUID;
+
+		END IF;
+
+    
+    ELSEif (_type = 'LOCATION') THEN 
+
+
+
+		select locationUUID into _itemFound from location where location_name = _name and location_customerUUID = _customerUUID;
+			
+		if ( _itemFound is not null) THEN
+		
+			SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type` 
+				FROM location where locationUUID = _itemFound;
+			
+		ELSE
+		
+		   insert into location 
+			(locationUUID, location_customerUUID, location_statusId, location_type, location_name, location_description, location_isPrimary, location_imageUrl, location_hotSpotJSON, location_addressTypeId, location_address, location_address_city, location_address_state, location_address_zip, location_country, location_contact_name, location_contact_email, location_contact_phone,
+			location_createdByUUID, location_updatedByUUID, location_updatedTS, location_createdTS, location_deleteTS)
+			values
+			(_objUUID, _customerUUID, 1, 'LOCATION', _name, _name, 1, null, null, null, null, null, null, null, null, null, null, null,
+			_userUUID, _userUUID, now(), now(), null);
+
+			SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type` 
+				FROM location where locationUUID = _objUUID;
+
+		END IF;
+
+
+
+
+	END IF;
+
+
+
+END IF;
+
+END$$
+
+
+DELIMITER ;
 
 -- ==================================================================
 
