@@ -561,10 +561,10 @@ DELIMITER ;
 -- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID); 
 -- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null); 
 -- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null); 
--- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSETPART', 'Avida Symphony',null); 
+-- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'Avida Symphony',null); 
 -- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55); 
 -- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55); 
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSETPART', 'ASSETPARTDAVID',22); 
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22); 
 
 
 DROP procedure IF EXISTS `LOCATION_action`;
@@ -612,7 +612,7 @@ IF(_action = 'SEARCH') THEN
         SET @l_SQL = CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',_type,'\' as `Type`
 			FROM asset where asset_name like \'', _name,'\'  and  asset_customerUUID= \'',_customerUUID,'\'');
     
-    ELSEif (_type = 'ASSETPART') THEN
+    ELSEif (_type = 'ASSET-PART') THEN
     
 		-- SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type` 
 		-- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
@@ -680,7 +680,7 @@ ELSEIF(_action = 'CREATE') THEN
 
 
     
-    ELSEif (_type = 'ASSETPART') THEN
+    ELSEif (_type = 'ASSET-PART') THEN
     
 		select asset_partUUID into _itemFound from asset_part where asset_part_name = _name and asset_part_customerUUID = _customerUUID;
 			
