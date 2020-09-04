@@ -577,7 +577,8 @@ IN _customerUUID VARCHAR(100),
 IN _type VARCHAR(100),
 IN _name VARCHAR(100),
 IN _objUUID VARCHAR(100),
-IN _isPrimary INT
+IN _isPrimary INT,
+IN _locationId VARCHAR(100)
 )
 LOCATION_action: BEGIN
 
@@ -671,7 +672,7 @@ ELSEIF(_action = 'CREATE') THEN
 			(assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate,
 			asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS)
 			values
-			(_objUUID, null, null, _customerUUID, 1, _name, _name, null,
+			(_objUUID, _locationId, null, _customerUUID, 1, _name, _name, null,
 			_userUUID, _userUUID, now(), now(), null);
 
 			SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type` 
