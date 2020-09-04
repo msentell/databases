@@ -558,13 +558,13 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID); 
--- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null); 
--- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null); 
--- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'Avida Symphony',null); 
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55); 
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55); 
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22); 
+-- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID, 0);
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null, 0);
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null, 0);
+-- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'Avida Symphony',null, 0); 
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55, 0); 
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55, 0); 
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22, 0); 
 
 
 DROP procedure IF EXISTS `LOCATION_action`;
@@ -576,7 +576,8 @@ IN _userUUID VARCHAR(100),
 IN _customerUUID VARCHAR(100),
 IN _type VARCHAR(100),
 IN _name VARCHAR(100),
-IN _objUUID VARCHAR(100)
+IN _objUUID VARCHAR(100),
+IN _isPrimary INT
 )
 LOCATION_action: BEGIN
 
@@ -721,7 +722,7 @@ ELSEIF(_action = 'CREATE') THEN
 			(locationUUID, location_customerUUID, location_statusId, location_type, location_name, location_description, location_isPrimary, location_imageUrl, location_hotSpotJSON, location_addressTypeId, location_address, location_address_city, location_address_state, location_address_zip, location_country, location_contact_name, location_contact_email, location_contact_phone,
 			location_createdByUUID, location_updatedByUUID, location_updatedTS, location_createdTS, location_deleteTS)
 			values
-			(_objUUID, _customerUUID, 1, 'LOCATION', _name, _name, 1, null, null, null, null, null, null, null, null, null, null, null,
+			(_objUUID, _customerUUID, 1, 'LOCATION', _name, _name, _isPrimary, null, null, null, null, null, null, null, null, null, null, null,
 			_userUUID, _userUUID, now(), now(), null);
 
 			SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type` 
