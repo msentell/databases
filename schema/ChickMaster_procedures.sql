@@ -816,7 +816,8 @@ IF(_action = 'GET') THEN
 		IF(_location_isPrimary IS NOT NULL) THEN
 			SET @l_SQL = CONCAT(@l_SQL, '  AND l.location_isPrimary =', _location_isPrimary);
 		END IF;
-        
+			
+		SET @l_SQL = CONCAT(@l_SQL, '  AND l.location_statusId = \'1\'');
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
         
         PREPARE stmt FROM @l_SQL;
