@@ -279,7 +279,7 @@ ELSEIF(_action = 'GET') THEN
         
 		IF(_diagnostic_node_title IS NOT NULL) THEN
 			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
-			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_node_title =\'', _diagnostic_node_title,'\'');
+			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_node_title like \'','%', _diagnostic_node_title,'%','\'');
 			set commaNeeded =1;			
 		END IF;
         
