@@ -500,26 +500,216 @@ DROP procedure IF EXISTS `WORKORDER_workOrder`;
 DELIMITER $$
 CREATE PROCEDURE `WORKORDER_workOrder` (
 IN _action VARCHAR(100),
-IN _customerId VARCHAR(100)
+IN _customerId VARCHAR(100),
+IN _userUUID VARCHAR(100),
+IN _workorderUUID VARCHAR(100),
+IN _workorder_locationUUID VARCHAR(100),
+IN _workorder_userUUID VARCHAR(100),
+IN _workorder_groupUUID VARCHAR(100),
+IN _workorder_assetUUID VARCHAR(100),
+IN _workorder_checklistUUID VARCHAR(100),
+IN _workorder_status varchar(100),
+IN _workorder_name VARCHAR(100),
+IN _workorder_number VARCHAR(100),
+IN _workorder_details VARCHAR(100),
+IN _workorder_actions TEXT,
+IN _workorder_priority VARCHAR(100),
+IN _workorder_dueDate VARCHAR(100),
+IN _workorder_rescheduleDate VARCHAR(100),
+IN _workorder_frequency INT,
+IN _workorder_frequencyScope VARCHAR(100),
+IN _wapj_asset_partUUID VARCHAR(100),
+IN _wapj_quantity INT
 )
 WORKORDER_workOrder: BEGIN
 
-IF(_action IS NULL or _action = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action can not be empty';
-	LEAVE WORKORDER_workOrder;
-END IF;
+DECLARE _DEBUG INT DEFAULT 0;
 
-IF(_customerId IS NULL or _customerId = '') THEN
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
-	LEAVE WORKORDER_workOrder;
-END IF;
+DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
+DECLARE _maxWO INT;
+DECLARE _commaNeeded INT;
+DECLARE _workorder_definition varchar(100);
 
 IF(_action ='GET') THEN
-	SELECT wo.* FROM workorder wo WHERE wo.workorder_customerUUID = _customerId;
+	
+	IF(_customerId IS NULL or _customerId = '') THEN
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
+		LEAVE WORKORDER_workOrder;
+	END IF;
+
+	if (_workorder_dueDate is not null) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
+
+		set  @l_sql = CONCAT('select from workorder where');		
+
+        if (_workorderUUID is null) THEN
+			set @l_sql = CONCAT(@l_sql,'workorderUUID = \'', _workorderUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if (_workorder_customerUUID is null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,',workorder_customerUUID = \'', _workorder_customerUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if (_workorder_userUUID is null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,',workorder_userUUID = \'', _workorder_userUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if (_workorder_groupUUID is null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,',workorder_groupUUID = \'', _workorder_groupUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if (_workorder_locationUUID is null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,',workorder_locationUUID = \'', _workorder_locationUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if (_workorder_status is null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if (_workorder_dueDate is null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,',DATE(now()) <= \'', _workorder_dueDate,'\'');
+            set _commaNeeded=1;
+        END IF;
+
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
+
+	IF(_customerId IS NULL or _customerId = '') THEN
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
+		LEAVE WORKORDER_workOrder;
+	END IF;
+
+	-- RULES and CONVERSIONS
+	if (_workorder_dueDate is not null) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
+	if (_workorder_rescheduleDate is not null) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
+	if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
+
+
+	-- TODO get configuration for workorder naming
+    set _workorder_definition = 'CM-';
+    select count(*) into _maxWO from workorder;
+	set _workorder_number = CONCAT(_workorder_definition,_maxWO);
+	set _workorder_status = 'OPEN';
+	
+    
+	insert into workorder (_workorderUUID,
+    workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID, 
+    workorder_assetUUID, workorder_checklistUUID, workorder_status, workorder_type, 
+    workorder_number, workorder_name, workorder_details, workorder_actions, workorder_priority, 
+    workorder_dueDate, workorder_rescheduleDate, workorder_completeDate, workorder_frequency, 
+    workorder_frequencyScope,
+	workorder_createdByUUID, workorder_updatedByUUID, workorder_updatedTS, workorder_createdTS
+    ) values (_workorderUUID,
+    _workorder_customerUUID, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
+    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type, 
+    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority, 
+    _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
+    _workorder_frequencyScope, 
+    _userUUID, _userUUID, now(), now()
+    );
+	
+ELSEIF(_action ='UPDATE') THEN
+
+		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);		
+
+        if (_workorder_status is null) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
+        END IF;
+        if (_workorder_name is null) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_name = \'', _workorder_name,'\'');
+        END IF;
+        if (_workorder_details is null) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_details = \'', _workorder_details,'\'');
+        END IF;
+        if (_workorder_actions is null) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_actions = \'', _workorder_actions,'\'');
+        END IF;
+        if (_workorder_priority is null) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
+        END IF;
+        if (_workorder_dueDate is null) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', _workorder_dueDate,'\'');
+        END IF;
+        if (_workorder_assetUUID is null) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
+        END IF;
+        if (_workorder_rescheduleDate is null) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', _workorder_rescheduleDate,'\'');
+        END IF;
+
+		set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
+       
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+
+ELSEIF(_action ='REMOVE' and _workorderUUID is not null) THEN
+
+	if (_wapj_asset_partUUID is not null) THEN
+		delete from workorder_asset_part_join where wapj_asset_partUUID=_wapj_asset_partUUID 
+        and wapj_workorderUUID = _workorderUUID;
+    ELSE
+		update workorder set workorder_deleteTS = now(),workorder_updatedTS = now(), 
+        workorder_updatedByUUID=_userUUID where workorderUUID=_workorderUUID;
+    END IF;
+    
+ELSEIF(_action ='ASSIGN') THEN
+
+		update workorder set workorder_status='OPEN', workorder_completeDate =null, 
+		workorder_userUUID = _workorder_userUUID,
+		workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID 
+        where workorderUUID=_workorderUUID;
+
+ELSEIF(_action ='START') THEN
+
+		update workorder set workorder_status='IN_PROGRESS', workorder_completeDate =null, 
+        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID 
+        where workorderUUID=_workorderUUID;
+
+ELSEIF(_action ='COMPLETE') THEN
+
+		update workorder set workorder_status='COMPLETE', workorder_completeDate = DATE(now()), 
+        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID 
+        where workorderUUID=_workorderUUID;
+
+ELSEIF(_action ='ADDPART' and _wapj_asset_partUUID is not null) THEN
+
+		REPLACE INTO workorder_asset_part_join (wapj_workorderUUID, wapj_asset_partUUID, 
+		wapj_quantity, wapj_createdTS)
+		values (
+		_workorderUUID,_wapj_asset_partUUID,_wapj_quantity,now()
+		);
+	
 ELSE
 	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action is of type invalid';
 	LEAVE WORKORDER_workOrder;
 END IF;
+
+
+IF (_DEBUG=1) THEN 
+	select _action,_workorderUUID,
+    _workorder_customerUUID, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
+    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type, 
+    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority, 
+    _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
+    _workorder_frequencyScope, 
+    _userUUID;
+    
+END IF;
+
 
 END$$
 
