@@ -366,8 +366,8 @@ DROP TABLE IF EXISTS asset;
 
 CREATE TABLE `asset` (
     assetUUID CHAR(32)  NOT NULL,
-    asset_locationUUID CHAR(32)  NOT NULL,
-    asset_partUUID CHAR(32)  NOT NULL,
+    asset_locationUUID CHAR(32)  NULL,
+    asset_partUUID CHAR(32)  NULL,
     asset_customerUUID CHAR(32)  NOT NULL,
     asset_statusId INT   NULL DEFAULT 1,
 
@@ -618,6 +618,7 @@ CREATE TABLE `diagnostic_node` (
     diagnostic_node_diagnosticUUID CHAR(32)  NOT NULL,
    	diagnostic_node_statusId INT   NULL DEFAULT 1,
     diagnostic_node_title varchar(100) NULL, 
+    diagnostic_node_warning varchar(255) NULL, 
     diagnostic_node_prompt varchar(255) NULL, 
     diagnostic_node_optionPrompt varchar(255) NULL, 
     diagnostic_node_hotSpotJSON text NULL, -- JSON payload
