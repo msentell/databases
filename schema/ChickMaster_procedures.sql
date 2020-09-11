@@ -745,6 +745,60 @@ END$$
 DELIMITER ;
 
 
+-- ==================================================================
+
+-- call CUSTOMER_getCustomerBrandDetails(_action, _customerId);
+-- call CUSTOMER_getCustomerBrandDetails('GET-LIST', NULL);
+
+DROP procedure IF EXISTS `CUSTOMER_CustomerBrand`;
+
+DELIMITER $$
+CREATE PROCEDURE `CUSTOMER_CustomerBrand` (
+IN _action VARCHAR(100),
+IN _userUUID VARCHAR(100),
+IN _brandUUID VARCHAR(100),
+IN _brandName VARCHAR(50),
+IN _brandLogo VARCHAR(255),
+IN _brandPreferenceJSON TEXT
+)
+CUSTOMER_CustomerBrand: BEGIN
+
+IF(_action IS NULL or _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _action can not be empty';
+	LEAVE CUSTOMER_CustomerBrand;
+END IF;
+
+IF(_userUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _userUUID missing';
+	LEAVE CUSTOMER_CustomerBrand;
+END IF;
+
+IF(_action ='GET-LIST') THEN
+	SELECT * FROM customer_brand;
+ELSEIF(_action ='GET') THEN
+	SELECT * FROM customer_brand where brandUUID = _brandUUID;
+ELSEIF(_action = 'CREATE') THEN
+
+	IF(_brandUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _brandUUID missing';
+		LEAVE CUSTOMER_CustomerBrand;
+	END IF;
+	IF(_brandName IS NULL) THEN
+    		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _brandName missing';
+    		LEAVE CUSTOMER_CustomerBrand;
+    	END IF;
+
+
+    insert into customer_brand
+    (brandUUID, brand_name, brand_logo, brand_preferenceJSON, brand_createdByUUID, brand_created)
+	values
+    (_brandUUID, _brandName, _brandLogo, _brandPreferenceJSON, _userUUID, now());
+
+END IF;
+
+END$$
+
+DELIMITER ;
 
 -- ==================================================================
 
