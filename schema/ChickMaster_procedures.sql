@@ -1775,7 +1775,7 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
 		user_createdByUUID, user_updatedByUUID, user_updatedTS, user_createdTS, user_deleteTS    
 		)
 		values (
-		_user_userUUID, _customerId, _user_userName, _user_loginEmailId, 
+		_user_userUUID, _customerId, _user_userName, _user_loginEmail,
         _user_loginPW, 1, 
 		_user_securityBitwise, 
 		_userUUID, _userUUID, now(), now(), null 
@@ -1798,8 +1798,8 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
         if (_user_userName is null) THEN
 			set @l_sql = CONCAT(@l_sql,',user_userName = \'', _user_userName,'\'');
         END IF;
-        if (_user_loginEmailId is null) THEN
-			set @l_sql = CONCAT(@l_sql,',user_loginEmailId = \'', _user_loginEmailId,'\'');
+        if (_user_loginEmail is null) THEN
+			set @l_sql = CONCAT(@l_sql,',user_loginEmailId = \'', _user_loginEmail,'\'');
         END IF;
         if (_user_statusId is null) THEN
 			set @l_sql = CONCAT(@l_sql,',user_statusId = ', _user_statusId);
@@ -1897,7 +1897,7 @@ END IF;
 
 
 IF (_DEBUG=1) THEN 
-	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmailId, 
+	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmail, 
         _user_loginPW,_user_securityBitwise, _userUUID,_groupUUID;
     
 END IF;
