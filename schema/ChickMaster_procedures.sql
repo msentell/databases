@@ -870,6 +870,7 @@ DELIMITER ;
 
 -- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
 -- call USER_userGroup('GET-LIST', 1, 1, null, null);
+-- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
 
 DROP procedure IF EXISTS `USER_userGroup`;
 
@@ -946,6 +947,96 @@ USER_userGroup: BEGIN
         DEALLOCATE PREPARE stmt;
     ELSEIF(_action = 'REMOVE' AND _groupUUID IS NOT NULL AND _groupUUID != '') THEN
         DELETE FROM user_group WHERE groupUUID = _groupUUID;
+    END IF;
+
+END$$
+
+DELIMITER ;
+
+-- ==================================================================
+# CUSTOMER
+-- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
+-- call USER_userGroup('GET-LIST', 1, 1, null, null);
+-- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
+
+DROP procedure IF EXISTS `CUSTOMER_customer`;
+
+DELIMITER $$
+CREATE PROCEDURE `CUSTOMER_customer` (
+    IN _action VARCHAR(100),
+    IN _userUUID VARCHAR(100),
+    IN _customerUUID VARCHAR(100),
+    IN _customerBrandUUID VARCHAR(100),
+    IN _customerStatusId INT,
+    IN _customerName VARCHAR(100),
+    IN _customerLogo VARCHAR(255),
+    IN _customerSecurityBitwise BIGINT,
+    IN _customerPreferenceJSON TEXT
+)
+CUSTOMER_customer: BEGIN
+    DECLARE _DEBUG INT DEFAULT 0;
+    IF(_action IS NULL or _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _action can not be empty';
+        LEAVE CUSTOMER_customer;
+    END IF;
+
+    IF(_userUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _userUUID missing';
+        LEAVE CUSTOMER_customer;
+    END IF;
+
+    IF(_action ='GET-LIST') THEN
+        SELECT * FROM customer;
+    ELSEIF(_action ='GET') THEN
+        IF(_customerUUID IS NULL or _customerUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+        SELECT * FROM customer WHERE customerUUID = _customerUUID;
+    ELSEIF(_action = 'CREATE') THEN
+        IF(_customerUUID IS NULL OR _customerUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _groupUUID missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+        IF(_customerName IS NULL OR _customerName = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerName missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+        INSERT INTO customer (customerUUID, customer_externalName,customer_brandUUID, customer_statusId, customer_name,
+                              customer_logo, customer_securityBitwise, customer_preferenceJSON, customer_createdByUUID,
+                              customer_updatedByUUID, customer_updatedTS, customer_createdTS, customer_deleteTS)
+        VALUES (_customerUUID, _customerName,_customerBrandUUID,_customerStatusId,_customerName,_customerLogo,
+                _customerSecurityBitwise, _customerPreferenceJSON, _userUUID,_userUUID,now(),now(),null);
+    ELSEIF(_action = 'UPDATE') THEN
+        IF(_customerUUID IS NULL or _customerUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+        SET @l_sql = CONCAT('UPDATE customer SET customer_updatedTS=now(), customer_updatedByUUID=\'',_userUUID,'\'');
+        IF (_customerStatusId IS NOT NULL AND _customerStatusId != '') THEN
+            SET @l_sql = CONCAT(@l_sql,',customer_statusId = \'',_customerStatusId,'\'');
+        END IF;
+        IF (_customerName IS NOT NULL and _customerName != '') THEN
+            SET @l_sql = CONCAT(@l_sql, ',customer_name = \'',_customerName,'\'');
+        END IF;
+        IF (_customerLogo IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',customer_logo = \'',_customerLogo,'\'');
+        END IF;
+        IF (_customerSecurityBitwise IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',customer_securityBitwise = \'',_customerSecurityBitwise,'\'');
+        END IF;
+        IF (_customerPreferenceJSON IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',customer_preferenceJSON = \'',_customerPreferenceJSON,'\'');
+        END IF;
+        SET @l_sql = CONCAT(@l_sql, ' WHERE customerUUID = \'',_customerUUID,'\'');
+        -- to do: securityBitwise
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSEIF(_action = 'REMOVE' AND _customerUUID IS NOT NULL AND _customerUUID != '') THEN
+        DELETE FROM customer WHERE customerUUID = _customerUUID;
     END IF;
 
 END$$
@@ -1769,7 +1860,7 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
 	IF (_userFoundUUID is null) THEN
 
 		insert into `user` (
-		userUUID, user_customerUUID, user_userName, user_loginEmailId, 
+		userUUID, user_customerUUID, user_userName, user_loginEmail,
         user_loginPW, user_statusId, 
 		user_securityBitwise, 
 		user_createdByUUID, user_updatedByUUID, user_updatedTS, user_createdTS, user_deleteTS    
@@ -1784,7 +1875,7 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
         -- handle creating the profile record;
         
         replace into user_profile (
-        userUUID, user_profile_avatarSrc, user_profile_phoneTypeId, user_profile_phone, user_profile_addressTypeId, user_profile_locationUUID, user_profile_preferenceJSON, 
+        user_profile_userUUID, user_profile_avatarSrc, user_profile_phoneTypeId, user_profile_phone, user_profile_addressTypeId, user_profile_locationUUID, user_profile_preferenceJSON,
         user_profile_createdByUUID, user_profile_updatedByUUID, user_profile_updatedTS, user_profile_createdTS, user_profile_deleteTS
         ) values (
         _user_userUUID, _user_profile_avatarSrc, 3, _user_profile_phone, 2, _user_profile_locationUUID, _user_profile_preferenceJSON, 
@@ -1897,7 +1988,7 @@ END IF;
 
 
 IF (_DEBUG=1) THEN 
-	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmail, 
+	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmail,
         _user_loginPW,_user_securityBitwise, _userUUID,_groupUUID;
     
 END IF;
