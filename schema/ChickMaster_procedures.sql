@@ -1042,6 +1042,83 @@ CUSTOMER_customer: BEGIN
 END$$
 
 DELIMITER ;
+
+-- ==================================================================
+# PLAN
+-- call PLAN_plan(_action)
+
+DROP procedure IF EXISTS `PLAN_plan`;
+
+DELIMITER $$
+CREATE PROCEDURE `PLAN_plan` (
+    IN _action VARCHAR(100),
+    IN _userUUID VARCHAR(100),
+    IN _planUUID VARCHAR(100),
+    IN _planName VARCHAR(100),
+    IN _planSecurityBitwise BIGINT,
+    IN _planMaxUsers BIGINT
+)
+PLAN_plan: BEGIN
+    DECLARE _DEBUG INT DEFAULT 0;
+    IF(_action IS NULL or _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call PLAN_plan: _action can not be empty';
+        LEAVE PLAN_plan;
+    END IF;
+
+    IF(_userUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _userUUID missing';
+        LEAVE PLAN_plan;
+    END IF;
+
+    IF(_action ='GET-LIST') THEN
+        SELECT * FROM plan;
+    ELSEIF(_action ='GET') THEN
+        IF(_planUUID IS NULL or _planUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _planUUID missing';
+            LEAVE PLAN_plan;
+        END IF;
+        SELECT * FROM plan WHERE planUUID = _planUUID;
+    ELSEIF(_action = 'CREATE') THEN
+        IF(_planUUID IS NULL OR _planUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _planUUID missing';
+            LEAVE PLAN_plan;
+        END IF;
+        IF(_planName IS NULL OR _planName = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _planName missing';
+            LEAVE PLAN_plan;
+        END IF;
+        INSERT INTO plan (planUUID, plan_name, plan_securityBitwise, plan_maxUsers, plan_createdByUUID,
+                          plan_updatedByUUID, plan_updatedTS, plan_createdTS, plan_deleteTS)
+        VALUES (_planUUID, _planName, _planSecurityBitwise, _planMaxUsers, _userUUID,_userUUID,now(),now(),null);
+    ELSEIF(_action = 'UPDATE') THEN
+        IF(_planUUID IS NULL or _planUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _planUUID missing';
+            LEAVE PLAN_plan;
+        END IF;
+        SET @l_sql = CONCAT('UPDATE plan SET plan_updatedTS=now(), plan_updatedByUUID=\'',_userUUID,'\'');
+        IF (_planName IS NOT NULL AND _planName != '') THEN
+            SET @l_sql = CONCAT(@l_sql,',plan_name = \'',_planName,'\'');
+        END IF;
+        IF (_planSecurityBitwise IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',plan_securityBitwise = ',_planSecurityBitwise);
+        END IF;
+        IF (_planMaxUsers IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',plan_maxUsers = ',_planMaxUsers);
+        END IF;
+        SET @l_sql = CONCAT(@l_sql, ' WHERE _planUUID = \'',_planUUID,'\'');
+        -- to do: securityBitwise
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSEIF(_action = 'REMOVE' AND _planUUID IS NOT NULL AND _planUUID != '') THEN
+        DELETE FROM plan WHERE planUUID = _planUUID;
+    END IF;
+
+END$$
+
+DELIMITER ;
 -- ==================================================================
 
 -- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID, 0);
