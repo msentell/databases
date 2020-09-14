@@ -853,6 +853,91 @@ DELIMITER ;
 
 -- ==================================================================
 
+-- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
+-- call USER_userGroup('GET-LIST', 1, 1, null, null);
+
+DROP procedure IF EXISTS `USER_userGroup`;
+
+DELIMITER $$
+CREATE PROCEDURE `USER_userGroup` (
+    IN _action VARCHAR(100),
+    IN _userUUID VARCHAR(100),
+    IN _customerUUID VARCHAR(100),
+    IN _groupUUID VARCHAR(100),
+    IN _groupName VARCHAR(255)
+)
+USER_userGroup: BEGIN
+    DECLARE _DEBUG INT DEFAULT 0;
+    IF(_action IS NULL or _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_userGroup: _action can not be empty';
+        LEAVE USER_userGroup;
+    END IF;
+
+    IF(_userUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _userUUID missing';
+        LEAVE USER_userGroup;
+    END IF;
+
+    IF(_action ='GET-LIST') THEN
+        SET @l_sql = 'SELECT * FROM user_group';
+        IF _customerUUID IS NOT NULL AND _customerUUID != '' THEN
+            SET @l_sql = CONCAT(@l_sql,' WHERE group_customerUUID = \'',_customerUUID,'\'');
+        END IF;
+        IF (_DEBUG = 1) THEN SELECT _action, @l_sql; END IF;
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    ELSEIF(_action ='GET') THEN
+        set @l_sql = 'SELECT ug.* FROM user_group ug';
+        IF(_groupUUID IS NULL OR _groupUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupUUID missing';
+            LEAVE USER_userGroup;
+        END IF;
+        SELECT ug.* FROM user_group ug WHERE ug.groupUUID = _groupUUID;
+    ELSEIF(_action = 'CREATE') THEN
+        IF(_groupUUID IS NULL OR _groupUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupUUID missing';
+            LEAVE USER_userGroup;
+        END IF;
+        IF(_groupName IS NULL OR _groupName = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupName missing';
+            LEAVE USER_userGroup;
+        END IF;
+        IF(_customerUUID IS NULL OR _customerUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _customerUUID missing';
+            LEAVE USER_userGroup;
+        END IF;
+        INSERT INTO user_group (groupUUID, group_customerUUID, group_name, group_createdByUUID, group_createdTS, group_updatedByUUID, group_updatedTS)
+        VALUES (_groupUUID, _customerUUID, _groupName, _userUUID, now(), _userUUID, now());
+    ELSEIF(_action = 'UPDATE') THEN
+        IF(_groupUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupUUID missing';
+            LEAVE USER_userGroup;
+        END IF;
+        SET @l_sql = CONCAT('UPDATE user_group SET group_updatedTS=now(), group_updatedByUUID=\'',_userUUID,'\'');
+        IF (_customerUUID IS NOT NULL AND _customerUUID != '') THEN
+            SET @l_sql = CONCAT(@l_sql,',group_customerUUID = \'',_customerUUID,'\'');
+        END IF;
+        IF (_groupName IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',group_name = \'',_groupName,'\'');
+        END IF;
+        SET @l_sql = CONCAT(@l_sql, ' WHERE groupUUID = \'',_groupUUID,'\'');
+        -- to do: securityBitwise
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSEIF(_action = 'REMOVE' AND _groupUUID IS NOT NULL AND _groupUUID != '') THEN
+        DELETE FROM user_group WHERE groupUUID = _groupUUID;
+    END IF;
+
+END$$
+
+DELIMITER ;
+-- ==================================================================
+
 -- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID, 0);
 -- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null, 0);
 -- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null, 0);
