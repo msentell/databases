@@ -492,9 +492,25 @@ END$$
 
 -- ==================================================================
 
--- call WORKORDER_workOrder(_action, _customerId); 
--- call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f');
+/*
+call WORKORDER_workOrder(_action, _customerId,
+_workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,_workorder_assetUUID,
+_workorder_checklistUUID,_workorder_status,_workorder_name,_workorder_number,_workorder_details,
+_workorder_actions,_workorder_priority,_workorder_dueDate,
+_workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
+_wapj_quantity
+);
 
+call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f',
+_workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,_workorder_assetUUID,
+_workorder_checklistUUID,_workorder_status,null,null,null,
+null,null,_workorder_dueDate,
+null,null,null,null,
+null
+); 
+ 
+-- call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f');
+*/
 DROP procedure IF EXISTS `WORKORDER_workOrder`;
 
 DELIMITER $$
@@ -800,7 +816,6 @@ ELSEIF(_action ='GET') THEN
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
 
-# 	SELECT * FROM customer_brand where brandUUID = _brandUUID;
 ELSEIF(_action = 'CREATE') THEN
 
 	IF(_brandUUID IS NULL) THEN
@@ -1632,3 +1647,297 @@ END$$
 
 
 DELIMITER ;
+
+
+
+-- ==================================================================
+
+/*
+call USER_user(_action, _customerId,
+_userUUID,_user_userUUID,_user_userName,_user_loginEmail,_user_loginPW,
+_user_statusId,_user_securityBitwise,_user_profile_locationUUID,_user_profile_phone,_user_profile_preferenceJSON,
+_user_profile_avatarSrc,_groupUUID
+);
+
+
+-- create or update
+call USER_user('UPDATE', _customerId,
+_userUUID,_user_userUUID,_user_userName,_user_loginEmail,_user_loginPW,
+_user_statusId,_user_securityBitwise,_user_profile_locationUUID,_user_profile_phone,_user_profile_preferenceJSON,
+_user_profile_avatarSrc,_groupUUID
+);
+
+call USER_user('GET', _customerId,null,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID);
+
+call USER_user('REMOVE', null,_userUUID,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID);
+
+call USER_user('ADDGROUP', null,_userUUID,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID);
+
+call USER_user('CHANGEPASSWORD', null,_userUUID,_user_userUUID,null,null,_user_loginPW,null,null,null,null,null,null,null);
+
+call USER_user('LOGOUT', null,null,_user_userUUID,null,null,null,null,null,null,null,null,null,null);
+
+*/
+
+DROP procedure IF EXISTS `USER_user`;
+
+DELIMITER $$
+CREATE PROCEDURE `USER_user` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100),
+IN _userUUID char(32), -- user making the request
+IN _user_userUUID char(32), -- target user
+IN _user_userName VARCHAR(100),
+IN _user_loginEmail VARCHAR(255),
+IN _user_loginPW VARCHAR(100),
+IN _user_statusId INT,
+IN _user_securityBitwise BIGINT,
+IN _user_profile_locationUUID char(32),
+IN _user_profile_phone VARCHAR(100),
+IN _user_profile_preferenceJSON VARCHAR(1000),
+IN _user_profile_avatarSrc varchar(255),
+IN _groupUUID char(32)
+
+)
+USER_user: BEGIN
+
+DECLARE _DEBUG INT DEFAULT 0;
+
+DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
+DECLARE _userFoundUUID char(32);
+DECLARE _commaNeeded INT;
+
+
+IF(_action ='GET') THEN
+	
+	IF(_customerId IS NULL or _customerId = '') THEN
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _customerId can not be empty';
+		LEAVE USER_user;
+	END IF;
+
+		set  @l_sql = CONCAT('select c.customer_name, u.*,l.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
+
+        if (_groupUUID is null) THEN
+			set  @l_sql = CONCAT(',g.group_name, g.groupUUID ');
+		end if;
+
+		set  @l_sql = CONCAT(' from `user` u');
+		set  @l_sql = CONCAT(' left join customer c on (c.customerUUID=u.user_customerUUID)');
+		set  @l_sql = CONCAT(' left join user_profile p on (p.userUUID = u.userUUID)');
+		set  @l_sql = CONCAT(' left join location l on (l.locationUUID = p.user_profile_locationUUID)');
+        
+        if (_groupUUID is null) THEN
+			set  @l_sql = CONCAT(' left join user_group_join gj on (gj.ugj_userUUID = u.userUUID)');
+			set  @l_sql = CONCAT(' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
+		end if;
+        
+		set  @l_sql = CONCAT(' where ');		
+
+        if (_customerId is null) THEN
+			set @l_sql = CONCAT(@l_sql,'c.customerId = \'', _customerId,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if (_user_userUUID is null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,',u.userUUID = \'', _user_userUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if (_groupUUID is null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,',g.groupUUID = \'', _groupUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+
+
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
+
+	IF(_customerId IS NULL or _customerId = '') THEN
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _customerId can not be empty';
+		LEAVE USER_user;
+	END IF;
+
+	-- RULES and CONVERSIONS
+
+	select userUUID into _userFoundUUID from `user` where userUUID=_user_userUUID;
+
+	IF (_userFoundUUID is null) THEN
+
+		insert into `user` (
+		userUUID, user_customerUUID, user_userName, user_loginEmailId, 
+        user_loginPW, user_statusId, 
+		user_securityBitwise, 
+		user_createdByUUID, user_updatedByUUID, user_updatedTS, user_createdTS, user_deleteTS    
+		)
+		values (
+		_user_userUUID, _customerId, _user_userName, _user_loginEmailId, 
+        _user_loginPW, 1, 
+		_user_securityBitwise, 
+		_userUUID, _userUUID, now(), now(), null 
+		);
+        
+        -- handle creating the profile record;
+        
+        replace into user_profile (
+        userUUID, user_profile_avatarSrc, user_profile_phoneTypeId, user_profile_phone, user_profile_addressTypeId, user_profile_locationUUID, user_profile_preferenceJSON, 
+        user_profile_createdByUUID, user_profile_updatedByUUID, user_profile_updatedTS, user_profile_createdTS, user_profile_deleteTS
+        ) values (
+        _user_userUUID, _user_profile_avatarSrc, 3, _user_profile_phone, 2, _user_profile_locationUUID, _user_profile_preferenceJSON, 
+        _userUUID, _userUUID, now(), now(), null
+        );
+			
+	ELSE -- update
+
+		set  @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID =', _userUUID);		
+
+        if (_user_userName is null) THEN
+			set @l_sql = CONCAT(@l_sql,',user_userName = \'', _user_userName,'\'');
+        END IF;
+        if (_user_loginEmailId is null) THEN
+			set @l_sql = CONCAT(@l_sql,',user_loginEmailId = \'', _user_loginEmailId,'\'');
+        END IF;
+        if (_user_statusId is null) THEN
+			set @l_sql = CONCAT(@l_sql,',user_statusId = ', _user_statusId);
+        END IF;
+        if (_user_securityBitwise is null) THEN
+			set @l_sql = CONCAT(@l_sql,',user_securityBitwise = ', _user_securityBitwise);
+        END IF;
+
+		set @l_sql = CONCAT(@l_sql,' where _userUUID = \'', _user_userUUID,'\';');
+       
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+		
+        if (_user_statusId = 3) THEN
+			update `user` set user_deleteTS=now() where userUUID = _user_userUUID;
+        else 
+			update `user` set user_deleteTS=null where userUUID = _user_userUUID;
+        END IF;
+
+
+		if (_user_profile_locationUUID is not null or _user_profile_phone is not null
+        or _user_profile_preferenceJSON is not null or _user_profile_avatarSrc is not null) THEN
+        
+			set  @l_sql= null;
+            
+			set  @l_sql = CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID =', _userUUID);		
+
+			if (_user_profile_locationUUID is null) THEN
+				set @l_sql = CONCAT(@l_sql,',user_profile_locationUUID = \'', _user_profile_locationUUID,'\'');
+			END IF;
+			if (_user_profile_phone is null) THEN
+				set @l_sql = CONCAT(@l_sql,',user_profile_phone = \'', _user_profile_phone,'\'');
+			END IF;
+			if (_user_profile_preferenceJSON is null) THEN
+				set @l_sql = CONCAT(@l_sql,',user_profile_preferenceJSON = \'', _user_profile_preferenceJSON,'\'');
+			END IF;
+			if (_user_profile_avatarSrc is null) THEN
+				set @l_sql = CONCAT(@l_sql,',user_profile_avatarSrc = \'', _user_profile_avatarSrc,'\'');
+			END IF;
+
+
+			set @l_sql = CONCAT(@l_sql,' where user_profile_userUUID = \'', _user_userUUID,'\';');
+		   
+			IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+				
+			PREPARE stmt FROM @l_sql;
+			EXECUTE stmt;
+			DEALLOCATE PREPARE stmt;
+        
+        END IF;
+
+	END IF;	
+
+ELSEIF(_action ='REMOVE' ) THEN
+
+	if (_groupUUID is not null) THEN
+
+		delete from user_group_join where ugj_groupUUID=_groupUUID and 
+        ugj_userUUID = _user_userUUID;
+    
+    END IF;
+    
+    if (_user_userUUID is not null) THEN
+		update `user` set user_deleteTS=now(), user_updatedByUUID=_userUUID, user_updatedTS=now()
+		where userUUID = _user_userUUID;
+    END IF;
+    
+    
+    
+    
+ELSEIF(_action ='ADDGROUP' and _user_userUUID is not null and _groupUUID is not null) THEN
+
+	insert ignore into user_group_join 
+    (ugj_groupUUID, ugj_userUUID, ugj_createdByUUID, ugj_createdTS)
+    values (_groupUUID, _user_userUUID, _userUUID, now() );
+    
+ELSEIF(_action ='CHANGEPASSWORD' and _user_userUUID is not null and _user_loginPW is not null) THEN
+
+		update `user` set user_loginPW=_user_loginPW, user_updatedByUUID=_userUUID, user_updatedTS=now()
+        where userUUID = _user_userUUID;
+
+ELSEIF(_action ='LOGOUT') THEN
+
+		update `user` set user_loginSessionExpire = now()
+        where userUUID = _user_userUUID;
+
+ELSE
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
+	LEAVE USER_user;
+END IF;
+
+
+IF (_DEBUG=1) THEN 
+	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmailId, 
+        _user_loginPW,_user_securityBitwise, _userUUID,_groupUUID;
+    
+END IF;
+
+
+END$$
+
+DELIMITER ; 
+
+
+
+-- ==================================================================
+-- call ATT_getPicklist(null, null, 1); -- returns all the picklists
+-- call ATT_getPicklist('att_address_type, global_need', null, 0); -- returns picklist for 'att_address_type, global_need'
+
+DROP procedure IF EXISTS `ATT_getPicklist`;
+
+DELIMITER //
+CREATE PROCEDURE `ATT_getPicklist`( IN _tables varchar(1000), _roleId INT, _returnAll INT)
+getPicklist: BEGIN
+
+DECLARE allTables varchar(500) default 'TBD';
+	
+    IF _returnAll = 1 then
+		set _tables = allTables;
+    END IF;
+    -- select allTables, _tables;
+	
+    IF (LOCATE('att_address_type', _tables) > 0) THEN
+		select 'att_address_type' as tableName, id as id, name as value, name as name from att_address_type order by name;
+	END IF; 
+    
+    IF (LOCATE('att_phone', _tables) > 0) THEN
+		select 'att_phone' as tableName, id as id, name as value, name as name from att_phone order by name;
+	END IF; 
+        
+    IF (LOCATE('customer', _tables) > 0) THEN
+		select 'customer' as tableName, customerUUID as id, customer_name as value, customer_name as name from customer order by customer_name;
+	END IF; 
+
+END //
+DELIMITER ;
+

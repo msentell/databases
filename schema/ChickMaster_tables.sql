@@ -55,6 +55,20 @@ insert into att_privilege(category,`key`,bitwise) values ('workorder','CANAPPROV
 insert into att_privilege(category,`key`,bitwise) values ('license','CANACCESSHMS',4);
 
 
+DROP TABLE IF EXISTS att_userlevel_predefined;
+
+CREATE TABLE `att_userlevel_predefined` (
+   description varchar(50) NOT NULL,
+   bitwise BIGINT NOT NULL,
+   PRIMARY KEY (description))
+ENGINE = InnoDB;
+
+insert into att_userlevel_predefined(description,bitwise) values ('CM Admin',1);
+insert into att_userlevel_predefined(description,bitwise) values ('Site Admin',2);
+insert into att_userlevel_predefined(description,bitwise) values ('Site Manager',4);
+insert into att_userlevel_predefined(description,bitwise) values ('Maintenance',8);
+insert into att_userlevel_predefined(description,bitwise) values ('Operator',16);
+
 
 -- =====================================
 -- CUSTOMER AND USERS
@@ -129,7 +143,7 @@ CREATE TABLE `user` (
     user_customerUUID CHAR(32)  NOT NULL,
     user_userName varchar(255)   NULL,
 
-    user_loginEmailId INT NULL,
+    user_loginEmail varchar(255) NULL,
     user_loginEmailValidationCode varchar(25) NULL,
     user_loginEmailVerified datetime NULL,
     user_loginEnabled SMALLINT NOT NULL DEFAULT 0,
@@ -171,25 +185,24 @@ ENGINE = InnoDB   AUTO_INCREMENT=1000;
 DROP TABLE IF EXISTS user_profile;
 
 CREATE TABLE `user_profile` (
-    user_profileId INT  NOT NULL   AUTO_INCREMENT,
-    userUUID CHAR(32)  NOT NULL,
+    -- user_profileId INT  NOT NULL   AUTO_INCREMENT,
+    user_profile_userUUID CHAR(32)  NOT NULL,
     
     user_profile_avatarSrc varchar(255)   NULL,
     user_profile_phoneTypeId INT NULL DEFAULT 1,
     user_profile_phone varchar(255)   NULL,
     user_profile_addressTypeId INT NULL DEFAULT 1,
 
-    user_locationUUID char(32),
+    user_profile_locationUUID char(32),
 
-    user_preferenceJSON text  NULL, -- JSON PAYLOAD
+    user_profile_preferenceJSON text  NULL, -- JSON PAYLOAD
 
     user_profile_createdByUUID CHAR(32)  NULL,
     user_profile_updatedByUUID CHAR(32)  NULL,
    	user_profile_updatedTS datetime  NULL,
   	user_profile_createdTS datetime  NULL default now(),
    	user_profile_deleteTS datetime  NULL,
-  	PRIMARY KEY (user_profileId),
-   	UNIQUE INDEX userId_unique (userUUID))
+  	PRIMARY KEY (user_profile_userUUID))
 ENGINE = InnoDB   AUTO_INCREMENT=1000;
 
 
