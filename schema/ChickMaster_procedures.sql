@@ -279,7 +279,7 @@ ELSEIF(_action = 'GET') THEN
         
 		IF(_diagnostic_node_title IS NOT NULL) THEN
 			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
-			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_node_title =\'', _diagnostic_node_title,'\'');
+			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_node_title like \'','%', _diagnostic_node_title,'%','\'');
 			set commaNeeded =1;			
 		END IF;
         
@@ -519,18 +519,21 @@ IN _action VARCHAR(100),
 IN _customerId VARCHAR(100),
 IN _userUUID VARCHAR(100),
 IN _workorderUUID VARCHAR(100),
+IN _workorder_customerUUID VARCHAR(100),
 IN _workorder_locationUUID VARCHAR(100),
 IN _workorder_userUUID VARCHAR(100),
 IN _workorder_groupUUID VARCHAR(100),
 IN _workorder_assetUUID VARCHAR(100),
 IN _workorder_checklistUUID VARCHAR(100),
 IN _workorder_status varchar(100),
+IN _workorder_type VARCHAR(100),
 IN _workorder_name VARCHAR(100),
 IN _workorder_number VARCHAR(100),
 IN _workorder_details VARCHAR(100),
 IN _workorder_actions TEXT,
 IN _workorder_priority VARCHAR(100),
 IN _workorder_dueDate VARCHAR(100),
+IN _workorder_completeDate VARCHAR(100),
 IN _workorder_rescheduleDate VARCHAR(100),
 IN _workorder_frequency INT,
 IN _workorder_frequencyScope VARCHAR(100),
@@ -618,7 +621,7 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
 	set _workorder_status = 'OPEN';
 	
     
-	insert into workorder (_workorderUUID,
+	insert into workorder (workorderUUID,
     workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID, 
     workorder_assetUUID, workorder_checklistUUID, workorder_status, workorder_type, 
     workorder_number, workorder_name, workorder_details, workorder_actions, workorder_priority, 
@@ -761,6 +764,108 @@ END$$
 DELIMITER ;
 
 
+-- ==================================================================
+
+-- call CUSTOMER_getCustomerBrandDetails(_action, _customerId);
+-- call CUSTOMER_getCustomerBrandDetails('GET-LIST', NULL);
+
+DROP procedure IF EXISTS `CUSTOMER_CustomerBrand`;
+
+DELIMITER $$
+CREATE PROCEDURE `CUSTOMER_CustomerBrand` (
+IN _action VARCHAR(100),
+IN _userUUID VARCHAR(100),
+IN _brandUUID VARCHAR(100),
+IN _brandName VARCHAR(50),
+IN _brandLogo VARCHAR(255),
+IN _brandPreferenceJSON TEXT
+)
+CUSTOMER_CustomerBrand: BEGIN
+
+
+DECLARE _DEBUG INT DEFAULT 0;
+DECLARE _commaNeeded INT;
+IF(_action IS NULL or _action = '') THEN
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _action can not be empty';
+	LEAVE CUSTOMER_CustomerBrand;
+END IF;
+
+IF(_userUUID IS NULL) THEN
+	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _userUUID missing';
+	LEAVE CUSTOMER_CustomerBrand;
+END IF;
+
+IF(_action ='GET-LIST') THEN
+	SELECT * FROM customer_brand;
+ELSEIF(_action ='GET') THEN
+    set @l_sql = 'SELECT b.* FROM customer_brand b';
+    IF((_brandUUID IS NULL OR _brandUUID = '') AND (_brandName IS NULL or _brandName = '')) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _brandUUID or _brandName missing';
+        LEAVE CUSTOMER_CustomerBrand;
+    END IF;
+    IF(_brandUUID IS NOT NULL and _brandUUID != '') THEN
+        set @l_sql = CONCAT(@l_sql, ' WHERE b.brandUUID = \'',_brandUUID,'\'');
+        set _commaNeeded=1;
+    END IF;
+    if(_brandName IS NOT NULL AND _brandName != '') THEN
+        if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql, ' AND '); ELSE set @l_sql = CONCAT(@l_sql, ' WHERE '); END IF;
+        set @l_sql = CONCAT(@l_sql, 'b.brand_name LIKE \'%',_brandName,'%\'');
+    END IF;
+    IF (_DEBUG = 1) THEN SELECT _action, @l_sql; END IF;
+    PREPARE stmt FROM @l_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+# 	SELECT * FROM customer_brand where brandUUID = _brandUUID;
+ELSEIF(_action = 'CREATE') THEN
+
+	IF(_brandUUID IS NULL) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _brandUUID missing';
+		LEAVE CUSTOMER_CustomerBrand;
+	END IF;
+	IF(_brandName IS NULL) THEN
+    		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _brandName missing';
+    		LEAVE CUSTOMER_CustomerBrand;
+    	END IF;
+    INSERT INTO customer_brand
+    (brandUUID, brand_name, brand_logo, brand_preferenceJSON, brand_createdByUUID, brand_created)
+	VALUES
+    (_brandUUID, _brandName, _brandLogo, _brandPreferenceJSON, _userUUID, now());
+ELSEIF(_action = 'UPDATE') THEN
+    IF(_brandUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _brandUUID missing';
+        LEAVE CUSTOMER_CustomerBrand;
+    END IF;
+    SET @l_sql = 'UPDATE customer_brand SET ';
+    SET _commaNeeded = 0;
+    IF (_brandName IS NOT NULL) THEN
+        SET @l_sql = CONCAT(@l_sql,'brand_name = \'',_brandName,'\'');
+        SET _commaNeeded = 1;
+    END IF;
+    IF (_brandLogo IS NOT NULL) THEN
+        IF (_commaNeeded=1) THEN SET @l_sql = CONCAT(@l_sql, ','); END IF;
+        SET @l_sql = CONCAT(@l_sql, 'brand_logo = \'',_brandLogo,'\'');
+        SET _commaNeeded = 1;
+    END IF;
+    IF (_brandPreferenceJSON IS NOT NULL) THEN
+        IF (_commaNeeded=1) THEN SET @l_sql = CONCAT(@l_sql, ','); END IF;
+        SET @l_sql = CONCAT(@l_sql, 'brand_preferenceJSON = \'',_brandPreferenceJSON,'\'');
+        SET _commaNeeded = 1;
+    END IF;
+    SET @l_sql = CONCAT(@l_sql, ' WHERE brandUUID = \'',_brandUUID,'\'');
+    -- to do: securityBitwise
+    IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+    PREPARE stmt FROM @l_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+ELSEIF(_action = 'REMOVE' AND _brandUUID IS NOT NULL AND _brandUUID != '') THEN
+    DELETE FROM customer_brand WHERE brandUUID = _brandUUID;
+END IF;
+
+END$$
+
+DELIMITER ;
 
 -- ==================================================================
 
