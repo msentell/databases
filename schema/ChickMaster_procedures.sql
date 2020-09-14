@@ -816,7 +816,6 @@ ELSEIF(_action ='GET') THEN
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
 
-# 	SELECT * FROM customer_brand where brandUUID = _brandUUID;
 ELSEIF(_action = 'CREATE') THEN
 
 	IF(_brandUUID IS NULL) THEN
