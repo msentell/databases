@@ -540,40 +540,40 @@ IF(_action ='GET') THEN
 		LEAVE WORKORDER_workOrder;
 	END IF;
 
-	if (_workorder_dueDate is not null) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
+	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-		set  @l_sql = CONCAT('select from workorder where');		
+		set  @l_sql = CONCAT('SELECT FROM workorder WHERE');
 
-        if (_workorderUUID is null) THEN
+        if (_workorderUUID IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,'workorderUUID = \'', _workorderUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_customerUUID is null) THEN
+        if (_workorder_customerUUID IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,',workorder_customerUUID = \'', _workorder_customerUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_userUUID is null) THEN
+        if (_workorder_userUUID IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,',workorder_userUUID = \'', _workorder_userUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_groupUUID is null) THEN
+        if (_workorder_groupUUID IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,',workorder_groupUUID = \'', _workorder_groupUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_locationUUID is null) THEN
+        if (_workorder_locationUUID IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,',workorder_locationUUID = \'', _workorder_locationUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_status is null) THEN
+        if (_workorder_status IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_dueDate is null) THEN
+        if (_workorder_dueDate IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,',DATE(now()) <= \'', _workorder_dueDate,'\'');
             set _commaNeeded=1;
@@ -593,8 +593,8 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
 	END IF;
 
 	-- RULES and CONVERSIONS
-	if (_workorder_dueDate is not null) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
-	if (_workorder_rescheduleDate is not null) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
+	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
+	if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
 	if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
 
 
@@ -625,28 +625,28 @@ ELSEIF(_action ='UPDATE') THEN
 
 		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);		
 
-        if (_workorder_status is null) THEN
+        if (_workorder_status IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
         END IF;
-        if (_workorder_name is null) THEN
+        if (_workorder_name IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_name = \'', _workorder_name,'\'');
         END IF;
-        if (_workorder_details is null) THEN
+        if (_workorder_details IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_details = \'', _workorder_details,'\'');
         END IF;
-        if (_workorder_actions is null) THEN
+        if (_workorder_actions IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_actions = \'', _workorder_actions,'\'');
         END IF;
-        if (_workorder_priority is null) THEN
+        if (_workorder_priority IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
         END IF;
-        if (_workorder_dueDate is null) THEN
+        if (_workorder_dueDate IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', _workorder_dueDate,'\'');
         END IF;
-        if (_workorder_assetUUID is null) THEN
+        if (_workorder_assetUUID IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
         END IF;
-        if (_workorder_rescheduleDate is null) THEN
+        if (_workorder_rescheduleDate IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', _workorder_rescheduleDate,'\'');
         END IF;
 
@@ -661,7 +661,7 @@ ELSEIF(_action ='UPDATE') THEN
 
 ELSEIF(_action ='REMOVE' and _workorderUUID is not null) THEN
 
-	if (_wapj_asset_partUUID is not null) THEN
+	if (_wapj_asset_partUUID IS NOT NULL) THEN
 		delete from workorder_asset_part_join where wapj_asset_partUUID=_wapj_asset_partUUID 
         and wapj_workorderUUID = _workorderUUID;
     ELSE
@@ -1296,8 +1296,8 @@ ELSEIF(_action = 'CREATE') THEN
 
 	IF (DEBUG=1) THEN select _action, _userUUID, _customerUUID, _assetUUID, _asset_locationUUID, _asset_partUUID, _asset_statusId, _asset_name, _asset_shortName, _asset_installDate; END IF;
     
-	IF(_assetUUID IS NULL or asset_partUUID is null) THEN
-		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID or asset_partUUID missing';
+	IF(_assetUUID IS NULL or _asset_partUUID is null) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID or _asset_partUUID missing';
 		LEAVE ASSET_asset;
 	END IF;
     
