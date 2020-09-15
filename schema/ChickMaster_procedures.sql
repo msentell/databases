@@ -202,12 +202,14 @@ END$$
 DELIMITER ;
 -- ==================================================================
 
--- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON); 
--- call DIAGNOSTIC_node('GETNODE', '1', null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null); 
--- call DIAGNOSTIC_node('GET', '1', null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null); 
--- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON'); 
--- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON'); 
--- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null); 
+
+-- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON,diagnostic_node_warning,diagnostic_node_warningSeverity); 
+-- call DIAGNOSTIC_node('GETNODE', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null,null); 
+-- call DIAGNOSTIC_node('GET', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null,null, null, null, null, null, null,null,null,null,null); 
+-- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON',null,null); 
+-- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON','diagnostic_node_warning',diagnostic_node_warningSeverity); 
+-- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null,null,null); 
+-- call DIAGNOSTIC_node('UPDATE','1','5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null ,'testing_tiltle rtghjy', 'diagnosticnodeprompt', 'diagnostic_node_optionPrompt', '[{"coordinates":[{}],"color":"red","forwardId":"1599760999552"}]', 'https://jcmi.sfo2.digitaloceanspaces.com/demodata/Hendrix/diagnostics/Heating1.JPG', 'false','hello','hijky');
 
 DROP procedure IF EXISTS `DIAGNOSTIC_node`;
 
@@ -224,7 +226,9 @@ IN _diagnostic_node_prompt VARCHAR(255),
 IN _diagnostic_node_optionPrompt VARCHAR(255),
 IN _diagnostic_node_hotSpotJSON text,
 IN _diagnostic_node_imageSetJSON text,
-IN _diagnostic_node_optionSetJSON text
+IN _diagnostic_node_optionSetJSON text,
+IN _diagnostic_node_warning VARCHAR(255),
+IN _diagnostic_node_warningSeverity VARCHAR(45)
 )
 DIAGNOSTIC_node: BEGIN
 DECLARE commaNeeded INT DEFAULT 0;
@@ -254,7 +258,7 @@ IF(_action = 'GETNODE') THEN
 			SELECT n.* from diagnostic_node n
 			-- left join diagnostic_tree d on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID) 
 			where diagnostic_nodeUUID = _diagnostic_nodeUUID;
-
+	
 	END IF;
 
 ELSEIF(_action = 'GET') THEN
@@ -345,6 +349,12 @@ ELSEIF(_action = 'UPDATE') THEN
         if (_diagnostic_node_optionSetJSON is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',diagnostic_node_optionSetJSON = \'', _diagnostic_node_optionSetJSON,'\'');
         END IF;
+		if(_diagnostic_node_warning is not null)THEN
+		set @l_sql = CONCAT(@l_sql,',diagnostic_node_warning= \'', _diagnostic_node_warning,'\'');
+		END IF;
+		if(_diagnostic_node_warningSeverity is not null)THEN
+		set @l_sql = CONCAT(@l_sql,',diagnostic_node_warningSeverity= \'', _diagnostic_node_warningSeverity,'\'');
+		END IF;
 
 		set @l_sql = CONCAT(@l_sql,' where diagnostic_nodeUUID = \'', _diagnostic_nodeUUID,'\';');
        
@@ -553,8 +563,9 @@ IF(_action ='GET') THEN
 		LEAVE WORKORDER_workOrder;
 	END IF;
 
-	if (_workorder_dueDate is not null) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
+	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
+<<<<<<< HEAD
 		set  @l_sql = CONCAT('select * from workorder where ');		
 
         if (_workorderUUID is not null) THEN
@@ -562,31 +573,60 @@ IF(_action ='GET') THEN
             set _commaNeeded=1;
         END IF;
         if (_customerId is not null) THEN
+=======
+		set  @l_sql = CONCAT('SELECT FROM workorder WHERE');
+
+        if (_workorderUUID IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,'workorderUUID = \'', _workorderUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if (_workorder_customerUUID IS NOT NULL) THEN
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_customerUUID = \'', _customerId,'\'');
             set _commaNeeded=1;
         END IF;
+<<<<<<< HEAD
         if (_workorder_userUUID is not null) THEN
+=======
+        if (_workorder_userUUID IS NOT NULL) THEN
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_userUUID = \'', _workorder_userUUID,'\'');
             set _commaNeeded=1;
         END IF;
+<<<<<<< HEAD
         if (_workorder_groupUUID is not null) THEN
+=======
+        if (_workorder_groupUUID IS NOT NULL) THEN
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_groupUUID = \'', _workorder_groupUUID,'\'');
             set _commaNeeded=1;
         END IF;
+<<<<<<< HEAD
         if (_workorder_locationUUID is not null) THEN
+=======
+        if (_workorder_locationUUID IS NOT NULL) THEN
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_locationUUID = \'', _workorder_locationUUID,'\'');
             set _commaNeeded=1;
         END IF;
+<<<<<<< HEAD
         if (_workorder_status is not null) THEN
+=======
+        if (_workorder_status IS NOT NULL) THEN
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_status = \'', _workorder_status,'\'');
             set _commaNeeded=1;
         END IF;
+<<<<<<< HEAD
         if (_workorder_dueDate is not null) THEN
+=======
+        if (_workorder_dueDate IS NOT NULL) THEN
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'DATE(now()) <= \'', _workorder_dueDate,'\'');
             set _commaNeeded=1;
@@ -606,8 +646,8 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
 	END IF;
 
 	-- RULES and CONVERSIONS
-	if (_workorder_dueDate is not null) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
-	if (_workorder_rescheduleDate is not null) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
+	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
+	if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
 	if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
 
 
@@ -638,6 +678,7 @@ ELSEIF(_action ='UPDATE') THEN
 
 		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);		
 
+<<<<<<< HEAD
         if (_workorder_status is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
         END IF;
@@ -660,6 +701,30 @@ ELSEIF(_action ='UPDATE') THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
         END IF;
         if (_workorder_rescheduleDate is not null) THEN
+=======
+        if (_workorder_status IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
+        END IF;
+        if (_workorder_name IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_name = \'', _workorder_name,'\'');
+        END IF;
+        if (_workorder_details IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_details = \'', _workorder_details,'\'');
+        END IF;
+        if (_workorder_actions IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_actions = \'', _workorder_actions,'\'');
+        END IF;
+        if (_workorder_priority IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
+        END IF;
+        if (_workorder_dueDate IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', _workorder_dueDate,'\'');
+        END IF;
+        if (_workorder_assetUUID IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
+        END IF;
+        if (_workorder_rescheduleDate IS NOT NULL) THEN
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', _workorder_rescheduleDate,'\'');
         END IF;
 
@@ -674,7 +739,7 @@ ELSEIF(_action ='UPDATE') THEN
 
 ELSEIF(_action ='REMOVE' and _workorderUUID is not null) THEN
 
-	if (_wapj_asset_partUUID is not null) THEN
+	if (_wapj_asset_partUUID IS NOT NULL) THEN
 		delete from workorder_asset_part_join where wapj_asset_partUUID=_wapj_asset_partUUID 
         and wapj_workorderUUID = _workorderUUID;
     ELSE
@@ -863,6 +928,259 @@ END$$
 
 DELIMITER ;
 
+-- ==================================================================
+
+-- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
+-- call USER_userGroup('GET-LIST', 1, 1, null, null);
+-- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
+
+DROP procedure IF EXISTS `USER_userGroup`;
+
+DELIMITER $$
+CREATE PROCEDURE `USER_userGroup` (
+    IN _action VARCHAR(100),
+    IN _userUUID VARCHAR(100),
+    IN _customerUUID VARCHAR(100),
+    IN _groupUUID VARCHAR(100),
+    IN _groupName VARCHAR(255)
+)
+USER_userGroup: BEGIN
+    DECLARE _DEBUG INT DEFAULT 0;
+    IF(_action IS NULL or _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_userGroup: _action can not be empty';
+        LEAVE USER_userGroup;
+    END IF;
+
+    IF(_userUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _userUUID missing';
+        LEAVE USER_userGroup;
+    END IF;
+
+    IF(_action ='GET-LIST') THEN
+        SET @l_sql = 'SELECT * FROM user_group';
+        IF _customerUUID IS NOT NULL AND _customerUUID != '' THEN
+            SET @l_sql = CONCAT(@l_sql,' WHERE group_customerUUID = \'',_customerUUID,'\'');
+        END IF;
+        IF (_DEBUG = 1) THEN SELECT _action, @l_sql; END IF;
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    ELSEIF(_action ='GET') THEN
+        set @l_sql = 'SELECT ug.* FROM user_group ug';
+        IF(_groupUUID IS NULL OR _groupUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupUUID missing';
+            LEAVE USER_userGroup;
+        END IF;
+        SELECT ug.* FROM user_group ug WHERE ug.groupUUID = _groupUUID;
+    ELSEIF(_action = 'CREATE') THEN
+        IF(_groupUUID IS NULL OR _groupUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupUUID missing';
+            LEAVE USER_userGroup;
+        END IF;
+        IF(_groupName IS NULL OR _groupName = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupName missing';
+            LEAVE USER_userGroup;
+        END IF;
+        IF(_customerUUID IS NULL OR _customerUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _customerUUID missing';
+            LEAVE USER_userGroup;
+        END IF;
+        INSERT INTO user_group (groupUUID, group_customerUUID, group_name, group_createdByUUID, group_createdTS, group_updatedByUUID, group_updatedTS)
+        VALUES (_groupUUID, _customerUUID, _groupName, _userUUID, now(), _userUUID, now());
+    ELSEIF(_action = 'UPDATE') THEN
+        IF(_groupUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupUUID missing';
+            LEAVE USER_userGroup;
+        END IF;
+        SET @l_sql = CONCAT('UPDATE user_group SET group_updatedTS=now(), group_updatedByUUID=\'',_userUUID,'\'');
+        IF (_customerUUID IS NOT NULL AND _customerUUID != '') THEN
+            SET @l_sql = CONCAT(@l_sql,',group_customerUUID = \'',_customerUUID,'\'');
+        END IF;
+        IF (_groupName IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',group_name = \'',_groupName,'\'');
+        END IF;
+        SET @l_sql = CONCAT(@l_sql, ' WHERE groupUUID = \'',_groupUUID,'\'');
+        -- to do: securityBitwise
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSEIF(_action = 'REMOVE' AND _groupUUID IS NOT NULL AND _groupUUID != '') THEN
+        DELETE FROM user_group WHERE groupUUID = _groupUUID;
+    END IF;
+
+END$$
+
+DELIMITER ;
+
+-- ==================================================================
+# CUSTOMER
+-- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
+-- call USER_userGroup('GET-LIST', 1, 1, null, null);
+-- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
+
+DROP procedure IF EXISTS `CUSTOMER_customer`;
+
+DELIMITER $$
+CREATE PROCEDURE `CUSTOMER_customer` (
+    IN _action VARCHAR(100),
+    IN _userUUID VARCHAR(100),
+    IN _customerUUID VARCHAR(100),
+    IN _customerBrandUUID VARCHAR(100),
+    IN _customerStatusId INT,
+    IN _customerName VARCHAR(100),
+    IN _customerLogo VARCHAR(255),
+    IN _customerSecurityBitwise BIGINT,
+    IN _customerPreferenceJSON TEXT
+)
+CUSTOMER_customer: BEGIN
+    DECLARE _DEBUG INT DEFAULT 1;
+    IF(_action IS NULL or _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _action can not be empty';
+        LEAVE CUSTOMER_customer;
+    END IF;
+
+    IF(_userUUID IS NULL OR _userUUID = '') THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _userUUID missing';
+        LEAVE CUSTOMER_customer;
+    END IF;
+
+    IF(_action ='GET-LIST') THEN
+        SELECT * FROM customer;
+    ELSEIF(_action ='GET') THEN
+        IF(_customerUUID IS NULL or _customerUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+        SELECT * FROM customer WHERE customerUUID = _customerUUID;
+    ELSEIF(_action = 'CREATE') THEN
+        IF(_customerUUID IS NULL OR _customerUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+        IF(_customerName IS NULL OR _customerName = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerName missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+        INSERT INTO customer (customerUUID, customer_externalName,customer_brandUUID, customer_statusId, customer_name,
+                              customer_logo, customer_securityBitwise, customer_preferenceJSON, customer_createdByUUID,
+                              customer_updatedByUUID, customer_updatedTS, customer_createdTS, customer_deleteTS)
+        VALUES (_customerUUID, _customerName,_customerBrandUUID,_customerStatusId,_customerName,_customerLogo,
+                _customerSecurityBitwise, _customerPreferenceJSON, _userUUID,_userUUID,now(),now(),null);
+    ELSEIF(_action = 'UPDATE') THEN
+        IF(_customerUUID IS NULL or _customerUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+        SET @l_sql = CONCAT('UPDATE customer SET customer_updatedTS=now(), customer_updatedByUUID=\'',_userUUID,'\'');
+        IF (_customerStatusId IS NOT NULL AND _customerStatusId != '') THEN
+            SET @l_sql = CONCAT(@l_sql,',customer_statusId = \'',_customerStatusId,'\'');
+        END IF;
+        IF (_customerName IS NOT NULL and _customerName != '') THEN
+            SET @l_sql = CONCAT(@l_sql, ',customer_name = \'',_customerName,'\'');
+        END IF;
+        IF (_customerLogo IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',customer_logo = \'',_customerLogo,'\'');
+        END IF;
+        IF (_customerSecurityBitwise IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',customer_securityBitwise = \'',_customerSecurityBitwise,'\'');
+        END IF;
+        IF (_customerPreferenceJSON IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',customer_preferenceJSON = \'',_customerPreferenceJSON,'\'');
+        END IF;
+        SET @l_sql = CONCAT(@l_sql, ' WHERE customerUUID = \'',_customerUUID,'\'');
+        -- to do: securityBitwise
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSEIF(_action = 'REMOVE' AND _customerUUID IS NOT NULL AND _customerUUID != '') THEN
+        DELETE FROM customer WHERE customerUUID = _customerUUID;
+    END IF;
+
+END$$
+
+DELIMITER ;
+
+-- ==================================================================
+# PLAN
+-- call PLAN_plan(_action)
+
+DROP procedure IF EXISTS `PLAN_plan`;
+
+DELIMITER $$
+CREATE PROCEDURE `PLAN_plan` (
+    IN _action VARCHAR(100),
+    IN _userUUID VARCHAR(100),
+    IN _planUUID VARCHAR(100),
+    IN _planName VARCHAR(100),
+    IN _planSecurityBitwise BIGINT,
+    IN _planMaxUsers BIGINT
+)
+PLAN_plan: BEGIN
+    DECLARE _DEBUG INT DEFAULT 0;
+    IF(_action IS NULL or _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call PLAN_plan: _action can not be empty';
+        LEAVE PLAN_plan;
+    END IF;
+
+    IF(_userUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _userUUID missing';
+        LEAVE PLAN_plan;
+    END IF;
+
+    IF(_action ='GET-LIST') THEN
+        SELECT * FROM plan;
+    ELSEIF(_action ='GET') THEN
+        IF(_planUUID IS NULL or _planUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _planUUID missing';
+            LEAVE PLAN_plan;
+        END IF;
+        SELECT * FROM plan WHERE planUUID = _planUUID;
+    ELSEIF(_action = 'CREATE') THEN
+        IF(_planUUID IS NULL OR _planUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _planUUID missing';
+            LEAVE PLAN_plan;
+        END IF;
+        IF(_planName IS NULL OR _planName = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _planName missing';
+            LEAVE PLAN_plan;
+        END IF;
+        INSERT INTO plan (planUUID, plan_name, plan_securityBitwise, plan_maxUsers, plan_createdByUUID,
+                          plan_updatedByUUID, plan_updatedTS, plan_createdTS, plan_deleteTS)
+        VALUES (_planUUID, _planName, _planSecurityBitwise, _planMaxUsers, _userUUID,_userUUID,now(),now(),null);
+    ELSEIF(_action = 'UPDATE') THEN
+        IF(_planUUID IS NULL or _planUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PLAN_plan: _planUUID missing';
+            LEAVE PLAN_plan;
+        END IF;
+        SET @l_sql = CONCAT('UPDATE plan SET plan_updatedTS=now(), plan_updatedByUUID=\'',_userUUID,'\'');
+        IF (_planName IS NOT NULL AND _planName != '') THEN
+            SET @l_sql = CONCAT(@l_sql,',plan_name = \'',_planName,'\'');
+        END IF;
+        IF (_planSecurityBitwise IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',plan_securityBitwise = ',_planSecurityBitwise);
+        END IF;
+        IF (_planMaxUsers IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',plan_maxUsers = ',_planMaxUsers);
+        END IF;
+        SET @l_sql = CONCAT(@l_sql, ' WHERE _planUUID = \'',_planUUID,'\'');
+        -- to do: securityBitwise
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSEIF(_action = 'REMOVE' AND _planUUID IS NOT NULL AND _planUUID != '') THEN
+        DELETE FROM plan WHERE planUUID = _planUUID;
+    END IF;
+
+END$$
+
+DELIMITER ;
 -- ==================================================================
 
 -- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID, 0);
@@ -1308,8 +1626,8 @@ ELSEIF(_action = 'CREATE') THEN
 
 	IF (DEBUG=1) THEN select _action, _userUUID, _customerUUID, _assetUUID, _asset_locationUUID, _asset_partUUID, _asset_statusId, _asset_name, _asset_shortName, _asset_installDate; END IF;
     
-	IF(_assetUUID IS NULL or asset_partUUID is null) THEN
-		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID or asset_partUUID missing';
+	IF(_assetUUID IS NULL or _asset_partUUID is null) THEN
+		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID or _asset_partUUID missing';
 		LEAVE ASSET_asset;
 	END IF;
     
@@ -1683,13 +2001,21 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
 	IF (_userFoundUUID is null) THEN
 
 		insert into `user` (
+<<<<<<< HEAD
 		userUUID, user_customerUUID, user_userName, user_loginEmail, 
+=======
+		userUUID, user_customerUUID, user_userName, user_loginEmail,
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
         user_loginPW, user_statusId, 
 		user_securityBitwise, 
 		user_createdByUUID, user_updatedByUUID, user_updatedTS, user_createdTS, user_deleteTS    
 		)
 		values (
+<<<<<<< HEAD
 		_user_userUUID, _customerId, _user_userName, _user_loginEmail, 
+=======
+		_user_userUUID, _customerId, _user_userName, _user_loginEmail,
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
         _user_loginPW, 1, 
 		_user_securityBitwise, 
 		_userUUID, _userUUID, now(), now(), null 
@@ -1698,7 +2024,7 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
         -- handle creating the profile record;
         
         replace into user_profile (
-        userUUID, user_profile_avatarSrc, user_profile_phoneTypeId, user_profile_phone, user_profile_addressTypeId, user_profile_locationUUID, user_profile_preferenceJSON, 
+        user_profile_userUUID, user_profile_avatarSrc, user_profile_phoneTypeId, user_profile_phone, user_profile_addressTypeId, user_profile_locationUUID, user_profile_preferenceJSON,
         user_profile_createdByUUID, user_profile_updatedByUUID, user_profile_updatedTS, user_profile_createdTS, user_profile_deleteTS
         ) values (
         _user_userUUID, _user_profile_avatarSrc, 3, _user_profile_phone, 2, _user_profile_locationUUID, _user_profile_preferenceJSON, 
@@ -1713,7 +2039,11 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',user_userName = \'', _user_userName,'\'');
         END IF;
         if (_user_loginEmail is null) THEN
+<<<<<<< HEAD
 			set @l_sql = CONCAT(@l_sql,',user_loginEmail = \'', _user_loginEmail,'\'');
+=======
+			set @l_sql = CONCAT(@l_sql,',user_loginEmailId = \'', _user_loginEmail,'\'');
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
         END IF;
         if (_user_statusId is null) THEN
 			set @l_sql = CONCAT(@l_sql,',user_statusId = ', _user_statusId);
@@ -1811,7 +2141,11 @@ END IF;
 
 
 IF (_DEBUG=1) THEN 
+<<<<<<< HEAD
 	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmail, 
+=======
+	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmail,
+>>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
         _user_loginPW,_user_securityBitwise, _userUUID,_groupUUID;
     
 END IF;
