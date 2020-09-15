@@ -984,13 +984,13 @@ CREATE PROCEDURE `CUSTOMER_customer` (
     IN _customerPreferenceJSON TEXT
 )
 CUSTOMER_customer: BEGIN
-    DECLARE _DEBUG INT DEFAULT 0;
+    DECLARE _DEBUG INT DEFAULT 1;
     IF(_action IS NULL or _action = '') THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _action can not be empty';
         LEAVE CUSTOMER_customer;
     END IF;
 
-    IF(_userUUID IS NULL) THEN
+    IF(_userUUID IS NULL OR _userUUID = '') THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _userUUID missing';
         LEAVE CUSTOMER_customer;
     END IF;
@@ -1005,7 +1005,7 @@ CUSTOMER_customer: BEGIN
         SELECT * FROM customer WHERE customerUUID = _customerUUID;
     ELSEIF(_action = 'CREATE') THEN
         IF(_customerUUID IS NULL OR _customerUUID = '') THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _groupUUID missing';
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
             LEAVE CUSTOMER_customer;
         END IF;
         IF(_customerName IS NULL OR _customerName = '') THEN
