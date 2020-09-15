@@ -493,25 +493,23 @@ END$$
 -- ==================================================================
 
 /*
-call WORKORDER_workOrder(_action, _customerId,
+call WORKORDER_workOrder(_action, _customerId,_userUUID
 _workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,_workorder_assetUUID,
-_workorder_checklistUUID,_workorder_status,_workorder_name,_workorder_number,_workorder_details,
-_workorder_actions,_workorder_priority,_workorder_dueDate,
+_workorder_checklistUUID,_workorder_status,_workorder_type,_workorder_name,_workorder_number,_workorder_details,
+_workorder_actions,_workorder_priority,_workorder_dueDate,_workorder_completeDate,
 _workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
 _wapj_quantity
 );
 
-call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f',
-_workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,_workorder_assetUUID,
-_workorder_checklistUUID,_workorder_status,null,null,null,
-null,null,_workorder_dueDate,
+call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f',1,
+'0d59f068ed4c462aaaa23c5acd71e4d6',null,null,null,null,
+null,null,null,null,null,null,
 null,null,null,null,
-null
-); 
- 
--- call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f');
+null,null,null,null,
+null);
 */
 DROP procedure IF EXISTS `WORKORDER_workOrder`;
+
 
 DELIMITER $$
 CREATE PROCEDURE `WORKORDER_workOrder` (
@@ -519,7 +517,6 @@ IN _action VARCHAR(100),
 IN _customerId VARCHAR(100),
 IN _userUUID VARCHAR(100),
 IN _workorderUUID VARCHAR(100),
-IN _workorder_customerUUID VARCHAR(100),
 IN _workorder_locationUUID VARCHAR(100),
 IN _workorder_userUUID VARCHAR(100),
 IN _workorder_groupUUID VARCHAR(100),
@@ -558,40 +555,40 @@ IF(_action ='GET') THEN
 
 	if (_workorder_dueDate is not null) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-		set  @l_sql = CONCAT('select from workorder where');		
+		set  @l_sql = CONCAT('select * from workorder where ');		
 
-        if (_workorderUUID is null) THEN
+        if (_workorderUUID is not null) THEN
 			set @l_sql = CONCAT(@l_sql,'workorderUUID = \'', _workorderUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_customerUUID is null) THEN
+        if (_customerId is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,',workorder_customerUUID = \'', _workorder_customerUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'workorder_customerUUID = \'', _customerId,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_userUUID is null) THEN
+        if (_workorder_userUUID is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,',workorder_userUUID = \'', _workorder_userUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'workorder_userUUID = \'', _workorder_userUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_groupUUID is null) THEN
+        if (_workorder_groupUUID is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,',workorder_groupUUID = \'', _workorder_groupUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'workorder_groupUUID = \'', _workorder_groupUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_locationUUID is null) THEN
+        if (_workorder_locationUUID is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,',workorder_locationUUID = \'', _workorder_locationUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'workorder_locationUUID = \'', _workorder_locationUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_status is null) THEN
+        if (_workorder_status is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
+			set @l_sql = CONCAT(@l_sql,'workorder_status = \'', _workorder_status,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_dueDate is null) THEN
+        if (_workorder_dueDate is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,',DATE(now()) <= \'', _workorder_dueDate,'\'');
+			set @l_sql = CONCAT(@l_sql,'DATE(now()) <= \'', _workorder_dueDate,'\'');
             set _commaNeeded=1;
         END IF;
 
@@ -629,7 +626,7 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
     workorder_frequencyScope,
 	workorder_createdByUUID, workorder_updatedByUUID, workorder_updatedTS, workorder_createdTS
     ) values (_workorderUUID,
-    _workorder_customerUUID, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
+    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
     _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type, 
     _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority, 
     _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
@@ -641,28 +638,28 @@ ELSEIF(_action ='UPDATE') THEN
 
 		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);		
 
-        if (_workorder_status is null) THEN
+        if (_workorder_status is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
         END IF;
-        if (_workorder_name is null) THEN
+        if (_workorder_name is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_name = \'', _workorder_name,'\'');
         END IF;
-        if (_workorder_details is null) THEN
+        if (_workorder_details is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_details = \'', _workorder_details,'\'');
         END IF;
-        if (_workorder_actions is null) THEN
+        if (_workorder_actions is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_actions = \'', _workorder_actions,'\'');
         END IF;
-        if (_workorder_priority is null) THEN
+        if (_workorder_priority is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
         END IF;
-        if (_workorder_dueDate is null) THEN
+        if (_workorder_dueDate is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', _workorder_dueDate,'\'');
         END IF;
-        if (_workorder_assetUUID is null) THEN
+        if (_workorder_assetUUID is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
         END IF;
-        if (_workorder_rescheduleDate is null) THEN
+        if (_workorder_rescheduleDate is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', _workorder_rescheduleDate,'\'');
         END IF;
 
@@ -720,7 +717,7 @@ END IF;
 
 IF (_DEBUG=1) THEN 
 	select _action,_workorderUUID,
-    _workorder_customerUUID, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
+    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
     _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type, 
     _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority, 
     _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
@@ -1582,7 +1579,7 @@ _user_statusId,_user_securityBitwise,_user_profile_locationUUID,_user_profile_ph
 _user_profile_avatarSrc,_groupUUID
 );
 
-call USER_user('GET', _customerId,null,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID);
+call USER_user('GET', 1,1,null,null,null,null,null,null,null,null,null,null,null);
 
 call USER_user('REMOVE', null,_userUUID,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID);
 
@@ -1630,39 +1627,41 @@ IF(_action ='GET') THEN
 		LEAVE USER_user;
 	END IF;
 
-		set  @l_sql = CONCAT('select c.customer_name, u.*,l.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
+		set  @l_sql = CONCAT('select c.customer_name, c.customerUUID, u.*,l.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
 
-        if (_groupUUID is null) THEN
-			set  @l_sql = CONCAT(',g.group_name, g.groupUUID ');
+
+        if (_groupUUID is not null) THEN
+			set  @l_sql = CONCAT(@l_sql,',g.group_name, g.groupUUID ');
 		end if;
 
-		set  @l_sql = CONCAT(' from `user` u');
-		set  @l_sql = CONCAT(' left join customer c on (c.customerUUID=u.user_customerUUID)');
-		set  @l_sql = CONCAT(' left join user_profile p on (p.userUUID = u.userUUID)');
-		set  @l_sql = CONCAT(' left join location l on (l.locationUUID = p.user_profile_locationUUID)');
+		set  @l_sql = CONCAT(@l_sql,' from `user` u');
+		set  @l_sql = CONCAT(@l_sql,' left join customer c on (c.customerUUID=u.user_customerUUID)');
+		set  @l_sql = CONCAT(@l_sql,' left join user_profile p on (p.user_profile_userUUID = u.userUUID)');
+		set  @l_sql = CONCAT(@l_sql,' left join location l on (l.locationUUID = p.user_profile_locationUUID)');
         
-        if (_groupUUID is null) THEN
-			set  @l_sql = CONCAT(' left join user_group_join gj on (gj.ugj_userUUID = u.userUUID)');
-			set  @l_sql = CONCAT(' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
+        if (_groupUUID is not null) THEN
+			set  @l_sql = CONCAT(@l_sql,' left join user_group_join gj on (gj.ugj_userUUID = u.userUUID)');
+			set  @l_sql = CONCAT(@l_sql,' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
 		end if;
         
-		set  @l_sql = CONCAT(' where ');		
+		set  @l_sql = CONCAT(@l_sql,' where ');		
 
-        if (_customerId is null) THEN
-			set @l_sql = CONCAT(@l_sql,'c.customerId = \'', _customerId,'\'');
+        if (_customerId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,'u.user_customerUUID = \'', _customerId,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_user_userUUID is null) THEN
+        if (_user_userUUID is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,',u.userUUID = \'', _user_userUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_groupUUID is null) THEN
+        if (_groupUUID is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,',g.groupUUID = \'', _groupUUID,'\'');
             set _commaNeeded=1;
         END IF;
 
+		set @l_sql = CONCAT(@l_sql,';');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 			
@@ -1684,13 +1683,13 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
 	IF (_userFoundUUID is null) THEN
 
 		insert into `user` (
-		userUUID, user_customerUUID, user_userName, user_loginEmailId, 
+		userUUID, user_customerUUID, user_userName, user_loginEmail, 
         user_loginPW, user_statusId, 
 		user_securityBitwise, 
 		user_createdByUUID, user_updatedByUUID, user_updatedTS, user_createdTS, user_deleteTS    
 		)
 		values (
-		_user_userUUID, _customerId, _user_userName, _user_loginEmailId, 
+		_user_userUUID, _customerId, _user_userName, _user_loginEmail, 
         _user_loginPW, 1, 
 		_user_securityBitwise, 
 		_userUUID, _userUUID, now(), now(), null 
@@ -1713,8 +1712,8 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
         if (_user_userName is null) THEN
 			set @l_sql = CONCAT(@l_sql,',user_userName = \'', _user_userName,'\'');
         END IF;
-        if (_user_loginEmailId is null) THEN
-			set @l_sql = CONCAT(@l_sql,',user_loginEmailId = \'', _user_loginEmailId,'\'');
+        if (_user_loginEmail is null) THEN
+			set @l_sql = CONCAT(@l_sql,',user_loginEmail = \'', _user_loginEmail,'\'');
         END IF;
         if (_user_statusId is null) THEN
 			set @l_sql = CONCAT(@l_sql,',user_statusId = ', _user_statusId);
@@ -1812,7 +1811,7 @@ END IF;
 
 
 IF (_DEBUG=1) THEN 
-	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmailId, 
+	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmail, 
         _user_loginPW,_user_securityBitwise, _userUUID,_groupUUID;
     
 END IF;
@@ -1823,15 +1822,14 @@ END$$
 DELIMITER ; 
 
 
-
 -- ==================================================================
 -- call ATT_getPicklist(null, null, 1); -- returns all the picklists
--- call ATT_getPicklist('att_address_type, global_need', null, 0); -- returns picklist for 'att_address_type, global_need'
+-- call ATT_getPicklist('att_userlevel_predefined', null, null); 
 
 DROP procedure IF EXISTS `ATT_getPicklist`;
 
 DELIMITER //
-CREATE PROCEDURE `ATT_getPicklist`( IN _tables varchar(1000), _roleId INT, _returnAll INT)
+CREATE PROCEDURE `ATT_getPicklist`( IN _tables varchar(1000), _userId varchar(100), _returnAll INT)
 getPicklist: BEGIN
 
 DECLARE allTables varchar(500) default 'TBD';
@@ -1853,6 +1851,9 @@ DECLARE allTables varchar(500) default 'TBD';
 		select 'customer' as tableName, customerUUID as id, customer_name as value, customer_name as name from customer order by customer_name;
 	END IF; 
 
+    IF (LOCATE('att_userlevel_predefined', _tables) > 0) THEN
+		select 'att_userlevel_predefined' as tableName, description as id, bitwise as value, bitwise as name from att_userlevel_predefined order by description;
+	END IF; 
+
 END //
 DELIMITER ;
-
