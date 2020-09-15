@@ -958,6 +958,11 @@ USER_userGroup: BEGIN
 
 END$$
 
+# CREATE PROCEDURE BITWISE (IN _userUUID, _key)
+# if user.securitybitwise and key, return true
+# for group in user_group
+#   if group_bitwize and key, return true
+
 DELIMITER ;
 
 -- ==================================================================
