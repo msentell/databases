@@ -202,12 +202,14 @@ END$$
 DELIMITER ;
 -- ==================================================================
 
--- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON); 
--- call DIAGNOSTIC_node('GETNODE', '1', null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null); 
--- call DIAGNOSTIC_node('GET', '1', null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null); 
--- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON'); 
--- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON'); 
--- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null); 
+
+-- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON,diagnostic_node_warning,diagnostic_node_warningSeverity); 
+-- call DIAGNOSTIC_node('GETNODE', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null,null); 
+-- call DIAGNOSTIC_node('GET', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null,null, null, null, null, null, null,null,null,null,null); 
+-- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON',null,null); 
+-- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON','diagnostic_node_warning',diagnostic_node_warningSeverity); 
+-- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null,null,null); 
+-- call DIAGNOSTIC_node('UPDATE','1','5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null ,'testing_tiltle rtghjy', 'diagnosticnodeprompt', 'diagnostic_node_optionPrompt', '[{"coordinates":[{}],"color":"red","forwardId":"1599760999552"}]', 'https://jcmi.sfo2.digitaloceanspaces.com/demodata/Hendrix/diagnostics/Heating1.JPG', 'false','hello','hijky');
 
 DROP procedure IF EXISTS `DIAGNOSTIC_node`;
 
@@ -224,7 +226,9 @@ IN _diagnostic_node_prompt VARCHAR(255),
 IN _diagnostic_node_optionPrompt VARCHAR(255),
 IN _diagnostic_node_hotSpotJSON text,
 IN _diagnostic_node_imageSetJSON text,
-IN _diagnostic_node_optionSetJSON text
+IN _diagnostic_node_optionSetJSON text,
+IN _diagnostic_node_warning VARCHAR(255),
+IN _diagnostic_node_warningSeverity VARCHAR(45)
 )
 DIAGNOSTIC_node: BEGIN
 DECLARE commaNeeded INT DEFAULT 0;
@@ -254,7 +258,7 @@ IF(_action = 'GETNODE') THEN
 			SELECT n.* from diagnostic_node n
 			-- left join diagnostic_tree d on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID) 
 			where diagnostic_nodeUUID = _diagnostic_nodeUUID;
-
+	
 	END IF;
 
 ELSEIF(_action = 'GET') THEN
@@ -345,6 +349,12 @@ ELSEIF(_action = 'UPDATE') THEN
         if (_diagnostic_node_optionSetJSON is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',diagnostic_node_optionSetJSON = \'', _diagnostic_node_optionSetJSON,'\'');
         END IF;
+		if(_diagnostic_node_warning is not null)THEN
+		set @l_sql = CONCAT(@l_sql,',diagnostic_node_warning= \'', _diagnostic_node_warning,'\'');
+		END IF;
+		if(_diagnostic_node_warningSeverity is not null)THEN
+		set @l_sql = CONCAT(@l_sql,',diagnostic_node_warningSeverity= \'', _diagnostic_node_warningSeverity,'\'');
+		END IF;
 
 		set @l_sql = CONCAT(@l_sql,' where diagnostic_nodeUUID = \'', _diagnostic_nodeUUID,'\';');
        
