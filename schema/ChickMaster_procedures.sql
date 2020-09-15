@@ -565,15 +565,6 @@ IF(_action ='GET') THEN
 
 	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-<<<<<<< HEAD
-		set  @l_sql = CONCAT('select * from workorder where ');		
-
-        if (_workorderUUID is not null) THEN
-			set @l_sql = CONCAT(@l_sql,'workorderUUID = \'', _workorderUUID,'\'');
-            set _commaNeeded=1;
-        END IF;
-        if (_customerId is not null) THEN
-=======
 		set  @l_sql = CONCAT('SELECT FROM workorder WHERE');
 
         if (_workorderUUID IS NOT NULL) THEN
@@ -581,52 +572,31 @@ IF(_action ='GET') THEN
             set _commaNeeded=1;
         END IF;
         if (_workorder_customerUUID IS NOT NULL) THEN
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_customerUUID = \'', _customerId,'\'');
             set _commaNeeded=1;
         END IF;
-<<<<<<< HEAD
-        if (_workorder_userUUID is not null) THEN
-=======
         if (_workorder_userUUID IS NOT NULL) THEN
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_userUUID = \'', _workorder_userUUID,'\'');
             set _commaNeeded=1;
         END IF;
-<<<<<<< HEAD
-        if (_workorder_groupUUID is not null) THEN
-=======
         if (_workorder_groupUUID IS NOT NULL) THEN
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_groupUUID = \'', _workorder_groupUUID,'\'');
             set _commaNeeded=1;
         END IF;
-<<<<<<< HEAD
-        if (_workorder_locationUUID is not null) THEN
-=======
         if (_workorder_locationUUID IS NOT NULL) THEN
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_locationUUID = \'', _workorder_locationUUID,'\'');
             set _commaNeeded=1;
         END IF;
-<<<<<<< HEAD
-        if (_workorder_status is not null) THEN
-=======
         if (_workorder_status IS NOT NULL) THEN
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_status = \'', _workorder_status,'\'');
             set _commaNeeded=1;
         END IF;
-<<<<<<< HEAD
-        if (_workorder_dueDate is not null) THEN
-=======
         if (_workorder_dueDate IS NOT NULL) THEN
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'DATE(now()) <= \'', _workorder_dueDate,'\'');
             set _commaNeeded=1;
@@ -678,30 +648,6 @@ ELSEIF(_action ='UPDATE') THEN
 
 		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);		
 
-<<<<<<< HEAD
-        if (_workorder_status is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
-        END IF;
-        if (_workorder_name is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_name = \'', _workorder_name,'\'');
-        END IF;
-        if (_workorder_details is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_details = \'', _workorder_details,'\'');
-        END IF;
-        if (_workorder_actions is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_actions = \'', _workorder_actions,'\'');
-        END IF;
-        if (_workorder_priority is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
-        END IF;
-        if (_workorder_dueDate is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', _workorder_dueDate,'\'');
-        END IF;
-        if (_workorder_assetUUID is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
-        END IF;
-        if (_workorder_rescheduleDate is not null) THEN
-=======
         if (_workorder_status IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
         END IF;
@@ -724,7 +670,6 @@ ELSEIF(_action ='UPDATE') THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
         END IF;
         if (_workorder_rescheduleDate IS NOT NULL) THEN
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
 			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', _workorder_rescheduleDate,'\'');
         END IF;
 
@@ -2001,21 +1946,14 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
 	IF (_userFoundUUID is null) THEN
 
 		insert into `user` (
-<<<<<<< HEAD
-		userUUID, user_customerUUID, user_userName, user_loginEmail, 
-=======
+
 		userUUID, user_customerUUID, user_userName, user_loginEmail,
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
         user_loginPW, user_statusId, 
 		user_securityBitwise, 
 		user_createdByUUID, user_updatedByUUID, user_updatedTS, user_createdTS, user_deleteTS    
 		)
 		values (
-<<<<<<< HEAD
-		_user_userUUID, _customerId, _user_userName, _user_loginEmail, 
-=======
 		_user_userUUID, _customerId, _user_userName, _user_loginEmail,
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
         _user_loginPW, 1, 
 		_user_securityBitwise, 
 		_userUUID, _userUUID, now(), now(), null 
@@ -2039,11 +1977,7 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',user_userName = \'', _user_userName,'\'');
         END IF;
         if (_user_loginEmail is null) THEN
-<<<<<<< HEAD
 			set @l_sql = CONCAT(@l_sql,',user_loginEmail = \'', _user_loginEmail,'\'');
-=======
-			set @l_sql = CONCAT(@l_sql,',user_loginEmailId = \'', _user_loginEmail,'\'');
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
         END IF;
         if (_user_statusId is null) THEN
 			set @l_sql = CONCAT(@l_sql,',user_statusId = ', _user_statusId);
@@ -2141,11 +2075,7 @@ END IF;
 
 
 IF (_DEBUG=1) THEN 
-<<<<<<< HEAD
-	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmail, 
-=======
 	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmail,
->>>>>>> 6106a2fce7f62cced9152e53f889f2a7595b280f
         _user_loginPW,_user_securityBitwise, _userUUID,_groupUUID;
     
 END IF;
