@@ -1053,6 +1053,109 @@ CUSTOMER_customer: BEGIN
 
 END$$
 
+Delimiter ;
+
+-- ==================================================================
+# KNOWLEDGE BASE
+-- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
+-- call USER_userGroup('GET-LIST', 1, 1, null, null);
+-- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
+
+DROP procedure IF EXISTS `KB_knowledge_base`;
+
+DELIMITER $$
+CREATE PROCEDURE `KB_knowledge_base` (
+    IN _action VARCHAR(100),
+    IN _userUUID VARCHAR(100),
+    IN _knowledgebaseUUID VARCHAR(100),
+    IN _knowledge_statusId INT,
+    IN _knowledge_imageURL VARCHAR(255),
+    IN _knowledge_tags VARCHAR(500),
+    IN _knowledge_categories VARCHAR(500),
+    IN _knowledge_title VARCHAR(100),
+    IN _knowledge_content VARCHAR(1000),
+    IN _knowledge_customerUUID CHAR(32)
+)
+KB_knowledge_base: BEGIN
+    DECLARE _DEBUG INT DEFAULT 1;
+    IF(_action IS NULL or _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call KB_knowledge_base: _action can not be empty';
+        LEAVE KB_knowledge_base;
+    END IF;
+
+    IF(_userUUID IS NULL OR _userUUID = '') THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _userUUID missing';
+        LEAVE KB_knowledge_base;
+    END IF;
+
+    IF(_action ='GET-LIST') THEN
+        SELECT * FROM knowledge_base;
+    ELSEIF(_action ='GET') THEN
+        IF(_knowledgebaseUUID IS NULL or _knowledgebaseUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _knowledgebaseUUID missing';
+            LEAVE KB_knowledge_base;
+        END IF;
+        SELECT * FROM knowledge_base WHERE knowledgeUUID = _knowledgebaseUUID;
+    ELSEIF(_action = 'CREATE') THEN
+        IF(_knowledgebaseUUID IS NULL OR _knowledgebaseUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _knowledgebaseUUID missing';
+            LEAVE KB_knowledge_base;
+        END IF;
+        IF(_knowledge_title IS NULL OR _knowledge_title = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _knowledge_title missing';
+            LEAVE KB_knowledge_base;
+        END IF;
+        INSERT INTO knowledge_base (knowledgeUUID, knowledge_statusId, knowledge_imageURL, knowledge_tags, knowledge_categories,
+                                    knowledge_title, knowledge_customerUUID, knowledge_content, knowledge_createdByUUID, knowledge_acknowledgedByUUID,
+                                    knowledge_updatedTS, knowledge_createdTS, knowledge_deleteTS)
+        VALUES (_knowledgebaseUUID, _knowledge_statusId, _knowledge_imageURL, _knowledge_tags, _knowledge_categories,
+                _knowledge_title, _knowledge_customerUUID, _knowledge_content,
+                _userUUID, _userUUID, now(), now(), null);
+    ELSEIF(_action = 'UPDATE') THEN
+        IF(_knowledgebaseUUID IS NULL or _knowledgebaseUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _knowledgebaseUUID missing';
+            LEAVE KB_knowledge_base;
+        END IF;
+        SET @l_sql = CONCAT('UPDATE knowledge_base SET knowledge_updatedTS=now(), knowledge_updatedByUUID=\'',_userUUID,'\'');
+        IF (_knowledge_statusId IS NOT NULL AND _knowledge_statusId != '') THEN
+            SET @l_sql = CONCAT(@l_sql,',knowledge_statusId = \'',_knowledge_statusId,'\'');
+        END IF;
+        IF (_knowledge_imageURL IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',knowledge_imageURL = \'',_knowledge_imageURL,'\'');
+        END IF;
+        IF (_knowledge_tags IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',knowledge_tags = \'',_knowledge_tags,'\'');
+        END IF;
+        IF (_knowledge_categories IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',knowledge_categories = \'',_knowledge_categories,'\'');
+        END IF;
+        IF (_knowledge_title IS NOT NULL AND _knowledge_title != '') THEN
+            SET @l_sql = CONCAT(@l_sql, ',knowledge_title = \'',_knowledge_title,'\'');
+        END IF;
+        IF (_knowledge_content IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',knowledge_content = \'',_knowledge_content,'\'');
+        END IF;
+        IF (_knowledge_customerUUID IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',knowledge_customerUUID = ',_knowledge_customerUUID);
+        END IF;
+        SET @l_sql = CONCAT(@l_sql, ' WHERE knowledgeUUID = \'',_knowledgebaseUUID,'\'');
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSEIF(_action = 'REMOVE' AND _knowledgebaseUUID IS NOT NULL AND _knowledgebaseUUID != '') THEN
+        DELETE FROM knowledge_base WHERE knowledgeUUID = _knowledgebaseUUID;
+    ELSEIF(_action = 'LIKE') THEN
+        UPDATE knowledge_base SET knowledge_likes = knowledge_likes+1 where knowledgeUUID=_knowledgebaseUUID;
+    ELSEIF(_action = 'UNLIKE') THEN
+        UPDATE knowledge_base SET knowledge_likes = knowledge_likes-1 where knowledgeUUID=_knowledgebaseUUID;
+    ELSEIF (_action = 'DISLIKE') THEN
+        UPDATE knowledge_base SET knowledge_dislikes = knowledge_dislikes+1 where knowledgeUUID=_knowledgebaseUUID;
+    ELSEIF (_action = 'UNDISLIKE') THEN
+        UPDATE knowledge_base SET knowledge_dislikes = knowledge_dislikes-1 where knowledgeUUID=_knowledgebaseUUID;
+    END IF;
+END$$
+
 DELIMITER ;
 
 -- ==================================================================
