@@ -46,13 +46,16 @@ DROP TABLE IF EXISTS att_privilege;
 CREATE TABLE `att_privilege` (
    category varchar(50) NOT NULL,
    `key` varchar(50) NOT NULL,
+   pos int NOT NULL,
    bitwise BIGINT NOT NULL,
    PRIMARY KEY (bitwise))
 ENGINE = InnoDB;
 
-insert into att_privilege(category,`key`,bitwise) values ('workorder','CANAPPROVECHECKLISTS',1);
-insert into att_privilege(category,`key`,bitwise) values ('workorder','CANAPPROVEORDER',2);
-insert into att_privilege(category,`key`,bitwise) values ('license','CANACCESSHMS',4);
+insert into att_privilege(category,`key`,pos,bitwise) values ('No','NONE',0,0);
+insert into att_privilege(category,`key`,pos,bitwise) values ('workorder','CANAPPROVECHECKLISTS',1,1);
+insert into att_privilege(category,`key`,pos,bitwise) values ('workorder','CANAPPROVEORDER',2,2);
+insert into att_privilege(category,`key`,pos,bitwise) values ('license','CANACCESSHMS',3,4);
+insert into att_privilege(category,`key`,pos,bitwise) values ('license','ADDUSERS',4,8);
 
 
 DROP TABLE IF EXISTS att_userlevel_predefined;
@@ -156,6 +159,7 @@ CREATE TABLE `user` (
 
     user_statusId INT   NULL DEFAULT 1,
     user_securityBitwise BIGINT  NULL,
+    user_individualSecurityBitwise BIGINT  NULL,
 
     user_createdByUUID CHAR(32)  NULL,
     user_updatedByUUID CHAR(32)  NULL,
@@ -214,6 +218,7 @@ CREATE TABLE `user_group` (
     group_name varchar(50)  NOT NULL,
     group_createdByUUID CHAR(32)  NULL,
     group_updatedByUUID CHAR(32)  NULL,
+    group_securityBitwise bigint  NOT NULL DEFAULT 0,
    	group_updatedTS datetime  NULL,
   	group_createdTS datetime  NULL default now(),
    	group_deleteTS datetime  NULL,
@@ -280,9 +285,10 @@ CREATE TABLE `notification_queue` (
    	notification_type varchar(25) NOT NULL, -- [SMS,EMAIL,APP]
    	notification_toEmail varchar(100) NULL,
    	notification_toSMS varchar(25) NULL,
-   	notification_toAppUUID CHAR(32) NULL,  -- may not go to a system user.
-   	notification_fromAppUUID CHAR(32) NULL,  -- may not go to a system user.
-   	notification_toUserUUID CHAR(32) NULL,  -- may not go to a system user.
+    notification_toGroupUUID CHAR(25) NULL,
+   	notification_toAppUUID CHAR(32) NULL,  
+   	notification_toUserUUID CHAR(32) NULL,  
+    notification_fromAppUUID CHAR(32) NULL,  
    	notification_fromUserUUID CHAR(32) NOT NULL,
    	notification_readyOn timestamp NOT NULL,
    	notification_expireOn timestamp NOT NULL,

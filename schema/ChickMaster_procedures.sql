@@ -500,6 +500,7 @@ END$$
 
 
 
+
 -- ==================================================================
 
 /*
@@ -565,13 +566,13 @@ IF(_action ='GET') THEN
 
 	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-		set  @l_sql = CONCAT('SELECT FROM workorder WHERE');
+		set  @l_sql = CONCAT('SELECT * FROM workorder WHERE ');
 
         if (_workorderUUID IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,'workorderUUID = \'', _workorderUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_customerUUID IS NOT NULL) THEN
+        if (_customerId IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_customerUUID = \'', _customerId,'\'');
             set _commaNeeded=1;
@@ -958,15 +959,9 @@ USER_userGroup: BEGIN
 
 END$$
 
-# CREATE PROCEDURE BITWISE (IN _userUUID, _key)
-# if user.securitybitwise and key, return true
-# for group in user_group
-#   if group_bitwize and key, return true
-
 DELIMITER ;
 
 -- ==================================================================
-# CUSTOMER
 -- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
 -- call USER_userGroup('GET-LIST', 1, 1, null, null);
 -- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
@@ -1056,7 +1051,6 @@ END$$
 DELIMITER ;
 
 -- ==================================================================
-# PLAN
 -- call PLAN_plan(_action)
 
 DROP procedure IF EXISTS `PLAN_plan`;
@@ -1829,7 +1823,6 @@ END$$
 DELIMITER ;
 
 
-
 -- ==================================================================
 
 /*
@@ -1847,7 +1840,7 @@ _user_statusId,_user_securityBitwise,_user_profile_locationUUID,_user_profile_ph
 _user_profile_avatarSrc,_groupUUID
 );
 
-call USER_user('GET', 1,1,null,null,null,null,null,null,null,null,null,null,null);
+call USER_user('GET', '7e7165375b344ab4892c18effb3296f7',1,null,null,null,null,null,null,null,null,null,null,null);
 
 call USER_user('REMOVE', null,_userUUID,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID);
 
@@ -1920,12 +1913,12 @@ IF(_action ='GET') THEN
         END IF;
         if (_user_userUUID is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,',u.userUUID = \'', _user_userUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'u.userUUID = \'', _user_userUUID,'\'');
             set _commaNeeded=1;
         END IF;
         if (_groupUUID is not null) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,',g.groupUUID = \'', _groupUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'g.groupUUID = \'', _groupUUID,'\'');
             set _commaNeeded=1;
         END IF;
 
@@ -2091,22 +2084,24 @@ END$$
 DELIMITER ; 
 
 
+
 -- ==================================================================
 -- call ATT_getPicklist(null, null, 1); -- returns all the picklists
 -- call ATT_getPicklist('att_userlevel_predefined', null, null); 
+-- call ATT_getPicklist('checklist', 'a30af0ce5e07474487c39adab6269d5f', null); 
+-- call ATT_getPicklist('group', 'a30af0ce5e07474487c39adab6269d5f', null); 
+-- call ATT_getPicklist('asset', 'a30af0ce5e07474487c39adab6269d5f', null); 
+-- call ATT_getPicklist('location', 'a30af0ce5e07474487c39adab6269d5f', null); 
+-- call ATT_getPicklist('user', 'a30af0ce5e07474487c39adab6269d5f', null); 
 
 DROP procedure IF EXISTS `ATT_getPicklist`;
 
 DELIMITER //
-CREATE PROCEDURE `ATT_getPicklist`( IN _tables varchar(1000), _userId varchar(100), _returnAll INT)
+CREATE PROCEDURE `ATT_getPicklist`( 
+IN _tables varchar(1000),
+_customerId char(32), 
+_userId char(32))
 getPicklist: BEGIN
-
-DECLARE allTables varchar(500) default 'TBD';
-	
-    IF _returnAll = 1 then
-		set _tables = allTables;
-    END IF;
-    -- select allTables, _tables;
 	
     IF (LOCATE('att_address_type', _tables) > 0) THEN
 		select 'att_address_type' as tableName, id as id, name as value, name as name from att_address_type order by name;
@@ -2120,9 +2115,346 @@ DECLARE allTables varchar(500) default 'TBD';
 		select 'customer' as tableName, customerUUID as id, customer_name as value, customer_name as name from customer order by customer_name;
 	END IF; 
 
+    IF (LOCATE('checklist', _tables) > 0) THEN
+    
+		if (_customerId is null) Then
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
+		LEAVE getPicklist;
+        END IF;
+        
+		select 'checklist' as tableName, checklistUUID as id, checklist_name as value, checklist_name as name 
+        from checklist where checklist_customerUUID = _customerId
+        order by checklist_name;
+	END IF; 
+
+
+    IF (LOCATE('group', _tables) > 0) THEN
+    
+		if (_customerId is null) Then
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
+		LEAVE getPicklist;
+        END IF;
+        
+		select 'group' as tableName, groupUUID as id, group_name as value, group_name as name 
+        from user_group where group_customerUUID = _customerId
+        order by group_name;
+	END IF; 
+
+    IF (LOCATE('asset', _tables) > 0) THEN
+    
+		if (_customerId is null) Then
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
+		LEAVE getPicklist;
+        END IF;
+        
+		select 'group' as tableName, assetUUID as id, asset_name as value, asset_name as name 
+        from asset where asset_customerUUID = _customerId
+        order by asset_name;
+	END IF; 
+
+    IF (LOCATE('location', _tables) > 0) THEN
+    
+		if (_customerId is null) Then
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
+		LEAVE getPicklist;
+        END IF;
+        
+		select 'location' as tableName, locationUUID as id, location_name as value, location_name as name 
+        from location where location_customerUUID = _customerId
+        order by location_name;
+	END IF; 
+
+    IF (LOCATE('user', _tables) > 0) THEN
+    
+		if (_customerId is null) Then
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
+		LEAVE getPicklist;
+        END IF;
+        
+		select 'user' as tableName, userUUID as id, user_userName as value, user_userName as name 
+        from `user` where user_customerUUID = _customerId and user_statusId=1
+        order by user_userName;
+	END IF; 
+    
     IF (LOCATE('att_userlevel_predefined', _tables) > 0) THEN
 		select 'att_userlevel_predefined' as tableName, description as id, bitwise as value, bitwise as name from att_userlevel_predefined order by description;
 	END IF; 
 
 END //
 DELIMITER ;
+
+-- ==================================================================
+-- call SECURITY_bitwise('CALCULATE',1,1,null,null);
+-- call SECURITY_bitwise('ADDUSERSECURITY',1,1,null,8);
+-- call SECURITY_bitwise('REMOVESECURITY',1,1,null,8);
+
+DROP procedure IF EXISTS `SECURITY_bitwise`;
+
+/*
+
+Name	Description
+&	Bitwise AND
+>>	Right shift
+<<	Left shift
+^	Bitwise XOR
+BIT_COUNT()	Return the number of bits that are set
+|	Bitwise OR
+~	Bitwise inversion
+
+*/
+
+DELIMITER $$
+CREATE  PROCEDURE SECURITY_bitwise(
+IN _action VARCHAR(100),
+IN _userId char(32),
+IN _targetUserId CHAR(32),
+IN _att_userlevel_predefined INT,
+IN _att_bitwise BIGINT
+)
+SECURITY_bitwise: BEGIN
+
+DECLARE _DEBUG INT DEFAULT 1;
+
+DECLARE _att_userlevel_predefined_bitwise BIGINT DEFAULT 0;
+DECLARE _customer_securityBitwise BIGINT DEFAULT 0;
+DECLARE _brand_securityBitwise BIGINT DEFAULT 0;
+DECLARE _group_securityBitwise BIGINT DEFAULT 0;
+DECLARE _user_individualSecurityBitwise BIGINT DEFAULT 0;
+
+DECLARE _user_securityBitwise BIGINT DEFAULT 0;
+
+DECLARE _customerId char(32);
+DECLARE _brandId char(32);
+
+if (_action = 'ADDUSERSECURITY') THEN
+
+	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise 
+	INTO
+	_customerId,_user_securityBitwise,_user_individualSecurityBitwise
+    from `user`
+	where userUUID=_targetUserId;
+
+	select _user_individualSecurityBitwise | _att_bitwise into _user_individualSecurityBitwise;
+
+	update `user` set user_individualSecurityBitwise=_user_individualSecurityBitwise where userUUID=_targetUserId;
+
+	set _action = 'CALCULATE';
+    
+ELSEif (_action = 'REMOVESECURITY') THEN
+
+	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise 
+	INTO
+	_customerId,_user_securityBitwise,_user_individualSecurityBitwise
+    from `user`
+	where userUUID=_targetUserId;
+
+	select _user_individualSecurityBitwise ^ _att_bitwise into _user_individualSecurityBitwise;
+
+	update `user` set user_individualSecurityBitwise=_user_individualSecurityBitwise where userUUID=_targetUserId;
+
+	set _action = 'CALCULATE';
+
+END IF;
+
+if (_action = 'CALCULATE') THEN
+
+	-- user
+	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise 
+	INTO
+	_customerId,_user_securityBitwise,_user_individualSecurityBitwise
+    from `user`
+	where _targetUserId=userUUID;
+
+	-- customer
+	select customer_securityBitwise into _customer_securityBitwise from customer where customerUUID = _customerId;
+	
+    -- brand
+    select ifnull(brand_securityBitwise,0) into _brand_securityBitwise 
+    from customer_brand b
+    left join customer c on (c.customer_brandUUID = b.brandUUID) where c.customerUUID = _customerId;
+
+	-- groups
+    -- select into _group_securityBitwise where ugj_userUUID = userUUID;
+
+	set _user_securityBitwise = _customer_securityBitwise | _brand_securityBitwise | _group_securityBitwise | _user_individualSecurityBitwise;
+
+	update `user` set user_securityBitwise=_user_securityBitwise where userUUID=_targetUserId;
+
+END IF;
+
+IF (_DEBUG=1) THEN select _action,_customerId,_user_securityBitwise,_customer_securityBitwise,_user_individualSecurityBitwise,_brand_securityBitwise,_group_securityBitwise,_targetUserId; END IF;
+
+
+END$$
+
+
+-- ==================================================================
+
+/*
+call NOTIFICATION_notification(
+_action,_userUUID,
+_notification_templateId,_notificationId,_notificationType,
+_notification_toEmail,_notification_toSMS,_notification_toUserUUID,_notification_toGroupUUID,_notification_toAppUUID,
+_notification_fromAppUUID,_notification_fromUserUUID,
+_notification_readyOn,_notification_expireOn,
+_notification_content,_notification_subject,_notification_hook
+);
+
+call NOTIFICATION_notification(
+'CREATE',1,
+1,null,'APP',
+null,null,1,null,null,
+null,2,
+'22-05-2020T01:25Z','22-05-2021T01:25Z',
+'Content','_notification_subject','_notification_hook'
+);
+
+
+call NOTIFICATION_notification('GETAPP',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+call NOTIFICATION_notification('GETSMS',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+call NOTIFICATION_notification('GETEMAIL',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+
+call NOTIFICATION_notification('ACKNOWLEDGE',null,null,1,null,null,null,null,null,null,null,null,null,null,null,null,null);
+
+call NOTIFICATION_notification('CLEANUP',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+
+*/
+
+DROP procedure IF EXISTS `NOTIFICATION_notification`;
+
+DELIMITER $$
+CREATE PROCEDURE `NOTIFICATION_notification` (
+IN _action VARCHAR(100),
+IN _userUUID char(32),
+IN _notification_templateId INT,
+IN _notificationId INT,
+IN _notification_type VARCHAR(25),
+IN _notification_toEmail VARCHAR(255),
+IN _notification_toSMS VARCHAR(100),
+IN _notification_toUserUUID char(32),
+IN _notification_toGroupUUID char(32),
+IN _notification_toAppUUID char(32),
+IN _notification_fromAppUUID char(32),
+IN _notification_fromUserUUID char(32),
+IN _notification_readyOn VARCHAR(32),
+IN _notification_expireOn VARCHAR(32),
+IN _notification_content TEXT,
+IN _notification_subject VARCHAR(255),
+IN _notification_hook VARCHAR(255)
+)
+NOTIFICATION_notification: BEGIN
+
+DECLARE _DEBUG INT DEFAULT 0;
+
+DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%YT%h:%iZ';
+DECLARE _notificationFoundId INT;
+DECLARE _commaNeeded INT;
+
+DECLARE _readyDate datetime;
+DECLARE _expireDate datetime;
+
+
+IF(_action ='GETAPP') THEN
+	
+	select * from notification_queue where notification_type='APP' 
+    and notification_toUserUUID = _userUUID and notification_expireOn > now() and notification_readyOn < now()
+    and notification_statusId =1
+    union all
+	select * from notification_queue where notification_type='APP' 
+    and notification_toGroupUUID in ( select ugj_groupUUID from user_group_join where ugj_userUUID=_userUUID) 
+    and notification_expireOn > now() and notification_readyOn < now()
+    and notification_statusId =1;
+
+ELSEIF(_action ='GETSMS') THEN
+
+	select * from notification_queue where notification_type='SMS'and notification_expireOn < now() 
+    and notification_readyOn < now() and notification_statusId =1;
+
+ELSEIF(_action ='GETEMAIL') THEN
+
+	select * from notification_queue where notification_type='EMAIL'and notification_expireOn < now() 
+    and notification_readyOn < now() and notification_statusId =1;
+
+ELSEIF(_action ='CREATE') THEN
+
+	if (_notification_readyOn IS NOT NULL) THEN 
+		set _readyDate = (STR_TO_DATE(_notification_readyOn, _dateFormat)); 
+    ELSE 
+		set _readyDate = now();
+    END IF;
+	
+    if (_notification_expireOn IS NOT NULL) THEN 
+		set _expireDate = (STR_TO_DATE(_notification_expireOn, _dateFormat));
+    ELSE 
+		set _expireDate = DATE_ADD(now() , INTERVAL 2 WEEK);
+    END IF;
+
+	-- attempt to find duplicates
+
+	-- select userUUID into _notificationFoundId from `notification_queue` 
+    -- where notification_subject=_notification_subject;
+
+	IF (_notificationFoundId is null) THEN
+
+		insert into `notification_queue` (
+notification_type, 
+notification_toEmail, notification_toSMS, notification_toGroupUUID, notification_toAppUUID, notification_toUserUUID, 
+notification_fromAppUUID, notification_fromUserUUID, 
+notification_readyOn, notification_expireOn, 
+notification_statusId, notification_content, notification_subject, notification_hook, 
+notification_createdTS   
+		)
+		values (
+_notification_type, 
+_notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID, _notification_toUserUUID, 
+_notification_fromAppUUID, _notification_fromUserUUID, 
+_readyDate, _expireDate, 
+1, _notification_content, _notification_subject, _notification_hook, 
+now()  
+		);
+	
+    END IF;
+
+ELSEIF(_action ='DELETE') THEN
+
+		if (_notificationId is not null) then
+			DELETE from notification_queue where notificationId = _notificationId;
+		elseif (_notification_toUserUUID is not null) then
+			DELETE from notification_queue where notification_toUserUUID = _notification_toUserUUID; -- deleted
+		elseif (_notification_toGroupUUID is not null) then
+			DELETE from notification_queue where notification_toGroupUUID = _notification_toGroupUUID; -- deleted
+		END IF;
+        
+ELSEIF(_action ='CLEANUP') THEN
+
+		DELETE from notification_queue where notification_expireOn < now();
+		DELETE from notification_queue where notification_statusId = 3; -- deleted
+        
+ELSEIF(_action ='ACKNOWLEDGE' and _notificationId is not null) THEN
+
+	update notification_queue set notification_statusId=3 where notificationId=_notificationId;
+    
+ELSE
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call NOTIFICATION_notification: _action is of type invalid';
+	LEAVE NOTIFICATION_notification;
+END IF;
+
+
+IF (_DEBUG=1) THEN 
+	select _action,_notification_type, 
+_notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID, _notification_toUserUUID, 
+_notification_fromAppUUID, _notification_fromUserUUID, 
+_readyDate, _expireDate, 
+_notification_statusId, _notification_content, _notification_subject, _notification_hook;
+    
+END IF;
+
+
+END$$
+
+DELIMITER ; 
+
+
+
+
+
