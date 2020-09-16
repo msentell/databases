@@ -571,7 +571,7 @@ IF(_action ='GET') THEN
 			set @l_sql = CONCAT(@l_sql,'workorderUUID = \'', _workorderUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_customerUUID IS NOT NULL) THEN
+        if (_customerId IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'workorder_customerUUID = \'', _customerId,'\'');
             set _commaNeeded=1;
