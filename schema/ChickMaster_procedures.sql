@@ -958,15 +958,9 @@ USER_userGroup: BEGIN
 
 END$$
 
-# CREATE PROCEDURE BITWISE (IN _userUUID, _key)
-# if user.securitybitwise and key, return true
-# for group in user_group
-#   if group_bitwize and key, return true
-
 DELIMITER ;
 
 -- ==================================================================
-# CUSTOMER
 -- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
 -- call USER_userGroup('GET-LIST', 1, 1, null, null);
 -- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
@@ -1159,7 +1153,6 @@ END$$
 DELIMITER ;
 
 -- ==================================================================
-# PLAN
 -- call PLAN_plan(_action)
 
 DROP procedure IF EXISTS `PLAN_plan`;
@@ -2229,3 +2222,108 @@ DECLARE allTables varchar(500) default 'TBD';
 
 END //
 DELIMITER ;
+
+
+-- ==================================================================
+-- call SECURITY_bitwise('CALCULATE',1,1,null,null);
+-- call SECURITY_bitwise('ADDUSERSECURITY',1,1,null,8);
+-- call SECURITY_bitwise('REMOVESECURITY',1,1,null,8);
+
+DROP procedure IF EXISTS `SECURITY_bitwise`;
+
+/*
+
+Name	Description
+&	Bitwise AND
+>>	Right shift
+<<	Left shift
+^	Bitwise XOR
+BIT_COUNT()	Return the number of bits that are set
+|	Bitwise OR
+~	Bitwise inversion
+
+*/
+
+DELIMITER $$
+CREATE  PROCEDURE SECURITY_bitwise(
+IN _action VARCHAR(100),
+IN _userId char(32),
+IN _targetUserId CHAR(32),
+IN _att_userlevel_predefined INT,
+IN _att_bitwise BIGINT
+)
+SECURITY_bitwise: BEGIN
+
+DECLARE _DEBUG INT DEFAULT 1;
+
+DECLARE _att_userlevel_predefined_bitwise BIGINT DEFAULT 0;
+DECLARE _customer_securityBitwise BIGINT DEFAULT 0;
+DECLARE _brand_securityBitwise BIGINT DEFAULT 0;
+DECLARE _group_securityBitwise BIGINT DEFAULT 0;
+DECLARE _user_individualSecurityBitwise BIGINT DEFAULT 0;
+
+DECLARE _user_securityBitwise BIGINT DEFAULT 0;
+
+DECLARE _customerId char(32);
+DECLARE _brandId char(32);
+
+if (_action = 'ADDUSERSECURITY') THEN
+
+	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise 
+	INTO
+	_customerId,_user_securityBitwise,_user_individualSecurityBitwise
+    from `user`
+	where userUUID=_targetUserId;
+
+	select _user_individualSecurityBitwise | _att_bitwise into _user_individualSecurityBitwise;
+
+	update `user` set user_individualSecurityBitwise=_user_individualSecurityBitwise where userUUID=_targetUserId;
+
+	set _action = 'CALCULATE';
+    
+ELSEif (_action = 'REMOVESECURITY') THEN
+
+	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise 
+	INTO
+	_customerId,_user_securityBitwise,_user_individualSecurityBitwise
+    from `user`
+	where userUUID=_targetUserId;
+
+	select _user_individualSecurityBitwise ^ _att_bitwise into _user_individualSecurityBitwise;
+
+	update `user` set user_individualSecurityBitwise=_user_individualSecurityBitwise where userUUID=_targetUserId;
+
+	set _action = 'CALCULATE';
+
+END IF;
+
+if (_action = 'CALCULATE') THEN
+
+	-- user
+	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise 
+	INTO
+	_customerId,_user_securityBitwise,_user_individualSecurityBitwise
+    from `user`
+	where _targetUserId=userUUID;
+
+	-- customer
+	select customer_securityBitwise into _customer_securityBitwise from customer where customerUUID = _customerId;
+	
+    -- brand
+    select ifnull(brand_securityBitwise,0) into _brand_securityBitwise 
+    from customer_brand b
+    left join customer c on (c.customer_brandUUID = b.brandUUID) where c.customerUUID = _customerId;
+
+	-- groups
+    -- select into _group_securityBitwise where ugj_userUUID = userUUID;
+
+	set _user_securityBitwise = _customer_securityBitwise | _brand_securityBitwise | _group_securityBitwise | _user_individualSecurityBitwise;
+
+	update `user` set user_securityBitwise=_user_securityBitwise where userUUID=_targetUserId;
+
+END IF;
+
+IF (_DEBUG=1) THEN select _action,_customerId,_user_securityBitwise,_customer_securityBitwise,_user_individualSecurityBitwise,_brand_securityBitwise,_group_securityBitwise,_targetUserId; END IF;
+
+
+END$$
