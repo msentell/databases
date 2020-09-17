@@ -2469,12 +2469,12 @@ IF(_action ='GETAPP') THEN
 
 ELSEIF(_action ='GETSMS') THEN
 
-	select * from notification_queue where notification_type='SMS'and notification_expireOn < now() 
+	select * from notification_queue where notification_type='SMS'and notification_expireOn > now() 
     and notification_readyOn < now() and notification_statusId =1;
 
 ELSEIF(_action ='GETEMAIL') THEN
 
-	select * from notification_queue where notification_type='EMAIL'and notification_expireOn < now() 
+	select * from notification_queue where notification_type='EMAIL'and notification_expireOn > now() 
     and notification_readyOn < now() and notification_statusId =1;
 
 ELSEIF(_action ='CREATE') THEN
