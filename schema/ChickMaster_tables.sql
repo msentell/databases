@@ -154,6 +154,7 @@ CREATE TABLE `user` (
     user_loginPWExpire datetime NULL,
     user_loginPWReset SMALLINT not NULL default 1,
     user_loginLast datetime null,
+    user_loginSession varchar(255) null,
     user_loginSessionExpire datetime null,
     user_loginFailedAttempts SMALLINT NOT NULL DEFAULT 0,
 

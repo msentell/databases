@@ -2428,7 +2428,7 @@ DELIMITER $$
 CREATE PROCEDURE `NOTIFICATION_notification` (
 IN _action VARCHAR(100),
 IN _userUUID char(32),
-IN _notification_templateId INT,
+IN _notification_templateKey varchar(25),
 IN _notificationId INT,
 IN _notification_type VARCHAR(25),
 IN _notification_toEmail VARCHAR(255),
@@ -2555,4 +2555,318 @@ END IF;
 END$$
 
 DELIMITER ; 
+
+
+
+-- ==================================================================
+
+/* 
+call USER_login(_action, _userId, _entityId, 
+_USER_loginEmail, _USER_loginPW, _USER_loginEmailValidationCode, _USER_loginEnabled, 
+_USER_loginPWReset);
+
+
+
+call USER_login('ACCESS', null, 1, null, null, null, 0, null);
+call USER_login('ACCESS', null, 1, 'mail@mail.com', null, null, 1, null);
+call USER_login('VERIFYEMAIL', null, null, 'mail@mail.com', null, '5997055', null, null);
+call USER_login('FORGOTPASSWORD', null, null, 'mail@mail.com', null, null, null, null);
+call USER_login('RESETPASSWORD', null, 1, null, '12345', null, null, null);
+call USER_login('LOGIN', null, null, 'mail@mail.com', '12345', null, null, null);
+call USER_login('RESENDMFA', null, 1, null, null, null, null, null);
+call USER_login('MFA', null, null, 'mail@mail.com', null, '2015', null, null);
+
+*/
+
+
+DROP procedure IF EXISTS `USER_login`;
+
+DELIMITER $$
+CREATE PROCEDURE `USER_login` (
+IN _action VARCHAR(100),
+IN _userId  char(32),
+
+IN _entityId char(32),
+IN _USER_loginEmail VARCHAR(100),
+IN _USER_loginPW VARCHAR(100), 
+IN _USER_loginEmailValidationCode VARCHAR(100), 
+IN _USER_loginEnabled INT, 
+IN _USER_loginPWReset INT
+)
+USER_login: BEGIN
+
+DECLARE _USER_loginLast DATETIME;
+DECLARE _USER_loginFailedAttempts INT;
+DECLARE _USER_loginPWExpire DATETIME;
+DECLARE _password varchar(100);
+DECLARE _USER_loginEmailVerified DATETIME;
+
+DECLARE _DISABLE_MFA INT default 1; -- 0 is enable MFA
+
+DECLARE DEBUG INT DEFAULT 0;
+
+
+IF(_action IS NULL ) THEN
+  SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_login: _action can not be empty';
+  LEAVE USER_login;
+END IF;
+
+IF(_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not null) THEN
+
+  
+    select userUUID,user_loginEnabled , user_loginPW, user_loginEmailVerified
+    into _entityId, _USER_loginEnabled,_password,_USER_loginEmailVerified 
+    from `user` where 
+    user_loginEmail=_USER_loginEmail; 
+
+  if (DEBUG=1) THEN select _action,_USER_loginEmail,_USER_loginPW,_entityId, _USER_loginEnabled,_password,_USER_loginEmailVerified; END IF;
+    
+  if (_entityId is null) THEN
+    SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call USER_login: user not found';
+      LEAVE USER_login;
+    END IF;
+
+  if (_USER_loginEnabled =0) THEN
+      SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call USER_login: login not enabled';
+      LEAVE USER_login;
+    END IF;
+
+  if (_USER_loginEmailVerified is null) THEN
+      SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call USER_login: email not verified';
+      LEAVE USER_login;
+    END IF;
+
+  if (_USER_loginPW <> _password) THEN
+      SIGNAL SQLSTATE '41007'  SET MESSAGE_TEXT = 'call USER_login: password not correct';
+      LEAVE USER_login;
+    END IF;
+    
+    if (_DISABLE_MFA = 0) THEN
+		select SESSION_generateAccessCode(4) into _USER_loginEmailValidationCode;
+    
+
+		  update `user` set user_loginLast=now(), user_loginSessionExpire= DATE_ADD( now(), INTERVAL 4 MINUTE ),
+			user_loginEmailValidationCode=_USER_loginEmailValidationCode,
+				user_loginFailedAttempts=0 where userUUID=_entityId;
+
+		call NOTIFICATION_notification(
+		'CREATE',null,
+		'MFA',null,'SMS',
+		null,_entityId,null,null,null,
+		null,2,
+		null,null,
+		concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),
+		concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),null
+		);
+		call NOTIFICATION_notification(
+		'CREATE',null,
+		'MFA',null,'EMAIL',
+		_entityId,null,null,null,null,
+		null,2,
+		null,null,
+		concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),
+		concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),null
+		);
+ 
+		select _entityId as entityId, _USER_loginEmailValidationCode as accessCode, 4 as expiresInMinutes;
+
+    ELSE 
+    
+        -- call ENTITY_session('CREATE', _entityId,null,@accessToken);
+		select SESSION_generateSession(25) into _USER_loginEmailValidationCode;
+        
+        update `user` set user_loginEmailValidationCode=null,user_loginSession=_USER_loginEmailValidationCode,
+         user_loginLast= now(), user_loginSessionExpire=DATE_ADD( now(), INTERVAL 8 HOUR )
+        where userUUID=_entityId;
+    
+		select _entityId as entityId, _USER_loginEmailValidationCode as sessionToken;
+
+	END IF;
+
+     
+    -- TODO, handle login in attempts and lockout in the future.    
+    
+ELSEIF(_action = 'MFA' and _USER_loginEmail is NOT null and _USER_loginEmailValidationCode is not null) THEN
+
+    select userUUID, user_loginEnabled, user_loginPW,user_loginEmailVerified 
+    into _entityId, _USER_loginEnabled,_password,_USER_loginEmailVerified 
+    from `user` where 
+    user_loginEmail=_USER_loginEmail and user_loginEmailValidationCode = _USER_loginEmailValidationCode
+    and now() < user_loginSessionExpire;
+
+
+  if (DEBUG=1) THEN select _action,_entityId, _USER_loginEnabled,_USER_loginEmailValidationCode,_USER_loginEmail; END IF;
+
+  if (_entityId is not null) THEN
+    
+        -- call ENTITY_session('CREATE', _entityId,null,@accessToken);
+		select SESSION_generateSession(25) into _USER_loginEmailValidationCode;
+        
+        update `user` set user_loginEmailValidationCode=null,user_loginSession=_USER_loginEmailValidationCode,
+         user_loginLast= now(), user_loginSessionExpire=DATE_ADD( now(), INTERVAL 8 HOUR )
+        where userUUID=_entityId;
+    
+    select _entityId as entityId, _USER_loginEmailValidationCode as sessionToken;
+        
+    else
+      SIGNAL SQLSTATE '45004'  SET MESSAGE_TEXT = 'Your authentication code has expired or does not match.', MYSQL_ERRNO =12;
+      LEAVE USER_login;
+    
+    END IF;
+
+ELSEIF(_action = 'FORGOTPASSWORD' and _USER_loginEmail is not null) THEN
+
+        -- set _USER_loginEmailValidationCode = SESSION_generateAccessCode(7);
+    select userUUID, user_loginEnabled, `user_loginPW`,user_loginEmailVerified 
+    into _entityId, _USER_loginEnabled,_USER_loginPW,_USER_loginEmailVerified 
+    from `user` where 
+      user_loginEmail=_USER_loginEmail and user_loginEnabled=1; 
+    
+        if (_entityId is not null and _USER_loginEnabled>0 and  _USER_loginEmailVerified is not null) THEN
+    
+        -- update contact set password=_USER_loginEmailValidationCode, emailValidationCode=_USER_loginEmailValidationCode where contactId=_entityId;
+    -- call updateNotificationQueue('ADD',null,null,'PASSWORD_TEMPORARY','EMAIL',null,_entityId,null,0,null,null);
+call NOTIFICATION_notification(
+'CREATE',null,
+'PASSWORD_TEMPORARY',null,'EMAIL',
+_entityId,null,null,null,null,
+null,2,
+null,null,
+concat('Your password is: ',_USER_loginPW, ' Please change once you log back in.'),
+'Password Reminder',null
+);
+    
+        END IF;
+
+    if (DEBUG=1) THEN select _action,_entityId,_USER_loginPW,_USER_loginEnabled,_USER_loginEmailVerified; END IF;
+    
+ELSEIF(_action = 'RESETPASSWORD' and _entityId is not null and _USER_loginPW is not null) THEN
+      
+    select  user_loginEnabled, user_loginPW,user_loginEmailVerified 
+    into  _USER_loginEnabled,_password,_USER_loginEmailVerified 
+    from `user` where 
+      userUUID=_entityId; 
+    
+        if (_entityId is not null and _USER_loginEnabled>0 and _USER_loginEmailVerified is not null) THEN
+
+      update `user` set user_loginEmailValidationCode=null,
+      `user_loginPW`= _USER_loginPW,
+      user_loginFailedAttempts=0 where userUUID=_entityId;
+
+    end if;
+  -- update entity set USER_loginPW=_USER_loginPW, USER_loginPWReset=0  where entityId=_entityId;
+    
+    if (DEBUG=1) THEN select _action,_entityId,_password as oldPass,_USER_loginPW,_USER_loginEnabled,_USER_loginEmailVerified; END IF;
+
+    -- call updateNotificationQueue('ADD',null,'MFA','EMAIL',null,_entityId,null,0,null,null);
+
+ELSEIF(_action = 'ACCESS' and _USER_loginEnabled is NOT null and _entityId is not null ) THEN
+    
+    if (_USER_loginEnabled=0) THEN
+ 
+		update `user` set user_loginEnabled=0, user_loginPWReset=1, user_loginPWExpire=now(), 
+        user_loginEmailValidationCode=null,user_loginSession=null 
+        where userUUID=_entityId;
+
+    ELSE
+        
+		if (_USER_loginEmail is not null) then
+			update `user` set user_loginEmail=_USER_loginEmail where userUUID=_entityId; 
+        END IF;
+
+		if (_USER_loginPW is not null) then
+			update `user` set user_loginPW=_USER_loginPW where userUUID=_entityId; 
+        END IF;
+
+		select  user_loginEnabled, user_loginPW,user_loginEmail 
+		into  _USER_loginEnabled,_password,_USER_loginEmail 
+		from `user` where 
+		  userUUID=_entityId; 
+
+		if (_password is null) then
+			update `user` set user_loginPW=SESSION_generateAccessCode(7) where userUUID=_entityId; 
+        END IF;
+		
+
+		if (_USER_loginEmail is null) then
+			  SIGNAL SQLSTATE '45007'  SET MESSAGE_TEXT = 'User login can not be enabled if email is not valid.', MYSQL_ERRNO =12;
+			  LEAVE USER_login;
+        END IF;
+        
+        set _USER_loginEmailValidationCode = SESSION_generateAccessCode(7);
+        
+		update `user` set user_loginEnabled=1, user_loginEmailValidationCode=_USER_loginEmailValidationCode where userUUID=_entityId;
+		-- call updateNotificationQueue('ADD',null,null,'INVITELOGIN','EMAIL',null,_entityId,null,0,null,null);
+
+call NOTIFICATION_notification(
+'CREATE',null,
+'INVITELOGIN',null,'EMAIL',
+_entityId,null,null,null,null,
+null,2,
+null,null,
+concat('Please verify your email: http://action=VERIFY'),
+'Invitatin',null
+);
+
+  END IF;
+    
+  if (DEBUG=1) THEN select _action,_entityId,_USER_loginEnabled,_USER_loginEmailValidationCode; END IF;
+    
+ELSEIF(_action = 'RESENDMFA' and _entityId is not null) THEN
+
+    set _USER_loginEmailValidationCode= SESSION_generateAccessCode(4) ;
+ 
+  update `user` set user_loginLast=now(), user_loginSessionExpire= DATE_ADD( now(), INTERVAL 4 MINUTE ),
+    user_loginEmailValidationCode=_USER_loginEmailValidationCode,
+        user_loginFailedAttempts=0 where userUUID=_entityId;
+
+    
+call NOTIFICATION_notification(
+'CREATE',null,
+'MFA',null,'SMS',
+null,_entityId,null,null,null,
+null,2,
+null,null,
+concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),
+concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),null
+);
+call NOTIFICATION_notification(
+'CREATE',null,
+'MFA',null,'EMAIL',
+_entityId,null,null,null,null,
+null,2,
+null,null,
+concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),
+concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),null
+);
+    select _entityId as entityId, _USER_loginEmailValidationCode as accessCode, 4 as expiresInMinutes;
+
+    if (DEBUG=1) THEN select _action,_entityId,_USER_loginEmailValidationCode; END IF;
+
+    -- select _entityId as entityId, _USER_loginEmailValidationCode as validationCode;
+
+ELSEIF(_action = 'VERIFYEMAIL' and _USER_loginEmailValidationCode is NOT null and _USER_loginEmail is not null) THEN
+
+  select userUUID into _entityId from `user` where user_loginEmail=_USER_loginEmail
+    and user_loginEmailValidationCode=_USER_loginEmailValidationCode;
+    
+
+  if (DEBUG=1) THEN select _action,_entityId,_USER_loginEmail,_USER_loginEmailValidationCode; END IF;
+
+    if (_entityId is null) THEN
+      SIGNAL SQLSTATE '45006'  SET MESSAGE_TEXT = 'Verification code not valid', MYSQL_ERRNO =12;
+      LEAVE USER_login;
+        END IF;
+
+  update `user` set user_loginEmailVerified=now(),user_loginEmailValidationCode=null where  userUUID= _entityId;
+        
+END IF;
+
+END$$
+
+
+DELIMITER ;
+
+
+
 
