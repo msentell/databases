@@ -804,6 +804,53 @@ CREATE TABLE `maestro_event` (
 ENGINE = InnoDB ;
 
 
+DROP TABLE IF EXISTS checklist_history;
+
+CREATE TABLE `checklist_history` (
+    checklist_historyUUID CHAR(32)  NOT NULL,
+    checklist_history_checklistUUID CHAR(32)  NOT NULL,
+    checklist_history_customerUUID CHAR(32) NOT NULL, 
+    checklist_history_workorderUUID CHAR(32) NULL,
+    checklist_history_statusId INT   NULL DEFAULT 1,
+    checklist_history_name varchar(100) NULL, 
+    checklist_history_rulesJSON text  NULL, 
+
+    checklist_history_createdByUUID CHAR(32)  NULL,
+    checklist_history_updatedByUUID CHAR(32)  NULL,
+    checklist_history_updatedTS datetime  NULL,
+    checklist_history_createdTS datetime  NULL default now(),
+    checklist_history_deleteTS datetime  NULL,
+
+    PRIMARY KEY (checklist_historyUUID))
+ENGINE = InnoDB ;
+
+
+DROP TABLE IF EXISTS checklist_item_history;
+
+CREATE TABLE `checklist_item_history` (
+    checklist_history_itemUUID CHAR(32)  NOT NULL,
+    checklist_history_item_historyUUID CHAR(32)  NOT NULL,
+    checklist_history_item_statusId INT   NULL DEFAULT 1,
+    
+    checklist_history_item_sortOrder INT  NOT NULL DEFAULT 1,
+    checklist_history_item_prompt varchar(255) NULL, 
+    checklist_history_item_type varchar(255) NULL DEFAULT 'TEXT', -- DECIMAL,TEXT,BOOLEAN 
+    checklist_history_item_optionSetJSON text NULL, -- JSON payload
+    checklist_history_item_successPrompt varchar(255) NULL, 
+    checklist_history_item_successRange varchar(255) NULL, 
+    
+    checklist_history_item_createdByUUID CHAR(32)  NULL,
+    checklist_history_item_updatedByUUID CHAR(32)  NULL,
+    checklist_history_item_updatedTS datetime  NULL,
+    checklist_history_item_createdTS datetime  NULL default now(),
+    checklist_history_item_deleteTS datetime  NULL,
+
+    PRIMARY KEY (checklist_history_itemUUID),
+  INDEX checklist_item_idx (checklist_history_item_historyUUID,checklist_history_itemUUID))
+ENGINE = InnoDB ;
+
+
+
 -- maestro_data - do this later.
 
 DROP TABLE IF EXISTS privilege_bitwise;
