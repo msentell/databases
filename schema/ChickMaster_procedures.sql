@@ -2868,5 +2868,209 @@ END$$
 DELIMITER ;
 
 
+-- ==================================================================
+
+/*
+call CHECKLIST_checklist(
+_action,_userUUID,_customerUUID,
+_checklistUUID, _historyUUID, _workorderUUID, 
+_checklist_statusId,_checklist_name, _checklist_recommendedFrequency,_checklist_rulesJSON,
+_checklist_itemUUID,_checklist_item_statusId,_checklist_item_sortOrder, 
+_checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON, 
+_checklist_item_successPrompt, _checklist_item_successRange
+);
+
+
+call CHECKLIST_checklist(
+'GET_TEMPLATE','1',null,
+'2b61b61eb4d141799a9560cccb109f59', null, null, null,null, null,null,null,null,null, null, null, null, null, null
+);
+
+call CHECKLIST_checklist(
+'GET_HISTORY','1',null,
+null, null, '2b61b61eb4d141799a9560cccb109f59', null,null, null,null,null,null,null, null, null, null, null, null
+);
+
+
+*/
+
+DROP procedure IF EXISTS `CHECKLIST_checklist`;
+
+DELIMITER $$
+CREATE PROCEDURE `CHECKLIST_checklist` (
+IN _action VARCHAR(100),
+IN _userUUID char(32),
+IN _customerUUID char(32),
+IN _checklistUUID char(32), 
+IN _historyUUID char(32), 
+IN _workorderUUID char(32), 
+IN _checklist_statusId INT, 
+IN _checklist_name varchar(255), 
+IN _checklist_recommendedFrequency varchar(25), -- [HOURLY,DAILY,WEEKLY,MONTHLY,YEARLY]
+IN _checklist_rulesJSON TEXT,
+
+IN _checklist_itemUUID char(32),
+IN _checklist_item_statusId INT, -- 0,1 
+IN _checklist_item_sortOrder INT, 
+IN _checklist_item_prompt varchar(255), 
+IN _checklist_item_type varchar(255), 
+IN _checklist_item_optionSetJSON TEXT, 
+IN _checklist_item_successPrompt varchar(255), 
+IN _checklist_item_successRange varchar(255)
+)
+CHECKLIST_checklist: BEGIN
+
+DECLARE _DEBUG INT DEFAULT 0;
+
+DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%YT%h:%iZ';
+DECLARE _foundId char(32);
+DECLARE _commaNeeded INT;
+
+DECLARE _readyDate datetime;
+DECLARE _expireDate datetime;
+
+IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null)) THEN
+
+
+		set  @l_sql = CONCAT('select c.*,i.* from checklist_history c ');
+		set  @l_sql = CONCAT(@l_sql,'left join checklist_item_history i on (i.checklist_history_item_historyUUID = c.checklist_historyUUID) ');
+		set  @l_sql = CONCAT(@l_sql,' where ');		
+
+        if ( _historyUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,'c.checklist_historyUUID = \'', _historyUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if ( _checklistUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,'c.checklist_history_checklistUUID. = \'', _checklistUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if ( _checklist_itemUUID is not null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,'i.checklist_history_itemUUID = \'', _checklist_itemUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if ( _workorderUUID is not null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,'i.checklist_history_workorderUUID = \'', _workorderUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+
+		set @l_sql = CONCAT(@l_sql,';');
+
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+ELSEIF(_action ='GET_TEMPLATE' and (_checklistUUID is not null or _checklist_itemUUID is not null)) THEN
+	
+		set  @l_sql = CONCAT('select c.*,i.* from checklist c ');
+		set  @l_sql = CONCAT(@l_sql,'left join checklist_item i on (i.checklist_item_checklistUUID = c.checklistUUID) ');
+		set  @l_sql = CONCAT(@l_sql,' where ');		
+
+        if ( _checklistUUID is not null) THEN
+			set @l_sql = CONCAT(@l_sql,'c.checklistUUID = \'', _checklistUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+        if ( _checklist_itemUUID is not null) THEN
+			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+			set @l_sql = CONCAT(@l_sql,'i.checklist_itemUUID = \'', _checklist_itemUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
+
+		set @l_sql = CONCAT(@l_sql,' order by checklist_item_sortOrder;');
+
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+ELSEIF(_action ='UPDATE_HISTORY') THEN
+
+	-- 1. determine if history aready exists
+    
+    -- 1b. determine if workorder aready exists
+		-- (note, this can be called from WO create as well.  Depends on from who the caller is
+			-- from workorder create
+            -- from start checklist 
+    
+    -- 2. if not, then copy a checklistUUID into a new history instance.
+    
+    -- 3. else update history.
+		-- update mastor record if noted
+        -- update item record if noted
+        
+    -- 4. if all items on the checklist are completed, then close the WO
+    
+    select _action;
+        
+ELSEIF(_action ='UPDATE_TEMPLATE') THEN
+
+	-- 1. update template
+    
+	if (_notification_readyOn IS NOT NULL) THEN 
+		set _readyDate = (STR_TO_DATE(_notification_readyOn, _dateFormat)); 
+    ELSE 
+		set _readyDate = now();
+    END IF;
+	
+    if (_notification_expireOn IS NOT NULL) THEN 
+		set _expireDate = (STR_TO_DATE(_notification_expireOn, _dateFormat));
+    ELSE 
+		set _expireDate = DATE_ADD(now() , INTERVAL 2 WEEK);
+    END IF;
+
+
+
+
+ELSEIF(_action ='PASS_CHECKLIST') THEN
+
+	-- 1. pass checklist
+    -- 2. update/close workorder
+
+    select _action;
+    
+ELSEIF(_action ='FAIL_CHECKLIST') THEN
+
+	-- 1. mark as failed, no further action
+    -- 2. update/close workorder
+    select _action;
+    
+ELSEIF(_action ='FAIL_CHECKLIST_CREATEWO') THEN
+
+	-- 1. create WO, assigned to userId with asset and other description filled out
+    -- Return data to allow WO to be pulled up with pre-defined data.
+    select _action;
+	
+
+ELSEIF(_action ='DELETE') THEN
+
+	-- 1. if delete of a checklist history, then make sure wo is deleted.
+    
+    select _action;
+        
+ELSE
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _action is of type invalid';
+	LEAVE CHECKLIST_checklist;
+END IF;
+
+
+IF (_DEBUG=1) THEN 
+	select _action,_notification_type, 
+_notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID, _notification_toUserUUID, 
+_notification_fromAppUUID, _notification_fromUserUUID, 
+_readyDate, _expireDate, 
+_notification_statusId, _notification_content, _notification_subject, _notification_hook;
+    
+END IF;
+
+
+END$$
+
+DELIMITER ; 
+
+
 
 
