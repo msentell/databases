@@ -10,10 +10,10 @@ DROP procedure IF EXISTS `IMAGES_getImageLayer`;
 DELIMITER $$
 CREATE  PROCEDURE IMAGES_getImageLayer(
 IN _action VARCHAR(100),
-IN _customerId VARCHAR(32),
-IN _userId VARCHAR(32),
+IN _customerId VARCHAR(36),
+IN _userId VARCHAR(36),
 IN _startingPoint INT,
-IN _id VARCHAR(32)
+IN _id VARCHAR(36)
 )
 IMAGES_getImageLayer: BEGIN
 
@@ -397,10 +397,10 @@ DROP procedure IF EXISTS `DIAGNOSTIC_getNode`;
 DELIMITER $$
 CREATE  PROCEDURE DIAGNOSTIC_getNode(
 IN _action VARCHAR(100),
-IN _customerId char(32),
-IN _userId char(32),
-IN _diagnosticId char(32),
-IN _nodeId char(32)
+IN _customerId CHAR(36),
+IN _userId CHAR(36),
+IN _diagnosticId CHAR(36),
+IN _nodeId CHAR(36)
 )
 DIAGNOSTIC_getNode: BEGIN
 
@@ -450,7 +450,7 @@ DROP procedure IF EXISTS `BUTTON_options`;
 DELIMITER $$
 CREATE  PROCEDURE BUTTON_options(
 IN _action VARCHAR(100),
-IN _asset_partUUID char(32),
+IN _asset_partUUID CHAR(36),
 IN _otherOptions varchar(255)
 )
 BUTTON_options: BEGIN
@@ -483,7 +483,7 @@ DROP procedure IF EXISTS `NOTIFICATION_notification`;
 DELIMITER $$
 CREATE  PROCEDURE NOTIFICATION_notification(
 IN _action VARCHAR(100),
-IN _userUUID char(32),
+IN _userUUID CHAR(36),
 IN _notificationId INT
 )
 NOTIFICATION_notification: BEGIN
@@ -1069,7 +1069,7 @@ CREATE PROCEDURE `KB_knowledge_base` (
     IN _knowledge_categories VARCHAR(500),
     IN _knowledge_title VARCHAR(100),
     IN _knowledge_content VARCHAR(1000),
-    IN _knowledge_customerUUID CHAR(32)
+    IN _knowledge_customerUUID CHAR(36)
 )
 KB_knowledge_base: BEGIN
     DECLARE _DEBUG INT DEFAULT 1;
@@ -1961,18 +1961,18 @@ DELIMITER $$
 CREATE PROCEDURE `USER_user` (
 IN _action VARCHAR(100),
 IN _customerId VARCHAR(100),
-IN _userUUID char(32), -- user making the request
-IN _user_userUUID char(32), -- target user
+IN _userUUID CHAR(36), -- user making the request
+IN _user_userUUID CHAR(36), -- target user
 IN _user_userName VARCHAR(100),
 IN _user_loginEmail VARCHAR(255),
 IN _user_loginPW VARCHAR(100),
 IN _user_statusId INT,
 IN _user_securityBitwise BIGINT,
-IN _user_profile_locationUUID char(32),
+IN _user_profile_locationUUID CHAR(36),
 IN _user_profile_phone VARCHAR(100),
 IN _user_profile_preferenceJSON VARCHAR(1000),
 IN _user_profile_avatarSrc varchar(255),
-IN _groupUUID char(32)
+IN _groupUUID CHAR(36)
 
 )
 USER_user: BEGIN
@@ -1980,7 +1980,7 @@ USER_user: BEGIN
 DECLARE _DEBUG INT DEFAULT 0;
 
 DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
-DECLARE _userFoundUUID char(32);
+DECLARE _userFoundUUID CHAR(36);
 DECLARE _commaNeeded INT;
 
 
@@ -2202,8 +2202,8 @@ DROP procedure IF EXISTS `ATT_getPicklist`;
 DELIMITER //
 CREATE PROCEDURE `ATT_getPicklist`( 
 IN _tables varchar(1000),
-_customerId char(32), 
-_userId char(32))
+_customerId CHAR(36), 
+_userId CHAR(36))
 getPicklist: BEGIN
 	
     IF (LOCATE('att_address_type', _tables) > 0) THEN
@@ -2309,8 +2309,8 @@ BIT_COUNT()	Return the number of bits that are set
 DELIMITER $$
 CREATE  PROCEDURE SECURITY_bitwise(
 IN _action VARCHAR(100),
-IN _userId char(32),
-IN _targetUserId CHAR(32),
+IN _userId CHAR(36),
+IN _targetUserId CHAR(36),
 IN _att_userlevel_predefined INT,
 IN _att_bitwise BIGINT
 )
@@ -2326,8 +2326,8 @@ DECLARE _user_individualSecurityBitwise BIGINT DEFAULT 0;
 
 DECLARE _user_securityBitwise BIGINT DEFAULT 0;
 
-DECLARE _customerId char(32);
-DECLARE _brandId char(32);
+DECLARE _customerId CHAR(36);
+DECLARE _brandId CHAR(36);
 
 if (_action = 'ADDUSERSECURITY') THEN
 
@@ -2427,19 +2427,19 @@ DROP procedure IF EXISTS `NOTIFICATION_notification`;
 DELIMITER $$
 CREATE PROCEDURE `NOTIFICATION_notification` (
 IN _action VARCHAR(100),
-IN _userUUID char(32),
+IN _userUUID CHAR(36),
 IN _notification_templateKey varchar(25),
 IN _notificationId INT,
 IN _notification_type VARCHAR(25),
 IN _notification_toEmail VARCHAR(255),
 IN _notification_toSMS VARCHAR(100),
-IN _notification_toUserUUID char(32),
-IN _notification_toGroupUUID char(32),
-IN _notification_toAppUUID char(32),
-IN _notification_fromAppUUID char(32),
-IN _notification_fromUserUUID char(32),
-IN _notification_readyOn VARCHAR(32),
-IN _notification_expireOn VARCHAR(32),
+IN _notification_toUserUUID CHAR(36),
+IN _notification_toGroupUUID CHAR(36),
+IN _notification_toAppUUID CHAR(36),
+IN _notification_fromAppUUID CHAR(36),
+IN _notification_fromUserUUID CHAR(36),
+IN _notification_readyOn VARCHAR(36),
+IN _notification_expireOn VARCHAR(36),
 IN _notification_content TEXT,
 IN _notification_subject VARCHAR(255),
 IN _notification_hook VARCHAR(255)
@@ -2584,9 +2584,9 @@ DROP procedure IF EXISTS `USER_login`;
 DELIMITER $$
 CREATE PROCEDURE `USER_login` (
 IN _action VARCHAR(100),
-IN _userId  char(32),
+IN _userId  CHAR(36),
 
-IN _entityId char(32),
+IN _entityId CHAR(36),
 IN _USER_loginEmail VARCHAR(100),
 IN _USER_loginPW VARCHAR(100), 
 IN _USER_loginEmailValidationCode VARCHAR(100), 
@@ -2873,7 +2873,7 @@ DELIMITER ;
 /*
 call CHECKLIST_checklist(
 _action,_userUUID,_customerUUID,
-_checklistUUID, _historyUUID, _workorderUUID, 
+_checklistUUID, _assetUUID,_historyUUID, _workorderUUID, 
 _checklist_statusId,_checklist_name, _checklist_recommendedFrequency,_checklist_rulesJSON,
 _checklist_itemUUID,_checklist_item_statusId,_checklist_item_sortOrder, 
 _checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON, 
@@ -2882,13 +2882,19 @@ _checklist_item_successPrompt, _checklist_item_successRange
 
 
 call CHECKLIST_checklist(
-'GET_TEMPLATE','1',null,
-'2b61b61eb4d141799a9560cccb109f59', null, null, null,null, null,null,null,null,null, null, null, null, null, null
+'UPDATE_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
+'2b61b61eb4d141799a9560cccb109f59', '00c93791035c44fd98d4f40ff2cdfe0a','100',
+ null, null,null, null,null,null,null,null, null, null, null, null, null
 );
 
 call CHECKLIST_checklist(
-'GET_HISTORY','1',null,
-null, null, '2b61b61eb4d141799a9560cccb109f59', null,null, null,null,null,null,null, null, null, null, null, null
+'GET_TEMPLATE','1','a30af0ce5e07474487c39adab6269d5f',
+'2b61b61eb4d141799a9560cccb109f59', null, null, null,null, null, null,null,null,null,null, null, null, null, null, null
+);
+
+call CHECKLIST_checklist(
+'GET_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
+null, null, '2b61b61eb4d141799a9560cccb109f59', null,null,null, null,null,null,null,null, null, null, null, null, null
 );
 
 
@@ -2899,17 +2905,18 @@ DROP procedure IF EXISTS `CHECKLIST_checklist`;
 DELIMITER $$
 CREATE PROCEDURE `CHECKLIST_checklist` (
 IN _action VARCHAR(100),
-IN _userUUID char(32),
-IN _customerUUID char(32),
-IN _checklistUUID char(32), 
-IN _historyUUID char(32), 
-IN _workorderUUID char(32), 
+IN _userUUID char(36),
+IN _customerUUID char(36),
+IN _checklistUUID char(36), 
+IN _assetUUID char(36), 
+IN _historyUUID char(36), 
+IN _workorderUUID char(36), 
 IN _checklist_statusId INT, 
 IN _checklist_name varchar(255), 
 IN _checklist_recommendedFrequency varchar(25), -- [HOURLY,DAILY,WEEKLY,MONTHLY,YEARLY]
 IN _checklist_rulesJSON TEXT,
 
-IN _checklist_itemUUID char(32),
+IN _checklist_itemUUID char(36),
 IN _checklist_item_statusId INT, -- 0,1 
 IN _checklist_item_sortOrder INT, 
 IN _checklist_item_prompt varchar(255), 
@@ -2920,14 +2927,30 @@ IN _checklist_item_successRange varchar(255)
 )
 CHECKLIST_checklist: BEGIN
 
-DECLARE _DEBUG INT DEFAULT 0;
+DECLARE _DEBUG INT DEFAULT 1;
+
+DECLARE _ids varchar(1000);
+DECLARE _id varchar(100);
+DECLARE SubStrLen INT;
+DECLARE strLen INT;
 
 DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%YT%h:%iZ';
-DECLARE _foundId char(32);
+DECLARE _foundId char(36);
 DECLARE _commaNeeded INT;
 
 DECLARE _readyDate datetime;
 DECLARE _expireDate datetime;
+DECLARE _assetName varchar(255);
+DECLARE _workorder_locationUUID char(36);
+
+
+
+
+	if (_customerUUID is null) THEN
+		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _customerUUID required';
+		LEAVE CHECKLIST_checklist;
+	END IF;    
+
 
 IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null)) THEN
 
@@ -2989,7 +3012,132 @@ ELSEIF(_action ='GET_TEMPLATE' and (_checklistUUID is not null or _checklist_ite
 
 ELSEIF(_action ='UPDATE_HISTORY') THEN
 
+	if (_checklistUUID is null or _assetUUID is null or _assetUUID is null) THEN
+		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _checklistUUID,assetUUID,_historyUUID required';
+		LEAVE CHECKLIST_checklist;
+	END IF;    
+
 	-- 1. determine if history aready exists
+    select checklist_historyUUID into _foundId from checklist_history where checklist_historyUUID=_historyUUID;
+
+	select asset_locationUUID,asset_name into _workorder_locationUUID, _assetName from asset where assetUUID =_assetUUID;
+
+	select checklist_name,checklist_rulesJSON into _checklist_name,_checklist_rulesJSON from checklist where checklistUUID =_checklistUUID;
+    
+    -- need to create a new checklist and workorder
+    if (_foundId is null) THEN
+
+		if (_workorderUUID is null) then select UUID() into _workorderUUID; end if;
+
+		
+        insert into checklist_history (
+        checklist_historyUUID, checklist_history_checklistUUID, checklist_history_customerUUID, 
+        checklist_history_workorderUUID, checklist_history_assetUUID, checklist_history_statusId, 
+        checklist_history_name, checklist_history_rulesJSON, 
+        checklist_history_createdByUUID, checklist_history_updatedByUUID, checklist_history_updatedTS, checklist_history_createdTS
+        )
+        Values (
+        _historyUUID,_checklistUUID,_customerUUID,_workorderUUID,_assetUUID,1,
+        _checklist_name,_checklist_rulesJSON,
+        _userUUID,_userUUID,now(),now()
+        );
+
+        
+        -- select _historyUUID, _checklistUUID,_customerUUID, _workorderUUID, _assetUUID, 1, checklist_name, checklist_rulesJSON, _userUUID, _userUUID, now(), now(), null
+        -- into checklist_history
+        -- from checklist where checklistUUID = _checklistUUID;
+        
+        select group_concat(checklist_itemUUID) into _ids  from checklist_item 
+        where checklist_item_checklistUUID = _checklistUUID and checklist_item_statusId =1
+        order by checklist_item_sortOrder;
+
+		if (_DEBUG=1) THEN select 'CREATE HISTORY ',_workorderUUID,' ',_assetUUID,' ',_workorder_locationUUID,' ',_checklist_name, ' ', _ids;  END IF;
+
+        -- reOrder of the stages for old tasktype
+         if(_ids is not null) then
+          looper: loop 
+               SET strLen = CHAR_LENGTH(_ids);
+                
+              set _id = SUBSTRING_INDEX(_ids, ',', 1);
+              
+              select UUID() into _checklist_itemUUID;
+        
+        select UUID(),checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON, checklist_item_successPrompt, checklist_item_successRange
+        into  _checklist_itemUUID, _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type, 
+        _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange
+        from checklist_item where  checklist_itemUUID= _id;
+
+		if (_workorderUUID is not null) then select UUID() into _workorderUUID; end if;
+
+		insert into checklist_item_history (
+        checklist_history_itemUUID, checklist_history_item_historyUUID, checklist_history_item_statusId, 
+        checklist_history_item_sortOrder, checklist_history_item_prompt, checklist_history_item_type, 
+        checklist_history_item_optionSetJSON, checklist_history_item_successPrompt, checklist_history_item_successRange, 
+        checklist_history_item_createdByUUID, checklist_history_item_updatedByUUID, checklist_history_item_updatedTS, checklist_history_item_createdTS
+        )
+        values (
+        _checklist_itemUUID, _historyUUID, 1, 
+        _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type, 
+        _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange, 
+        _userUUID,_userUUID,now(),now()        
+        );
+        
+        -- select              
+		-- _checklist_itemUUID, _historyUUID, checklist_item_statusId, checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON, checklist_item_successPrompt, checklist_item_successRange, _userUUID, _userUUID, now(), now(), null              
+        -- into table checklist_item_history
+        -- from checklist_item where  checklist_itemUUID= _id;
+
+              
+              SET SubStrLen = CHAR_LENGTH(SUBSTRING_INDEX(_ids, ',', 1))+2;
+              SET _ids = MID(_ids, SubStrLen, strLen);
+              
+              if(_ids = '') then
+                leave looper;
+              end if;
+            end loop;
+         end if;
+
+
+			-- create WO if it does not exist, but make sure to update the historyUUID 
+			set _foundId = null;
+			
+			select workorderUUID into _foundId from workorder where workorderUUID=_workorderUUID;
+			
+			if (_foundId is null) THEN
+			
+				if (_DEBUG=1) THEN select 'CREATE WO ',_workorderUUID,' ',_assetUUID,' ',_workorder_locationUUID,' ',_checklist_name;  END IF;
+				
+                call WORKORDER_workOrder('CREATE', _customerUUID,_userUUID,
+				_workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID,
+				_historyUUID,1,'CHECKLIST',_checklist_name,null,_assetName,
+				_assetName,1,null,null,
+				null,1,'DAILY',null,
+				null
+				);
+				
+			ELSE
+				call WORKORDER_workOrder('UPDATE', _customerUUID,_userUUID,
+				_workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID,
+				_historyUUID,1,'CHECKLIST',null,null,_workorder_details,
+				_workorder_actions,null,null,null,
+				null,1,'DAILY',null,
+				null
+				);		
+				
+			END IF;
+
+	ELSE
+    
+		-- need to update the workorder history
+        
+        -- need to update the workorder item.
+		select _action; 
+		
+    END IF;
+
+
+    
+    
     
     -- 1b. determine if workorder aready exists
 		-- (note, this can be called from WO create as well.  Depends on from who the caller is
@@ -3003,8 +3151,6 @@ ELSEIF(_action ='UPDATE_HISTORY') THEN
         -- update item record if noted
         
     -- 4. if all items on the checklist are completed, then close the WO
-    
-    select _action;
         
 ELSEIF(_action ='UPDATE_TEMPLATE') THEN
 
@@ -3058,18 +3204,15 @@ END IF;
 
 
 IF (_DEBUG=1) THEN 
-	select _action,_notification_type, 
-_notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID, _notification_toUserUUID, 
-_notification_fromAppUUID, _notification_fromUserUUID, 
-_readyDate, _expireDate, 
-_notification_statusId, _notification_content, _notification_subject, _notification_hook;
-    
+	select _action;
 END IF;
 
 
 END$$
 
 DELIMITER ; 
+
+
 
 
 
