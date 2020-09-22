@@ -473,34 +473,6 @@ where asset_partUUID=_asset_partUUID;
 
 END$$
 
-
--- ==================================================================
--- call NOTIFICATION_notification('GET','1',null); 
--- call NOTIFICATION_notification('ACKNOWLEDGE','1',1001); 
-
-DROP procedure IF EXISTS `NOTIFICATION_notification`;
-
-DELIMITER $$
-CREATE  PROCEDURE NOTIFICATION_notification(
-IN _action VARCHAR(100),
-IN _userUUID char(32),
-IN _notificationId INT
-)
-NOTIFICATION_notification: BEGIN
-
--- TODO, need to discuss acknowledgement and history.  It is not really the same as our notificaiton_queue
-
-if (_action='GET') THEN
-	select 'There was a flag on the last PRE-SET CHECKLIST';
-ELSEIF (_action='ACKNOWLEDGE') THEN
-	select 1001;
-END IF;
-
-END$$
-
-
-
-
 -- ==================================================================
 
 /*
@@ -1242,7 +1214,6 @@ DELIMITER ;
 -- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55, 0); 
 -- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22, 0); 
 
-
 DROP procedure IF EXISTS `LOCATION_action`;
 
 DELIMITER $$
@@ -1288,7 +1259,7 @@ IF(_action = 'SEARCH') THEN
 		-- 	FROM asset where asset_name like _name and  asset_customerUUID=_customerUUID;
 
         SET @l_SQL = CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',_type,'\' as `Type`
-			FROM asset where asset_name like \'', _name,'\'  and  asset_customerUUID= \'',_customerUUID,'\'');
+			FROM asset where asset_statusId = 1 and asset_name like \'', _name,'\'  and  asset_customerUUID= \'',_customerUUID,'\'');
     
     ELSEif (_type = 'ASSET-PART') THEN
     
@@ -1296,7 +1267,7 @@ IF(_action = 'SEARCH') THEN
 		-- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
 
         SET @l_SQL = CONCAT('SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`, \'',_type,'\' as `Type` 
-			FROM asset_part where asset_part_name like \'', _name,'\'  and  asset_part_customerUUID= \'',_customerUUID,'\'');
+			FROM asset_part where asset_part_statusId = 1 and asset_part_name like \'', _name,'\'  and  asset_part_customerUUID= \'',_customerUUID,'\'');
     
     ELSEif (_type = 'LOCATION') THEN 
 
@@ -1304,7 +1275,7 @@ IF(_action = 'SEARCH') THEN
 		-- 	FROM location where location_name like _name and location_customerUUID =_customerUUID;
 
         SET @l_SQL = CONCAT('SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`, \'',_type,'\' as `Type` 
-			FROM location where location_name like \'', _name,'\'  and  location_customerUUID= \'',_customerUUID,'\'');
+			FROM location where location_statusId = 1 and location_name like \'', _name,'\'  and  location_customerUUID= \'',_customerUUID,'\'');
 
 	else
     
@@ -2462,14 +2433,14 @@ DECLARE _expireDate datetime;
 
 IF(_action ='GETAPP') THEN
 	
-	select * from notification_queue where notification_type='APP' 
+	select * from (select * from notification_queue where notification_type='APP' 
     and notification_toUserUUID = _userUUID and notification_expireOn > now() and notification_readyOn < now()
     and notification_statusId =1
     union all
 	select * from notification_queue where notification_type='APP' 
     and notification_toGroupUUID in ( select ugj_groupUUID from user_group_join where ugj_userUUID=_userUUID) 
     and notification_expireOn > now() and notification_readyOn < now()
-    and notification_statusId =1;
+    and notification_statusId =1) no left join user u on no.notification_fromUserUUID=u.userUUID;
 
 ELSEIF(_action ='GETSMS') THEN
 
@@ -2602,8 +2573,14 @@ USER_login: BEGIN
 DECLARE _USER_loginLast DATETIME;
 DECLARE _USER_loginFailedAttempts INT;
 DECLARE _USER_loginPWExpire DATETIME;
+DECLARE _userName varchar(100);
 DECLARE _password varchar(100);
 DECLARE _USER_loginEmailVerified DATETIME;
+DECLARE _customerUUID varchar(100);
+DECLARE _startLocationUUID varchar(100);
+DECLARE _securityBitwise varchar(100);
+DECLARE _individualSecurityBitwise varchar(100);
+
 
 DECLARE _DISABLE_MFA INT default 1; -- 0 is enable MFA
 
@@ -2618,8 +2595,8 @@ END IF;
 IF(_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not null) THEN
 
   
-    select userUUID,user_loginEnabled , user_loginPW, user_loginEmailVerified
-    into _entityId, _USER_loginEnabled,_password,_USER_loginEmailVerified 
+    select userUUID, user_customerUUID, user_userName, user_loginEnabled , user_loginPW, user_loginEmailVerified, user_securityBitwise, user_individualSecurityBitwise
+    into _entityId, _customerUUID, _userName, _USER_loginEnabled,_password,_USER_loginEmailVerified, _securityBitwise, _individualSecurityBitwise
     from `user` where 
     user_loginEmail=_USER_loginEmail; 
 
@@ -2671,8 +2648,12 @@ IF(_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not n
 		concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),
 		concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),null
 		);
- 
-		select _entityId as entityId, _USER_loginEmailValidationCode as accessCode, 4 as expiresInMinutes;
+        
+        select user_profile_locationUUID into _startLocationUUID from user_profile where user_profile_userUUID = _entityId;
+        IF(_startLocationUUID is null) THEN
+            select locationUUID into _startLocationUUID from location where location_customerUUID = _customerUUID and location_isPrimary = 1 LIMIT 1;
+		END IF;
+        select _entityId as entityId, _USER_loginEmailValidationCode as accessCode, 4 as expiresInMinutes, _startLocationUUID as startLocationUUID, _userName as userName, _securityBitwise as securityBitwise, _individualSecurityBitwise as individualSecurityBitwise, _customerUUID as customerUUID;
 
     ELSE 
     
@@ -2683,7 +2664,11 @@ IF(_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not n
          user_loginLast= now(), user_loginSessionExpire=DATE_ADD( now(), INTERVAL 8 HOUR )
         where userUUID=_entityId;
     
-		select _entityId as entityId, _USER_loginEmailValidationCode as sessionToken;
+		select user_profile_locationUUID into _startLocationUUID from user_profile where user_profile_userUUID = _entityId;
+        IF(_startLocationUUID is null) THEN
+            select locationUUID into _startLocationUUID from location where location_customerUUID = _customerUUID and location_isPrimary = 1 LIMIT 1;
+		END IF;
+        select _entityId as entityId, _USER_loginEmailValidationCode as sessionToken, _startLocationUUID as startLocationUUID, _userName as userName, _securityBitwise as securityBitwise, _individualSecurityBitwise as individualSecurityBitwise, _customerUUID as customerUUID;
 
 	END IF;
 
@@ -2692,8 +2677,8 @@ IF(_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not n
     
 ELSEIF(_action = 'MFA' and _USER_loginEmail is NOT null and _USER_loginEmailValidationCode is not null) THEN
 
-    select userUUID, user_loginEnabled, user_loginPW,user_loginEmailVerified 
-    into _entityId, _USER_loginEnabled,_password,_USER_loginEmailVerified 
+    select userUUID, user_customerUUID, user_userName, user_loginEnabled, user_loginPW,user_loginEmailVerified, user_securityBitwise, user_individualSecurityBitwise
+    into _entityId, _customerUUID, _userName, _USER_loginEnabled,_password,_USER_loginEmailVerified, _securityBitwise, _individualSecurityBitwise
     from `user` where 
     user_loginEmail=_USER_loginEmail and user_loginEmailValidationCode = _USER_loginEmailValidationCode
     and now() < user_loginSessionExpire;
@@ -2709,8 +2694,13 @@ ELSEIF(_action = 'MFA' and _USER_loginEmail is NOT null and _USER_loginEmailVali
         update `user` set user_loginEmailValidationCode=null,user_loginSession=_USER_loginEmailValidationCode,
          user_loginLast= now(), user_loginSessionExpire=DATE_ADD( now(), INTERVAL 8 HOUR )
         where userUUID=_entityId;
+        
+	select user_profile_locationUUID into _startLocationUUID from user_profile where user_profile_userUUID = _entityId;
+	IF(_startLocationUUID is null) THEN
+		select locationUUID into _startLocationUUID from location where location_customerUUID = _customerUUID and location_isPrimary = 1 LIMIT 1;
+	END IF;
     
-    select _entityId as entityId, _USER_loginEmailValidationCode as sessionToken;
+    select _entityId as entityId, _USER_loginEmailValidationCode as sessionToken, _startLocationUUID as startLocationUUID, _userName as userName, _securityBitwise as securityBitwise, _individualSecurityBitwise as individualSecurityBitwise, _customerUUID as customerUUID;
         
     else
       SIGNAL SQLSTATE '45004'  SET MESSAGE_TEXT = 'Your authentication code has expired or does not match.', MYSQL_ERRNO =12;
