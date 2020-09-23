@@ -591,9 +591,9 @@ CREATE TABLE `knowledge_base` (
     knowledge_customerUUID CHAR(36)  NULL,
     knowledge_likes int NULL DEFAULT 0, 
     knowledge_dislikes int NULL DEFAULT 0,
- 
-    knowledge_createdByUUID CHAR(36)  NULL,
-    knowledge_updatedByUUID CHAR(36)  NULL,
+	  knowledge_relatedArticles TEXT NULL, -- json 
+    knowledge_createdByUUID CHAR(32)  NULL,
+    knowledge_updatedByUUID CHAR(32)  NULL,
    	knowledge_updatedTS datetime  NULL,
   	knowledge_createdTS datetime  NULL default now(),
    	knowledge_deleteTS datetime  NULL,

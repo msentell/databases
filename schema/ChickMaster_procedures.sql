@@ -1070,6 +1070,7 @@ CREATE PROCEDURE `KB_knowledge_base` (
     IN _knowledge_title VARCHAR(100),
     IN _knowledge_content VARCHAR(1000),
     IN _knowledge_customerUUID CHAR(36)
+    IN _knowledge_relatedArticle TEXT
 )
 KB_knowledge_base: BEGIN
     DECLARE _DEBUG INT DEFAULT 1;
@@ -1101,10 +1102,10 @@ KB_knowledge_base: BEGIN
             LEAVE KB_knowledge_base;
         END IF;
         INSERT INTO knowledge_base (knowledgeUUID, knowledge_statusId, knowledge_imageURL, knowledge_tags, knowledge_categories,
-                                    knowledge_title, knowledge_customerUUID, knowledge_content, knowledge_createdByUUID, knowledge_acknowledgedByUUID,
+                                    knowledge_title, knowledge_customerUUID, knowledge_relatedArticle, knowledge_content, knowledge_createdByUUID, knowledge_acknowledgedByUUID,
                                     knowledge_updatedTS, knowledge_createdTS, knowledge_deleteTS)
         VALUES (_knowledgebaseUUID, _knowledge_statusId, _knowledge_imageURL, _knowledge_tags, _knowledge_categories,
-                _knowledge_title, _knowledge_customerUUID, _knowledge_content,
+                _knowledge_title, _knowledge_customerUUID, _knowledge_relatedArticle,_knowledge_content,
                 _userUUID, _userUUID, now(), now(), null);
     ELSEIF(_action = 'UPDATE') THEN
         IF(_knowledgebaseUUID IS NULL or _knowledgebaseUUID = '') THEN
@@ -1132,6 +1133,9 @@ KB_knowledge_base: BEGIN
         END IF;
         IF (_knowledge_customerUUID IS NOT NULL) THEN
             SET @l_sql = CONCAT(@l_sql, ',knowledge_customerUUID = ',_knowledge_customerUUID);
+        END IF;
+        IF (_knowledge_relatedArticle IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',knowledge_relatedArticle = \'',_knowledge_relatedArticle,'\'');
         END IF;
         SET @l_sql = CONCAT(@l_sql, ' WHERE knowledgeUUID = \'',_knowledgebaseUUID,'\'');
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
