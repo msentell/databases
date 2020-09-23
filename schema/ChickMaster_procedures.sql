@@ -529,6 +529,7 @@ DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
 DECLARE _maxWO INT;
 DECLARE _commaNeeded INT;
 DECLARE _workorder_definition varchar(100);
+DECLARE _checklist_historyUUID char(36);
 
 IF(_action ='GET') THEN
 	
@@ -599,9 +600,10 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
     set _workorder_definition = 'CM-';
     select count(*) into _maxWO from workorder;
 	set _workorder_number = CONCAT(_workorder_definition,_maxWO);
-	set _workorder_status = 'OPEN';
+	set _workorder_status = 'Open';
 	
-    
+    -- based on frequencyScope and frequency, create 1-M WO's
+    -- TODO
 	insert into workorder (workorderUUID,
     workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID, 
     workorder_assetUUID, workorder_checklistUUID, workorder_status, workorder_type, 
@@ -618,6 +620,7 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
     _userUUID, _userUUID, now(), now()
     );
 	
+
 ELSEIF(_action ='UPDATE') THEN
 
 		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);		
@@ -675,15 +678,49 @@ ELSEIF(_action ='ASSIGN') THEN
 
 ELSEIF(_action ='START') THEN
 
+        -- check to see if this WO was a checklist, and complete it.
+        -- this checklistUUID is the template.  It will get changed to history when started.
+        select workorder_checklistUUID into _workorder_checklistUUID from workorder where workorderUUID=_workorderUUID; 
+		
+        if (_workorder_checklistUUID is not null) THEN
+
+        	-- create new historical
+        	set _checklist_historyUUID = UUID();
+
+        	-- create a new history version of the checklist
+			call CHECKLIST_checklist(
+			'UPDATE_HISTORY',_userUUID,_customerId,
+			_workorder_checklistUUID, _workorder_assetUUID,_checklist_historyUUID,
+	 		_workorderUUID, null,null, null,null,null,null,null, null, null, null, null, null, null, null
+			);
+
+        END IF;		
+
 		update workorder set workorder_status='IN_PROGRESS', workorder_completeDate =null, 
-        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID 
+        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID , workorder_checklistUUID=_checklist_historyUUID
         where workorderUUID=_workorderUUID;
+
+
+
+
 
 ELSEIF(_action ='COMPLETE') THEN
 
-		update workorder set workorder_status='COMPLETE', workorder_completeDate = DATE(now()), 
+		update workorder set workorder_status='Complete', workorder_completeDate = DATE(now()), 
         workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID 
         where workorderUUID=_workorderUUID;
+
+        -- check to see if this WO was a checklist, and complete it.
+        select workorder_checklistUUID into _workorder_checklistUUID from workorder where workorderUUID=_workorderUUID; 
+		
+        if (_workorder_checklistUUID is not null) THEN
+			call CHECKLIST_checklist(
+			'PASS_CHECKLIST',_userUUID,null,
+			null, null, _workorder_checklistUUID, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+				);
+
+		END IF;
+
 
 ELSEIF(_action ='ADDPART' and _wapj_asset_partUUID is not null) THEN
 
@@ -2872,26 +2909,45 @@ _checklistUUID, _assetUUID,_historyUUID, _workorderUUID,
 _checklist_statusId,_checklist_name, _checklist_recommendedFrequency,_checklist_rulesJSON,
 _checklist_itemUUID,_checklist_item_statusId,_checklist_item_sortOrder, 
 _checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON, 
-_checklist_item_successPrompt, _checklist_item_successRange
+_checklist_item_successPrompt, _checklist_item_successRange,
+checklist_history_item_resultFlag,checklist_history_item_resultText
 );
 
+-- creates a cl and wo
+call CHECKLIST_checklist(
+'UPDATE_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
+'2b61b61eb4d141799a9560cccb109f59', '00c93791035c44fd98d4f40ff2cdfe0a',uuid(),
+ null, null,null, null,null,null,null,null, null, null, null, null, null, null, null
+);
 
+-- updates a cl item
 call CHECKLIST_checklist(
 'UPDATE_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
 '2b61b61eb4d141799a9560cccb109f59', '00c93791035c44fd98d4f40ff2cdfe0a','100',
- null, null,null, null,null,null,null,null, null, null, null, null, null
+ null, null,null, null,null,null,null,null, null, null, null, null, null, null, null
 );
+
 
 call CHECKLIST_checklist(
 'GET_TEMPLATE','1','a30af0ce5e07474487c39adab6269d5f',
-'2b61b61eb4d141799a9560cccb109f59', null, null, null,null, null, null,null,null,null,null, null, null, null, null, null
+'2b61b61eb4d141799a9560cccb109f59', null, null, null,null, null, null,null,null,null,null, null, null, null, null, null, null, null
 );
 
 call CHECKLIST_checklist(
 'GET_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
-null, null, '2b61b61eb4d141799a9560cccb109f59', null,null,null, null,null,null,null,null, null, null, null, null, null
+null, null, '9910d4bb-fd03-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
 );
 
+
+call CHECKLIST_checklist(
+'PASS_CHECKLIST','1',null,
+null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+);
+
+call CHECKLIST_checklist(
+'FAIL_CHECKLIST_CREATEWO','1','a30af0ce5e07474487c39adab6269d5f',
+null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+);
 
 */
 
@@ -2918,11 +2974,15 @@ IN _checklist_item_prompt varchar(255),
 IN _checklist_item_type varchar(255), 
 IN _checklist_item_optionSetJSON TEXT, 
 IN _checklist_item_successPrompt varchar(255), 
-IN _checklist_item_successRange varchar(255)
+IN _checklist_item_successRange varchar(255),
+
+IN _checklist_history_item_resultFlag INT,
+IN _checklist_history_item_resultText varchar(255)
+
 )
 CHECKLIST_checklist: BEGIN
 
-DECLARE _DEBUG INT DEFAULT 1;
+DECLARE _DEBUG INT DEFAULT 0;
 
 DECLARE _ids varchar(1000);
 DECLARE _id varchar(100);
@@ -2939,15 +2999,8 @@ DECLARE _assetName varchar(255);
 DECLARE _workorder_locationUUID char(36);
 
 
-
-
-	if (_customerUUID is null) THEN
-		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _customerUUID required';
-		LEAVE CHECKLIST_checklist;
-	END IF;    
-
-
 IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null)) THEN
+
 
 
 		set  @l_sql = CONCAT('select c.*,i.* from checklist_history c ');
@@ -3005,12 +3058,48 @@ ELSEIF(_action ='GET_TEMPLATE' and (_checklistUUID is not null or _checklist_ite
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
 
-ELSEIF(_action ='UPDATE_HISTORY') THEN
+ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
-	if (_checklistUUID is null or _assetUUID is null or _assetUUID is null) THEN
+
+	if (_customerUUID is null) THEN
+		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _customerUUID required';
+		LEAVE CHECKLIST_checklist;
+	END IF;    
+	if (_checklistUUID is null or _assetUUID is null) THEN
 		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _checklistUUID,assetUUID,_historyUUID required';
 		LEAVE CHECKLIST_checklist;
 	END IF;    
+	if (_historyUUID is null) THEN
+		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _historyUUID required';
+		LEAVE CHECKLIST_checklist;
+	END IF;    
+
+	IF (_action ='FAIL_CHECKLIST_CREATEWO') THEN
+    
+		-- consider getting checklist_history_checklistUUID,checklist_history_assetUUID
+		-- checklist_history_checklistUUID, checklist_history_customerUUID, checklist_history_workorderUUID, 
+        -- checklist_history_assetUUID, checklist_history_statusId, checklist_history_resultFlag, 
+        -- checklist_history_name, checklist_history_rulesJSON
+        
+		select checklist_history_workorderUUID,checklist_history_checklistUUID,checklist_history_assetUUID 
+			into _workorderUUID, _checklistUUID,_assetUUID
+			from checklist_history 
+			where checklist_historyUUID = _historyUUID;
+
+		update  checklist_history set checklist_history_resultFlag=2,checklist_history_updatedTS=now(),
+			checklist_history_updatedByUUID=_userUUID
+			where checklist_historyUUID = _historyUUID;
+		
+		update  workorder set workorder_completeDate=Date(now()), workorder_updatedTS = now(),
+			workorder_updatedByUUID = _userUUID, workorder_status = 'Complete'
+			where workorderUUID = _workorderUUID;
+        
+        set _workorderUUID = null;
+        set _historyUUID= UUID();
+
+
+	END IF;
+
 
 	-- 1. determine if history aready exists
     select checklist_historyUUID into _foundId from checklist_history where checklist_historyUUID=_historyUUID;
@@ -3028,20 +3117,17 @@ ELSEIF(_action ='UPDATE_HISTORY') THEN
         insert into checklist_history (
         checklist_historyUUID, checklist_history_checklistUUID, checklist_history_customerUUID, 
         checklist_history_workorderUUID, checklist_history_assetUUID, checklist_history_statusId, 
-        checklist_history_name, checklist_history_rulesJSON, 
+        checklist_history_name, checklist_history_rulesJSON,
+        checklist_history_resultFlag,
         checklist_history_createdByUUID, checklist_history_updatedByUUID, checklist_history_updatedTS, checklist_history_createdTS
         )
         Values (
         _historyUUID,_checklistUUID,_customerUUID,_workorderUUID,_assetUUID,1,
         _checklist_name,_checklist_rulesJSON,
+        0,
         _userUUID,_userUUID,now(),now()
         );
 
-        
-        -- select _historyUUID, _checklistUUID,_customerUUID, _workorderUUID, _assetUUID, 1, checklist_name, checklist_rulesJSON, _userUUID, _userUUID, now(), now(), null
-        -- into checklist_history
-        -- from checklist where checklistUUID = _checklistUUID;
-        
         select group_concat(checklist_itemUUID) into _ids  from checklist_item 
         where checklist_item_checklistUUID = _checklistUUID and checklist_item_statusId =1
         order by checklist_item_sortOrder;
@@ -3062,18 +3148,19 @@ ELSEIF(_action ='UPDATE_HISTORY') THEN
         _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange
         from checklist_item where  checklist_itemUUID= _id;
 
-		if (_workorderUUID is not null) then select UUID() into _workorderUUID; end if;
 
 		insert into checklist_item_history (
         checklist_history_itemUUID, checklist_history_item_historyUUID, checklist_history_item_statusId, 
         checklist_history_item_sortOrder, checklist_history_item_prompt, checklist_history_item_type, 
-        checklist_history_item_optionSetJSON, checklist_history_item_successPrompt, checklist_history_item_successRange, 
+        checklist_history_item_optionSetJSON, checklist_history_item_successPrompt, checklist_history_item_successRange,
+        checklist_history_item_resultFlag,
         checklist_history_item_createdByUUID, checklist_history_item_updatedByUUID, checklist_history_item_updatedTS, checklist_history_item_createdTS
         )
         values (
         _checklist_itemUUID, _historyUUID, 1, 
         _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type, 
-        _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange, 
+        _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange,
+        0,
         _userUUID,_userUUID,now(),now()        
         );
         
@@ -3091,8 +3178,7 @@ ELSEIF(_action ='UPDATE_HISTORY') THEN
               end if;
             end loop;
          end if;
-
-
+         
 			-- create WO if it does not exist, but make sure to update the historyUUID 
 			set _foundId = null;
 			
@@ -3110,7 +3196,11 @@ ELSEIF(_action ='UPDATE_HISTORY') THEN
 				null
 				);
 				
-			ELSE
+-- 	 		ELSE
+            
+				-- this will replace the checklistUUID for the historyUUID version of it.
+				-- update workorder set workorder_checklistUUID = _historyUUID where workorderUUID=_workorderUUID;
+/*
 				call WORKORDER_workOrder('UPDATE', _customerUUID,_userUUID,
 				_workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID,
 				_historyUUID,1,'CHECKLIST',null,null,_workorder_details,
@@ -3118,15 +3208,57 @@ ELSEIF(_action ='UPDATE_HISTORY') THEN
 				null,1,'DAILY',null,
 				null
 				);		
-				
+*/				
 			END IF;
 
-	ELSE
+	ELSE -- history found, so update records
     
-		-- need to update the workorder history
+		if ( _checklist_statusId is not null or _checklist_name is not null) THEN 
+       
+			set  @l_sql = CONCAT('update checklist_history set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');		
+
+			if (_checklist_name is not null) THEN
+				set @l_sql = CONCAT(@l_sql,', checklist_history_name= \'', _checklist_name,'\'');
+			END IF;
+			if (_checklist_statusId is not null) THEN
+				set @l_sql = CONCAT(@l_sql,', checklist_history_statusId= ', _checklist_statusId);
+			END IF;
+
+
+			set @l_sql = CONCAT(@l_sql,' where checklist_historyUUID = \'', _historyUUID,'\';');
+		   
+			IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+				
+			PREPARE stmt FROM @l_sql;
+			EXECUTE stmt;
+			DEALLOCATE PREPARE stmt;
+		
+        END IF;
+  
+		if ( _checklist_item_statusId is not null or _checklist_name is not null) THEN 
+       
+			set  @l_sql = CONCAT('update checklist_item_history set checklist_history_item_updatedTS=now(), checklist_history_item_updatedByUUID=\'', _userUUID,'\'');		
+
+			if (_checklist_history_item_resultText is not null) THEN
+				set @l_sql = CONCAT(@l_sql,', checklist_history_item_resultText= \'', _checklist_history_item_resultText,'\'');
+			END IF;
+			if (_checklist_history_item_resultFlag is not null) THEN
+				set @l_sql = CONCAT(@l_sql,', checklist_history_item_resultFlag= ', _checklist_history_item_resultFlag);
+			END IF;
+			if (_checklist_item_statusId is not null) THEN
+				set @l_sql = CONCAT(@l_sql,', checklist_history_item_statusId= ', _checklist_item_statusId);
+			END IF;
+
+			set @l_sql = CONCAT(@l_sql,' where  checklist_history_itemUUID= \'', _checklist_itemUUID,'\';');
+		   
+			IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+				
+			PREPARE stmt FROM @l_sql;
+			EXECUTE stmt;
+			DEALLOCATE PREPARE stmt;
         
-        -- need to update the workorder item.
-		select _action; 
+        
+		END IF;
 		
     END IF;
 
@@ -3147,44 +3279,143 @@ ELSEIF(_action ='UPDATE_HISTORY') THEN
         
     -- 4. if all items on the checklist are completed, then close the WO
         
-ELSEIF(_action ='UPDATE_TEMPLATE') THEN
+ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
 	-- 1. update template
     
-	if (_notification_readyOn IS NOT NULL) THEN 
-		set _readyDate = (STR_TO_DATE(_notification_readyOn, _dateFormat)); 
-    ELSE 
-		set _readyDate = now();
+	if (_customerUUID is null) THEN
+		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _customerUUID required';
+		LEAVE CHECKLIST_checklist;
+	END IF;    
+
+	-- 1. determine if history aready exists
+    select checklistUUID into _foundId from checklist where checklistUUID=_checklistUUID;
+ 
+    if (_foundId is null) THEN
+    
+		if (_checklist_recommendedFrequency is null) THEN set _checklist_recommendedFrequency='WEEKLY'; END IF;
+        
+		insert into checklist (
+checklistUUID, checklist_customerUUID, checklist_statusId, checklist_name, checklist_recommendedFrequency, 
+checklist_rulesJSON, 
+checklist_createdByUUID, checklist_updatedByUUID, checklist_updatedTS, checklist_createdTS        
+        ) values (
+_checklistUUID, _customerUUID, 1, _checklist_name, _checklist_recommendedFrequency, 
+_checklist_rulesJSON, 
+_userUUID, _userUUID, now(), now()
+         );
+    
+    ELSE
+
+		set  @l_sql = CONCAT('update checklist set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');		
+
+        if (_checklist_rulesJSON is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_rulesJSON = \'', _checklist_rulesJSON,'\'');
+        END IF;
+        if (_checklist_recommendedFrequency is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_recommendedFrequency = \'', _checklist_recommendedFrequency,'\'');
+        END IF;
+        if (_checklist_name is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_name = \'', _checklist_name,'\'');
+        END IF;
+        if (_checklist_statusId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_statusId = ', _checklist_statusId);
+        END IF;
+
+
+		set @l_sql = CONCAT(@l_sql,' where checklistUUID = \'', _checklistUUID,'\';');
+       
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
+    
     END IF;
-	
-    if (_notification_expireOn IS NOT NULL) THEN 
-		set _expireDate = (STR_TO_DATE(_notification_expireOn, _dateFormat));
-    ELSE 
-		set _expireDate = DATE_ADD(now() , INTERVAL 2 WEEK);
+    
+    select checklist_itemUUID into _foundId from checklist_item where checklist_itemUUID=_checklist_itemUUID;
+ 
+    if (_foundId is null and _checklist_itemUUID is not null) THEN
+            
+		insert into checklist_itemUUID (
+ checklist_itemUUID, checklist_item_checklistUUID, checklist_item_customerUUID, checklist_item_statusId,
+ checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON,
+ checklist_item_successPrompt, checklist_item_successRange,
+ checklist_item_createdByUUID, checklist_item_updatedByUUID, checklist_item_updatedTS, checklist_item_createdTS
+ ) values (
+ _checklist_itemUUID, _checklistUUID, _customerUUID, 1,
+ _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON,
+ _checklist_item_successPrompt, _checklist_item_successRange,
+ _userUUID, _userUUID, now(), now()
+         );
+    
+    ELSE
+
+		set  @l_sql = CONCAT('update checklist_item set checklist_item_updatedTS=now(), checklist_item_updatedByUUID=\'', _userUUID,'\'');		
+
+        if (_checklist_item_successRange is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_item_successRange = \'', _checklist_item_successRange,'\'');
+        END IF;
+        if (_checklist_item_successPrompt is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_item_successPrompt = \'', _checklist_item_successPrompt,'\'');
+        END IF;
+        if (_checklist_item_optionSetJSON is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_item_optionSetJSON = \'', _checklist_item_optionSetJSON,'\'');
+        END IF;
+        if (_checklist_item_type is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_item_type = \'', _checklist_item_type,'\'');
+        END IF;
+        if (_checklist_item_prompt is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_item_prompt = \'', _checklist_item_prompt,'\'');
+        END IF;
+        if (_checklist_item_statusId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_item_statusId = ', _checklist_item_statusId);
+        END IF;
+        if (_checklist_item_sortOrder is not null) THEN
+			set @l_sql = CONCAT(@l_sql,',checklist_item_sortOrder = ', _checklist_item_sortOrder);
+        END IF;
+
+		set @l_sql = CONCAT(@l_sql,' where checklist_itemUUID = \'', _checklist_itemUUID,'\';');
+              
+        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+			
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+        
     END IF;
-
-
-
+    
 
 ELSEIF(_action ='PASS_CHECKLIST') THEN
 
-	-- 1. pass checklist
-    -- 2. update/close workorder
 
-    select _action;
-    
+	select checklist_history_workorderUUID into _workorderUUID from checklist_history 
+		where checklist_historyUUID = _historyUUID;
+
+	update  checklist_history set checklist_history_resultFlag=1,checklist_history_updatedTS=now(),
+		checklist_history_updatedByUUID=_userUUID
+		where checklist_historyUUID = _historyUUID;
+	
+    update  workorder set workorder_completeDate=Date(now()), workorder_updatedTS = now(),
+		workorder_updatedByUUID = _userUUID, workorder_status = 'Complete'
+		where workorderUUID = _workorderUUID;
+
+		if (_DEBUG=1) THEN select _action, _workorderUUID,' ',_historyUUID;  END IF;
+     
 ELSEIF(_action ='FAIL_CHECKLIST') THEN
 
-	-- 1. mark as failed, no further action
-    -- 2. update/close workorder
-    select _action;
-    
-ELSEIF(_action ='FAIL_CHECKLIST_CREATEWO') THEN
+	select checklist_history_workorderUUID into _workorderUUID from checklist_history 
+		where checklist_historyUUID = _historyUUID;
 
-	-- 1. create WO, assigned to userId with asset and other description filled out
-    -- Return data to allow WO to be pulled up with pre-defined data.
-    select _action;
+	update  checklist_history set checklist_history_resultFlag=2,checklist_history_updatedTS=now(),
+		checklist_history_updatedByUUID=_userUUID
+		where checklist_historyUUID = _historyUUID;
 	
+    update  workorder set workorder_completeDate=Date(now()), workorder_updatedTS = now(),
+		workorder_updatedByUUID = _userUUID, workorder_status = 'Complete'
+		where workorderUUID = _workorderUUID;
+    
 
 ELSEIF(_action ='DELETE') THEN
 
@@ -3206,7 +3437,6 @@ END IF;
 END$$
 
 DELIMITER ; 
-
 
 
 
