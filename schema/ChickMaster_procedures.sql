@@ -2177,10 +2177,6 @@ BEGIN
     DECLARE _commaNeeded INT;
 
     IF (_action = 'GET-LIST') THEN
-        IF (_customerId IS NULL or _customerId = '') THEN
-            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _customerId can not be empty';
-            LEAVE USER_user;
-        END IF;
 
         set @l_sql = CONCAT(
                 'select c.customer_name, c.customerUUID, u.*,l.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
@@ -2200,10 +2196,8 @@ BEGIN
             set @l_sql = CONCAT(@l_sql, ' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
         end if;
 
-        set @l_sql = CONCAT(@l_sql, ' where ');
-
         if (_customerId is not null) THEN
-            set @l_sql = CONCAT(@l_sql, 'u.user_customerUUID = \'', _customerId, '\'');
+            set @l_sql = CONCAT(@l_sql, 'where u.user_customerUUID = \'', _customerId, '\'');
             set _commaNeeded = 1;
         END IF;
         PREPARE stmt FROM @l_sql;
