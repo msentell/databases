@@ -24,7 +24,7 @@ ELSEIF (_action is NULL OR _action='') THEN
 	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid value action';
 END IF;
 
--- isPrimary may be enumerated (i.e 1,2,3 )  
+-- isPrimary may be enumerated (i.e 1,2,3 )
 --   where 1=top most
 -- 			2 = layer down
 -- 			3 = layer down again
@@ -42,20 +42,20 @@ If (_action = 'LOCATION') THEN
 	if (_startingPoint is not null) THEN
 
 		SELECT loc.*
-		from location loc 
+		from location loc
         where loc.location_customerUUID = _customerId AND loc.location_isPrimary = _startingPoint AND loc.locationUUID = _id;
-	
+
 	ELSE
 
 		SELECT loc.*
 		from location loc where loc.locationUUID = _id;
-	
+
 	END IF;
 
 ELSEIF (_action = 'ASSET') THEN
 
 	select a.*,p.* from asset a
-	left join asset_part p on (a.asset_partUUID = p.asset_partUUID) 
+	left join asset_part p on (a.asset_partUUID = p.asset_partUUID)
     where assetUUID=_id;
 
 ELSEIF (_action = 'ASSET-PART') THEN
@@ -69,11 +69,11 @@ END$$
 
 -- ==================================================================
 
--- call DIAGNOSTIC_tree(action,userId,diagnosticUUID, diagnostic_statusId, diagnostic_name, diagnostic_description, diagnostic_startNodeUUID); 
--- call DIAGNOSTIC_tree('GET', '1', null, null, null, null, null); 
--- call DIAGNOSTIC_tree('CREATE', '1', '10', null, 'diagnostic_name', 'diagnostic_description', null); 
--- call DIAGNOSTIC_tree('UPDATE', '1', '10', null, 'diagnostic_name2', 'diagnostic_description2', 10); 
--- call DIAGNOSTIC_tree('DELETE', '1',  '10', null, null, null,null); 
+-- call DIAGNOSTIC_tree(action,userId,diagnosticUUID, diagnostic_statusId, diagnostic_name, diagnostic_description, diagnostic_startNodeUUID);
+-- call DIAGNOSTIC_tree('GET', '1', null, null, null, null, null);
+-- call DIAGNOSTIC_tree('CREATE', '1', '10', null, 'diagnostic_name', 'diagnostic_description', null);
+-- call DIAGNOSTIC_tree('UPDATE', '1', '10', null, 'diagnostic_name2', 'diagnostic_description2', 10);
+-- call DIAGNOSTIC_tree('DELETE', '1',  '10', null, null, null,null);
 
 DROP procedure IF EXISTS `DIAGNOSTIC_tree`;
 
@@ -105,31 +105,31 @@ END IF;
 IF(_action = 'GET') THEN
 
 	SET @l_SQL = 'SELECT * FROM diagnostic_tree ';
-	
+
 		IF(_diagnosticUUID IS NOT NULL or _diagnostic_startNodeUUID IS NOT NULL or _diagnostic_name IS NOT NULL) THEN
 			SET @l_SQL = CONCAT(@l_SQL, '  WHERE ');
 		END IF;
 
 		IF(_diagnosticUUID IS NOT NULL) THEN
-			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			SET @l_SQL = CONCAT(@l_SQL, ' diagnosticUUID =\'', _diagnosticUUID,'\'');
-			set commaNeeded =1;			
+			set commaNeeded =1;
 		END IF;
 
 		IF(_diagnostic_startNodeUUID IS NOT NULL) THEN
-			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_startNodeUUID =\'', _diagnostic_startNodeUUID,'\'');
-			set commaNeeded =1;			
+			set commaNeeded =1;
 		END IF;
-        
+
 		IF(_diagnostic_name IS NOT NULL) THEN
-			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_name =\'', _diagnostic_name,'\'');
-			set commaNeeded =1;			
+			set commaNeeded =1;
 		END IF;
-        
+
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-        
+
         PREPARE stmt FROM @l_SQL;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
@@ -137,13 +137,13 @@ IF(_action = 'GET') THEN
 ELSEIF(_action = 'CREATE') THEN
 
 	IF (DEBUG=1) THEN select _action, _userUUID, _diagnosticUUID, _diagnostic_statusId, _diagnostic_name, _diagnostic_description, _diagnostic_startNodeUUID; END IF;
-    
+
 	IF(_diagnosticUUID IS NULL) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_tree: diagnosticUUID missing';
 		LEAVE DIAGNOSTIC_tree;
 	END IF;
-    
-    insert into diagnostic_tree 
+
+    insert into diagnostic_tree
     (diagnosticUUID, diagnostic_statusId, diagnostic_name, diagnostic_description, diagnostic_startNodeUUID,
     diagnostic_createdByUUID, diagnostic_updatedByUUID, diagnostic_updatedTS, diagnostic_createdTS, diagnostic_deleteTS)
 	values
@@ -158,7 +158,7 @@ ELSEIF(_action = 'UPDATE') THEN
 	END IF;
 
 
-		set  @l_sql = CONCAT('update diagnostic_tree set diagnostic_updatedTS=now(), diagnostic_updatedByUUID=\'', _userUUID,'\'');		
+		set  @l_sql = CONCAT('update diagnostic_tree set diagnostic_updatedTS=now(), diagnostic_updatedByUUID=\'', _userUUID,'\'');
 
         if (_diagnostic_name is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',diagnostic_name = \'', _diagnostic_name,'\'');
@@ -174,18 +174,18 @@ ELSEIF(_action = 'UPDATE') THEN
         END IF;
 
 		set @l_sql = CONCAT(@l_sql,' where diagnosticUUID = \'', _diagnosticUUID,'\';');
-       
+
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
-        
+
 
 ELSEIF(_action = 'DELETE') THEN
 
 	IF (DEBUG=1) THEN select _action,_diagnosticUUID; END IF;
-    
+
 	IF(_diagnosticUUID IS NULL) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_tree: _diagnosticUUID missing';
 		LEAVE DIAGNOSTIC_tree;
@@ -203,12 +203,12 @@ DELIMITER ;
 -- ==================================================================
 
 
--- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON,diagnostic_node_warning,diagnostic_node_warningSeverity); 
--- call DIAGNOSTIC_node('GETNODE', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null,null); 
--- call DIAGNOSTIC_node('GET', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null,null, null, null, null, null, null,null,null,null,null); 
--- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON',null,null); 
--- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON','diagnostic_node_warning',diagnostic_node_warningSeverity); 
--- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null,null,null); 
+-- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON,diagnostic_node_warning,diagnostic_node_warningSeverity);
+-- call DIAGNOSTIC_node('GETNODE', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null,null);
+-- call DIAGNOSTIC_node('GET', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null,null, null, null, null, null, null,null,null,null,null);
+-- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON',null,null);
+-- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON','diagnostic_node_warning',diagnostic_node_warningSeverity);
+-- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null,null,null);
 -- call DIAGNOSTIC_node('UPDATE','1','5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null ,'testing_tiltle rtghjy', 'diagnosticnodeprompt', 'diagnostic_node_optionPrompt', '[{"coordinates":[{}],"color":"red","forwardId":"1599760999552"}]', 'https://jcmi.sfo2.digitaloceanspaces.com/demodata/Hendrix/diagnostics/Heating1.JPG', 'false','hello','hijky');
 
 DROP procedure IF EXISTS `DIAGNOSTIC_node`;
@@ -250,69 +250,69 @@ IF(_action = 'GETNODE') THEN
 	If (_diagnostic_node_diagnosticUUID is not null and _diagnostic_nodeUUID is null) THEN
 
 			SELECT n.*,d.* from diagnostic_tree d
-			left join diagnostic_node n on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID and d.diagnostic_startNodeUUID = n.diagnostic_nodeUUID) 
+			left join diagnostic_node n on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID and d.diagnostic_startNodeUUID = n.diagnostic_nodeUUID)
 			where diagnosticUUID = _diagnostic_node_diagnosticUUID;
 
 	ELSEIF (_diagnostic_nodeUUID is not null) THEN
 
 			SELECT n.* from diagnostic_node n
-			-- left join diagnostic_tree d on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID) 
+			-- left join diagnostic_tree d on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID)
 			where diagnostic_nodeUUID = _diagnostic_nodeUUID;
-	
+
 	END IF;
 
 ELSEIF(_action = 'GET') THEN
 
 		SET @l_SQL = 'SELECT * FROM diagnostic_node ';
-	
+
 		IF(_diagnostic_nodeUUID IS NOT NULL or _diagnostic_node_diagnosticUUID IS NOT NULL or _diagnostic_node_title IS NOT NULL) THEN
 			SET @l_SQL = CONCAT(@l_SQL, '  WHERE ');
 		END IF;
 
 		IF(_diagnostic_nodeUUID IS NOT NULL) THEN
-			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_nodeUUID =\'', _diagnostic_nodeUUID,'\'');
-			set commaNeeded =1;			
+			set commaNeeded =1;
 		END IF;
 
 		IF(_diagnostic_node_diagnosticUUID IS NOT NULL) THEN
-			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_node_diagnosticUUID =\'', _diagnostic_node_diagnosticUUID,'\'');
-			set commaNeeded =1;			
+			set commaNeeded =1;
 		END IF;
-        
+
 		IF(_diagnostic_node_title IS NOT NULL) THEN
-			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF; 
+			IF (commaNeeded>0) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			SET @l_SQL = CONCAT(@l_SQL, ' diagnostic_node_title like \'','%', _diagnostic_node_title,'%','\'');
-			set commaNeeded =1;			
+			set commaNeeded =1;
 		END IF;
-        
+
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-        
+
         PREPARE stmt FROM @l_SQL;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
 
-    
+
 ELSEIF(_action = 'CREATE') THEN
 
-	IF (DEBUG=1) THEN select _action, _userUUID, _diagnostic_nodeUUID, _diagnostic_node_diagnosticUUID, 1, 
-	_diagnostic_node_title, _diagnostic_node_prompt, _diagnostic_node_optionPrompt, 
+	IF (DEBUG=1) THEN select _action, _userUUID, _diagnostic_nodeUUID, _diagnostic_node_diagnosticUUID, 1,
+	_diagnostic_node_title, _diagnostic_node_prompt, _diagnostic_node_optionPrompt,
 	_diagnostic_node_hotSpotJSON, _diagnostic_node_imageSetJSON, _diagnostic_node_optionSetJSON; END IF;
-    
+
 	IF(_diagnostic_nodeUUID IS NULL or _diagnostic_node_diagnosticUUID is null) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call _diagnostic_nodeUUID: _diagnostic_nodeUUID or _diagnostic_node_diagnosticUUID missing';
 		LEAVE DIAGNOSTIC_node;
 	END IF;
-    
-    insert ignore into diagnostic_node 
-    (diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId, 
-	diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, 
+
+    insert ignore into diagnostic_node
+    (diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,
+	diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt,
 	diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON,
     diagnostic_node_createdByUUID, diagnostic_node_updatedByUUID, diagnostic_node_updatedTS, diagnostic_node_createdTS, diagnostic_node_deleteTS)
 	values
-    (_diagnostic_nodeUUID, _diagnostic_node_diagnosticUUID, 1, 
-	_diagnostic_node_title, _diagnostic_node_prompt, _diagnostic_node_optionPrompt, 
+    (_diagnostic_nodeUUID, _diagnostic_node_diagnosticUUID, 1,
+	_diagnostic_node_title, _diagnostic_node_prompt, _diagnostic_node_optionPrompt,
 	_diagnostic_node_hotSpotJSON, _diagnostic_node_imageSetJSON, _diagnostic_node_optionSetJSON,
     _userUUID, _userUUID, now(), now(), null);
 
@@ -323,7 +323,7 @@ ELSEIF(_action = 'UPDATE') THEN
 		LEAVE DIAGNOSTIC_node;
 	END IF;
 
-		set  @l_sql = CONCAT('update diagnostic_node set diagnostic_node_updatedTS=now(), diagnostic_node_updatedByUUID=\'', _userUUID,'\'');		
+		set  @l_sql = CONCAT('update diagnostic_node set diagnostic_node_updatedTS=now(), diagnostic_node_updatedByUUID=\'', _userUUID,'\'');
 
         if (_diagnostic_node_diagnosticUUID is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',diagnostic_node_diagnosticUUID = \'', _diagnostic_node_diagnosticUUID,'\'');
@@ -357,18 +357,18 @@ ELSEIF(_action = 'UPDATE') THEN
 		END IF;
 
 		set @l_sql = CONCAT(@l_sql,' where diagnostic_nodeUUID = \'', _diagnostic_nodeUUID,'\';');
-       
+
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
-        
+
 
 ELSEIF(_action = 'DELETE') THEN
 
 	IF (DEBUG=1) THEN select _action,_diagnostic_nodeUUID; END IF;
-    
+
 	IF(_diagnostic_nodeUUID IS NULL) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _diagnostic_nodeUUID missing';
 		LEAVE DIAGNOSTIC_node;
@@ -409,7 +409,7 @@ DIAGNOSTIC_getNode: BEGIN
 
 
 /*
--- isPrimary may be enumerated (i.e 1,2,3 )  
+-- isPrimary may be enumerated (i.e 1,2,3 )
 --   where 1=top most
 -- 			2 = layer down
 -- 			3 = layer down again
@@ -427,13 +427,13 @@ If (_diagnosticId is not null and _nodeId is null) THEN
 	-- get the starting node
 
 		SELECT n.*,d.* from diagnostic_tree d
-        left join diagnostic_node n on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID and d.diagnostic_startNodeUUID = n.diagnostic_nodeUUID) 
+        left join diagnostic_node n on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID and d.diagnostic_startNodeUUID = n.diagnostic_nodeUUID)
         where diagnosticUUID = _diagnosticId;
 
 ELSEIF (_nodeId is not null) THEN
 
 		SELECT n.* from diagnostic_node n
-        -- left join diagnostic_tree d on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID) 
+        -- left join diagnostic_tree d on (d.diagnosticUUID=n.diagnostic_node_diagnosticUUID)
         where diagnostic_nodeUUID = _nodeId;
 
 END IF;
@@ -443,7 +443,7 @@ END$$
 
 
 -- ==================================================================
--- call BUTTON_options(null,'1c5a0f1a10b841699ee5b5f431d01e03','CONTACT|CHAT|STARTCHECKLIST|ADDLOG'); 
+-- call BUTTON_options(null,'1c5a0f1a10b841699ee5b5f431d01e03','CONTACT|CHAT|STARTCHECKLIST|ADDLOG');
 
 DROP procedure IF EXISTS `BUTTON_options`;
 
@@ -532,7 +532,7 @@ DECLARE _workorder_definition varchar(100);
 DECLARE _checklist_historyUUID char(36);
 
 IF(_action ='GET') THEN
-	
+
 	IF(_customerId IS NULL or _customerId = '') THEN
 		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
 		LEAVE WORKORDER_workOrder;
@@ -578,7 +578,7 @@ IF(_action ='GET') THEN
         END IF;
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
@@ -601,29 +601,29 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
     select count(*) into _maxWO from workorder;
 	set _workorder_number = CONCAT(_workorder_definition,_maxWO);
 	set _workorder_status = 'Open';
-	
+
     -- based on frequencyScope and frequency, create 1-M WO's
     -- TODO
 	insert into workorder (workorderUUID,
-    workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID, 
-    workorder_assetUUID, workorder_checklistUUID, workorder_status, workorder_type, 
-    workorder_number, workorder_name, workorder_details, workorder_actions, workorder_priority, 
-    workorder_dueDate, workorder_rescheduleDate, workorder_completeDate, workorder_frequency, 
+    workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID,
+    workorder_assetUUID, workorder_checklistUUID, workorder_status, workorder_type,
+    workorder_number, workorder_name, workorder_details, workorder_actions, workorder_priority,
+    workorder_dueDate, workorder_rescheduleDate, workorder_completeDate, workorder_frequency,
     workorder_frequencyScope,
 	workorder_createdByUUID, workorder_updatedByUUID, workorder_updatedTS, workorder_createdTS
     ) values (_workorderUUID,
-    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
-    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type, 
-    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority, 
-    _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
-    _workorder_frequencyScope, 
+    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
+    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type,
+    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority,
+    _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency,
+    _workorder_frequencyScope,
     _userUUID, _userUUID, now(), now()
     );
-	
+
 
 ELSEIF(_action ='UPDATE') THEN
 
-		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);		
+		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
 
         if (_workorder_status IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
@@ -651,9 +651,9 @@ ELSEIF(_action ='UPDATE') THEN
         END IF;
 
 		set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
-       
+
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
@@ -662,26 +662,26 @@ ELSEIF(_action ='UPDATE') THEN
 ELSEIF(_action ='REMOVE' and _workorderUUID is not null) THEN
 
 	if (_wapj_asset_partUUID IS NOT NULL) THEN
-		delete from workorder_asset_part_join where wapj_asset_partUUID=_wapj_asset_partUUID 
+		delete from workorder_asset_part_join where wapj_asset_partUUID=_wapj_asset_partUUID
         and wapj_workorderUUID = _workorderUUID;
     ELSE
-		update workorder set workorder_deleteTS = now(),workorder_updatedTS = now(), 
+		update workorder set workorder_deleteTS = now(),workorder_updatedTS = now(),
         workorder_updatedByUUID=_userUUID where workorderUUID=_workorderUUID;
     END IF;
-    
+
 ELSEIF(_action ='ASSIGN') THEN
 
-		update workorder set workorder_status='OPEN', workorder_completeDate =null, 
+		update workorder set workorder_status='OPEN', workorder_completeDate =null,
 		workorder_userUUID = _workorder_userUUID,
-		workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID 
+		workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID
         where workorderUUID=_workorderUUID;
 
 ELSEIF(_action ='START') THEN
 
         -- check to see if this WO was a checklist, and complete it.
         -- this checklistUUID is the template.  It will get changed to history when started.
-        select workorder_checklistUUID into _workorder_checklistUUID from workorder where workorderUUID=_workorderUUID; 
-		
+        select workorder_checklistUUID into _workorder_checklistUUID from workorder where workorderUUID=_workorderUUID;
+
         if (_workorder_checklistUUID is not null) THEN
 
         	-- create new historical
@@ -694,9 +694,9 @@ ELSEIF(_action ='START') THEN
 	 		_workorderUUID, null,null, null,null,null,null,null, null, null, null, null, null, null, null
 			);
 
-        END IF;		
+        END IF;
 
-		update workorder set workorder_status='IN_PROGRESS', workorder_completeDate =null, 
+		update workorder set workorder_status='IN_PROGRESS', workorder_completeDate =null,
         workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID , workorder_checklistUUID=_checklist_historyUUID
         where workorderUUID=_workorderUUID;
 
@@ -706,13 +706,13 @@ ELSEIF(_action ='START') THEN
 
 ELSEIF(_action ='COMPLETE') THEN
 
-		update workorder set workorder_status='Complete', workorder_completeDate = DATE(now()), 
-        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID 
+		update workorder set workorder_status='Complete', workorder_completeDate = DATE(now()),
+        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID
         where workorderUUID=_workorderUUID;
 
         -- check to see if this WO was a checklist, and complete it.
-        select workorder_checklistUUID into _workorder_checklistUUID from workorder where workorderUUID=_workorderUUID; 
-		
+        select workorder_checklistUUID into _workorder_checklistUUID from workorder where workorderUUID=_workorderUUID;
+
         if (_workorder_checklistUUID is not null) THEN
 			call CHECKLIST_checklist(
 			'PASS_CHECKLIST',_userUUID,null,
@@ -724,37 +724,37 @@ ELSEIF(_action ='COMPLETE') THEN
 
 ELSEIF(_action ='ADDPART' and _wapj_asset_partUUID is not null) THEN
 
-		REPLACE INTO workorder_asset_part_join (wapj_workorderUUID, wapj_asset_partUUID, 
+		REPLACE INTO workorder_asset_part_join (wapj_workorderUUID, wapj_asset_partUUID,
 		wapj_quantity, wapj_createdTS)
 		values (
 		_workorderUUID,_wapj_asset_partUUID,_wapj_quantity,now()
 		);
-	
+
 ELSE
 	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action is of type invalid';
 	LEAVE WORKORDER_workOrder;
 END IF;
 
 
-IF (_DEBUG=1) THEN 
+IF (_DEBUG=1) THEN
 	select _action,_workorderUUID,
-    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
-    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type, 
-    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority, 
-    _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
-    _workorder_frequencyScope, 
+    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
+    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type,
+    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority,
+    _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency,
+    _workorder_frequencyScope,
     _userUUID;
-    
+
 END IF;
 
 
 END$$
 
-DELIMITER ; 
+DELIMITER ;
 
 -- ==================================================================
 
--- call CUSTOMER_getCustomerDetails(_action, _customerId); 
+-- call CUSTOMER_getCustomerDetails(_action, _customerId);
 -- call CUSTOMER_getCustomerDetails('GET-LIST', NULL);
 
 DROP procedure IF EXISTS `CUSTOMER_getCustomerDetails`;
@@ -1079,7 +1079,7 @@ CREATE PROCEDURE `KB_knowledge_base` (
     IN _knowledge_categories VARCHAR(500),
     IN _knowledge_title VARCHAR(100),
     IN _knowledge_content VARCHAR(1000),
-    IN _knowledge_customerUUID CHAR(36)
+    IN _knowledge_customerUUID CHAR(36),
     IN _knowledge_relatedArticle TEXT
 )
 KB_knowledge_base: BEGIN
@@ -1247,10 +1247,10 @@ DELIMITER ;
 -- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID, 0);
 -- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null, 0);
 -- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null, 0);
--- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'Avida Symphony',null, 0); 
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55, 0); 
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55, 0); 
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22, 0); 
+-- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'Avida Symphony',null, 0);
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55, 0);
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55, 0);
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22, 0);
 
 DROP procedure IF EXISTS `LOCATION_action`;
 
@@ -1290,40 +1290,40 @@ IF(_action = 'SEARCH') THEN
 
 
 	set _name = concat('%',_name,'%');
-    
+
 	if (_type = 'ASSET') THEN
 
-		-- SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type` 
+		-- SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type`
 		-- 	FROM asset where asset_name like _name and  asset_customerUUID=_customerUUID;
 
         SET @l_SQL = CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',_type,'\' as `Type`
 			FROM asset where asset_statusId = 1 and asset_name like \'', _name,'\'  and  asset_customerUUID= \'',_customerUUID,'\'');
-    
+
     ELSEif (_type = 'ASSET-PART') THEN
-    
-		-- SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type` 
+
+		-- SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type`
 		-- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
 
-        SET @l_SQL = CONCAT('SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`, \'',_type,'\' as `Type` 
+        SET @l_SQL = CONCAT('SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`, \'',_type,'\' as `Type`
 			FROM asset_part where asset_part_statusId = 1 and asset_part_name like \'', _name,'\'  and  asset_part_customerUUID= \'',_customerUUID,'\'');
-    
-    ELSEif (_type = 'LOCATION') THEN 
 
-		-- SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type` 
+    ELSEif (_type = 'LOCATION') THEN
+
+		-- SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type`
 		-- 	FROM location where location_name like _name and location_customerUUID =_customerUUID;
 
-        SET @l_SQL = CONCAT('SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`, \'',_type,'\' as `Type` 
+        SET @l_SQL = CONCAT('SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`, \'',_type,'\' as `Type`
 			FROM location where location_statusId = 1 and location_name like \'', _name,'\'  and  location_customerUUID= \'',_customerUUID,'\'');
 
 	else
-    
+
 	SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _type not valid';
 	LEAVE LOCATION_action;
 
 	END IF;
 
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-        
+
         PREPARE stmt FROM @l_SQL;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
@@ -1333,7 +1333,7 @@ IF(_action = 'SEARCH') THEN
 ELSEIF(_action = 'CREATE') THEN
 
 	IF (DEBUG=1) THEN select _action, _userUUID, _customerUUID, _type, _name,_objUUID; END IF;
-    
+
 	IF(_name IS NULL or _type is null or _objUUID is null ) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _name or _type or _objUUID missing';
 		LEAVE LOCATION_action;
@@ -1345,73 +1345,73 @@ ELSEIF(_action = 'CREATE') THEN
 
 
 		if ( _itemFound is not null) THEN
-		
-			SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type` 
+
+			SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type`
 			FROM asset where assetUUID = _itemFound;
-            			
+
 		ELSE
-		
+
 			-- location,part required?
-            
-			insert into asset 
+
+			insert into asset
 			(assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate,
 			asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS)
 			values
 			(_objUUID, _locationId, null, _customerUUID, 1, _name, _name, null,
 			_userUUID, _userUUID, now(), now(), null);
 
-			SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type` 
+			SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`,_type as `Type`
 			FROM asset where assetUUID = _objUUID;
 
 		END IF;
 
 
-    
+
     ELSEif (_type = 'ASSET-PART') THEN
-    
+
 		select asset_partUUID into _itemFound from asset_part where asset_part_name = _name and asset_part_customerUUID = _customerUUID;
-			
+
 		if ( _itemFound is not null) THEN
-		
-			SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type` 
+
+			SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type`
 				FROM asset_part where asset_partUUID = _itemFound;
-			
+
 		ELSE
-		
-			insert into asset_part 
+
+			insert into asset_part
 			(asset_partUUID, asset_part_template_part_sku,asset_part_customerUUID,asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor,
 			asset_part_createdByUUID, asset_part_updatedByUUID, asset_part_updatedTS, asset_part_createdTS, asset_part_deleteTS)
 			values
 			(_objUUID, null, _customerUUID, 1, null, _name, _name, null, _name, null, null, null, null, null, null, null,
 			_userUUID, _userUUID, now(), now(), null);
 
-			SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type` 
+			SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type`
 				FROM asset_part where asset_partUUID = _objUUID;
 
 		END IF;
 
-    
-    ELSEif (_type = 'LOCATION') THEN 
+
+    ELSEif (_type = 'LOCATION') THEN
 
 
 
 		select locationUUID into _itemFound from location where location_name = _name and location_customerUUID = _customerUUID;
-			
+
 		if ( _itemFound is not null) THEN
-		
-			SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type` 
+
+			SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type`
 				FROM location where locationUUID = _itemFound;
-			
+
 		ELSE
-		
-		   insert into location 
+
+		   insert into location
 			(locationUUID, location_customerUUID, location_statusId, location_type, location_name, location_description, location_isPrimary, location_imageUrl, location_hotSpotJSON, location_addressTypeId, location_address, location_address_city, location_address_state, location_address_zip, location_country, location_contact_name, location_contact_email, location_contact_phone,
 			location_createdByUUID, location_updatedByUUID, location_updatedTS, location_createdTS, location_deleteTS)
 			values
 			(_objUUID, _customerUUID, 1, 'LOCATION', _name, _name, _isPrimary, null, null, null, null, null, null, null, null, null, null, null,
 			_userUUID, _userUUID, now(), now(), null);
 
-			SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type` 
+			SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type`
 				FROM location where locationUUID = _objUUID;
 
 		END IF;
@@ -1432,11 +1432,11 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call LOCATION_Location(action, _location_userUUID, location_customerUUID, locationUUID, location_statusId,location_type, location_name, location_description, location_isPrimary, location_imageUrl, location_hotSpotJSON, location_addressTypeId, location_address, location_address_city, location_address_state, location_address_zip, location_country, location_contact_name, location_contact_email, location_contact_phone); 
+-- call LOCATION_Location(action, _location_userUUID, location_customerUUID, locationUUID, location_statusId,location_type, location_name, location_description, location_isPrimary, location_imageUrl, location_hotSpotJSON, location_addressTypeId, location_address, location_address_city, location_address_state, location_address_zip, location_country, location_contact_name, location_contact_email, location_contact_phone);
 -- call LOCATION_Location('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', null, null,null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);   -- GET ALL LOCATIONS
 -- call LOCATION_Location('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', '179d6406ac1241e0bd148d3f1ccabf36', null,null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null);   -- GET SINGLE LOCATIONS
--- call LOCATION_Location('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null,'LOCATION', 'location_name', 'location_description', 1, 'location_imageUrl', 'location_hotSpotJSON', 1, 'location_address', 'location_address_city', 'location_address_state', 'location_address_zip', 'location_country', 'location_contact_name', 'location_contact_email', 'location_contact_phone'); 
--- call LOCATION_Location('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null,'LOCATION', 'location_name2', 'location_description2', 1, 'location_imageUrl2', 'location_hotSpotJSON', 1, 'location_address', 'location_address_city', 'location_address_state', 'location_address_zip', 'location_country', 'location_contact_name', 'location_contact_email', 'location_contact_phone'); 
+-- call LOCATION_Location('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null,'LOCATION', 'location_name', 'location_description', 1, 'location_imageUrl', 'location_hotSpotJSON', 1, 'location_address', 'location_address_city', 'location_address_state', 'location_address_zip', 'location_country', 'location_contact_name', 'location_contact_email', 'location_contact_phone');
+-- call LOCATION_Location('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null,'LOCATION', 'location_name2', 'location_description2', 1, 'location_imageUrl2', 'location_hotSpotJSON', 1, 'location_address', 'location_address_city', 'location_address_state', 'location_address_zip', 'location_country', 'location_contact_name', 'location_contact_email', 'location_contact_phone');
 -- call LOCATION_Location('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null,null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);   -- GET ALL LOCATIONS
 
 
@@ -1456,8 +1456,8 @@ IN _location_isPrimary INT,
 IN _location_imageUrl  VARCHAR(1000),
 IN _location_hotSpotJSON TEXT,
 IN _location_addressTypeId INT,
-IN _location_address VARCHAR(255), 
-IN _location_address_city VARCHAR(255), 
+IN _location_address VARCHAR(255),
+IN _location_address_city VARCHAR(255),
 IN _location_address_state VARCHAR(25),
 IN _location_address_zip VARCHAR(25),
 IN _location_country VARCHAR(25),
@@ -1494,17 +1494,17 @@ IF(_action = 'GET') THEN
 		LEAVE LOCATION_Location;
 	ELSE
         SET @l_SQL = CONCAT(@l_SQL, '  WHERE l.location_customerUUID =\'', _location_customerUUID,'\'');
-        
+
 		IF(_locationUUID IS NOT NULL AND _locationUUID!='') THEN
 			SET @l_SQL = CONCAT(@l_SQL, '  AND l.locationUUID =\'', _locationUUID,'\'');
 		END IF;
 		IF(_location_isPrimary IS NOT NULL) THEN
 			SET @l_SQL = CONCAT(@l_SQL, '  AND l.location_isPrimary =', _location_isPrimary);
 		END IF;
-			
+
 		SET @l_SQL = CONCAT(@l_SQL, '  AND l.location_statusId = \'1\'');
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-        
+
         PREPARE stmt FROM @l_SQL;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
@@ -1513,13 +1513,13 @@ IF(_action = 'GET') THEN
 ELSEIF(_action = 'CREATE') THEN
 
 	IF (DEBUG=1) THEN select _action,_locationUUID, _location_customerUUID, 1, _location_type, _location_name, _location_description, _location_isPrimary, _location_imageUrl, _location_hotSpotJSON, _location_addressTypeId, _location_address, _location_address_city, _location_address_state, _location_address_zip, _location_country, _location_contact_name, _location_contact_email, _location_contact_phone; END IF;
-    
+
 	IF(_locationUUID IS NULL) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_Location: _location_customerUUID missing';
 		LEAVE LOCATION_Location;
 	END IF;
-    
-    insert into location 
+
+    insert into location
     (locationUUID, location_customerUUID, location_statusId, location_type, location_name, location_description, location_isPrimary, location_imageUrl, location_hotSpotJSON, location_addressTypeId, location_address, location_address_city, location_address_state, location_address_zip, location_country, location_contact_name, location_contact_email, location_contact_phone,
     location_createdByUUID, location_updatedByUUID, location_updatedTS, location_createdTS, location_deleteTS)
 	values
@@ -1534,8 +1534,8 @@ ELSEIF(_action = 'UPDATE') THEN
 		LEAVE LOCATION_Location;
 	END IF;
 
-		set  @l_sql = CONCAT('update location set location_updatedTS=now(), location_updatedByUUID=\'', _location_userUUID,'\'');		
-                
+		set  @l_sql = CONCAT('update location set location_updatedTS=now(), location_updatedByUUID=\'', _location_userUUID,'\'');
+
         if (_location_statusId is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',location_statusId = ', _location_statusId);
         END IF;
@@ -1586,18 +1586,18 @@ ELSEIF(_action = 'UPDATE') THEN
         END IF;
 
 		set @l_sql = CONCAT(@l_sql,' where locationUUID = \'', _locationUUID,'\';');
-       
+
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
-        
+
 
 ELSEIF(_action = 'DELETE') THEN
 
 	IF (DEBUG=1) THEN select _action,_locationUUID; END IF;
-    
+
 	IF(_locationUUID IS NULL) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_Location: _location_customerUUID missing';
 		LEAVE LOCATION_Location;
@@ -1622,11 +1622,11 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate); 
--- call ASSET_asset('GET', '1', 'a30af'GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null, null); 
--- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now())); 
--- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now())); 
--- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null); 
+-- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate);
+-- call ASSET_asset('GET', '1', 'a30af'GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null, null);
+-- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now()));
+-- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now()));
+-- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null);
 
 
 DROP procedure IF EXISTS `ASSET_asset`;
@@ -1666,18 +1666,18 @@ END IF;
 IF(_action = 'GET') THEN
 
 	SET @l_SQL = 'SELECT * FROM asset ';
-	
+
         SET @l_SQL = CONCAT(@l_SQL, '  WHERE asset_customerUUID =\'', _customerUUID,'\'');
-        
+
 		IF(_assetUUID IS NOT NULL AND _assetUUID!='') THEN
 			SET @l_SQL = CONCAT(@l_SQL, '  AND assetUUID =\'', _assetUUID,'\'');
 		END IF;
 		IF(_asset_partUUID IS NOT NULL AND _asset_partUUID!='') THEN
 			SET @l_SQL = CONCAT(@l_SQL, '  AND asset_partUUID =\'', _asset_partUUID,'\'');
 		END IF;
-        
+
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-        
+
         PREPARE stmt FROM @l_SQL;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
@@ -1685,13 +1685,13 @@ IF(_action = 'GET') THEN
 ELSEIF(_action = 'CREATE') THEN
 
 	IF (DEBUG=1) THEN select _action, _userUUID, _customerUUID, _assetUUID, _asset_locationUUID, _asset_partUUID, _asset_statusId, _asset_name, _asset_shortName, _asset_installDate; END IF;
-    
+
 	IF(_assetUUID IS NULL or _asset_partUUID is null) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID or _asset_partUUID missing';
 		LEAVE ASSET_asset;
 	END IF;
-    
-    insert into asset 
+
+    insert into asset
     (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate,
     asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS)
 	values
@@ -1706,7 +1706,7 @@ ELSEIF(_action = 'UPDATE') THEN
 		LEAVE ASSET_asset;
 	END IF;
 
-		set  @l_sql = CONCAT('update asset set asset_updatedTS=now(), asset_updatedByUUID=\'', _userUUID,'\'');		
+		set  @l_sql = CONCAT('update asset set asset_updatedTS=now(), asset_updatedByUUID=\'', _userUUID,'\'');
 
         if (_asset_locationUUID is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',asset_locationUUID = \'', _asset_locationUUID,'\'');
@@ -1726,21 +1726,21 @@ ELSEIF(_action = 'UPDATE') THEN
         if (_asset_name is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',asset_name = \'', _asset_name,'\'');
         END IF;
-        
+
 
 		set @l_sql = CONCAT(@l_sql,' where assetUUID = \'', _assetUUID,'\';');
-       
+
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
-        
+
 
 ELSEIF(_action = 'DELETE') THEN
 
 	IF (DEBUG=1) THEN select _action,_assetUUID; END IF;
-    
+
 	IF(_assetUUID IS NULL) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID missing';
 		LEAVE ASSET_asset;
@@ -1763,12 +1763,12 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call ASSETPART_assetpart(action, _userUUID, _customerUUID, asset_partUUID, asset_part_template_part_sku,asset_part_statusId, asset_part_sku,asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor); 
--- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5', null, null,null, null, null, null, null, null, null, null, null, null, null, null, null); 
--- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5',  '0090d1d3b414471485c5e8b6f390a150', null,null, null, null, null, null, null, null, null, null, null, null, null, null); 
--- call ASSETPART_assetpart('CREATE', '1', '3792f636d9a843d190b8425cc06257f5',  10, 'asset_part_template_part_sku',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 1, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor'); 
--- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, 'asset_part_template_part_sku2',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 0, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor'); 
--- call ASSETPART_assetpart('DELETE', '1', '3792f636d9a843d190b8425cc06257f5',  10, null,null, null, null,null,null,null,null,null,null,null,null, null,null); 
+-- call ASSETPART_assetpart(action, _userUUID, _customerUUID, asset_partUUID, asset_part_template_part_sku,asset_part_statusId, asset_part_sku,asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor);
+-- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5', null, null,null, null, null, null, null, null, null, null, null, null, null, null, null);
+-- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5',  '0090d1d3b414471485c5e8b6f390a150', null,null, null, null, null, null, null, null, null, null, null, null, null, null);
+-- call ASSETPART_assetpart('CREATE', '1', '3792f636d9a843d190b8425cc06257f5',  10, 'asset_part_template_part_sku',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 1, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor');
+-- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, 'asset_part_template_part_sku2',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 0, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor');
+-- call ASSETPART_assetpart('DELETE', '1', '3792f636d9a843d190b8425cc06257f5',  10, null,null, null, null,null,null,null,null,null,null,null,null, null,null);
 
 
 DROP procedure IF EXISTS `ASSETPART_assetpart`;
@@ -1822,15 +1822,15 @@ IF(_action = 'GET') THEN
 
 
 	SET @l_SQL = 'SELECT * FROM asset_part ';
-	
+
         SET @l_SQL = CONCAT(@l_SQL, '  WHERE asset_part_customerUUID =\'', _customerUUID,'\'');
-        
+
 		IF(_asset_partUUID IS NOT NULL AND _asset_partUUID!='') THEN
 			SET @l_SQL = CONCAT(@l_SQL, '  AND asset_partUUID =\'', _asset_partUUID,'\'');
 		END IF;
-       
+
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-        
+
         PREPARE stmt FROM @l_SQL;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
@@ -1838,15 +1838,15 @@ IF(_action = 'GET') THEN
 ELSEIF(_action = 'CREATE') THEN
 
 	IF (DEBUG=1) THEN select _action, _userUUID, _customerUUID, _asset_partUUID, _asset_part_template_part_sku,_asset_part_statusId, _asset_part_sku, _asset_part_name, _asset_part_description, _asset_part_userInstruction, _asset_part_shortName, _asset_part_imageURL, _asset_part_imageThumbURL, _asset_part_hotSpotJSON, _asset_part_isPurchasable, _asset_part_diagnosticUUID, _asset_part_magentoUUID, _asset_part_vendor; END IF;
-    
+
 	IF(_asset_partUUID IS NULL) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
 		LEAVE ASSETPART_assetpart;
 	END IF;
-    
+
     if (_asset_part_isPurchasable is null) then set _asset_part_isPurchasable=0; end if;
-    
-    insert into asset_part 
+
+    insert into asset_part
     (asset_partUUID, asset_part_template_part_sku,asset_part_customerUUID,asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor,
     asset_part_createdByUUID, asset_part_updatedByUUID, asset_part_updatedTS, asset_part_createdTS, asset_part_deleteTS)
 	values
@@ -1861,7 +1861,7 @@ ELSEIF(_action = 'UPDATE') THEN
 		LEAVE ASSETPART_assetpart;
 	END IF;
 
-		set  @l_sql = CONCAT('update asset_part set asset_part_updatedTS=now(), asset_part_updatedByUUID=\'', _userUUID,'\'');		
+		set  @l_sql = CONCAT('update asset_part set asset_part_updatedTS=now(), asset_part_updatedByUUID=\'', _userUUID,'\'');
 
         if (_asset_partUUID is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',asset_partUUID = \'', _asset_partUUID,'\'');
@@ -1911,18 +1911,18 @@ ELSEIF(_action = 'UPDATE') THEN
 
 
 		set @l_sql = CONCAT(@l_sql,' where asset_partUUID = \'', _asset_partUUID,'\';');
-       
+
         IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
-        
+
 
 ELSEIF(_action = 'DELETE') THEN
 
 	IF (DEBUG=1) THEN select _action,_asset_partUUID; END IF;
-    
+
 	IF(_asset_partUUID IS NULL) THEN
 		SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
 		LEAVE ASSETPART_assetpart;
@@ -1996,9 +1996,37 @@ DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
 DECLARE _userFoundUUID CHAR(36);
 DECLARE _commaNeeded INT;
 
+IF(_action = 'GET-LIST') THEN
+  	IF(_customerId IS NULL or _customerId = '') THEN
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _customerId can not be empty';
+		LEAVE USER_user;
+	END IF;
 
-IF(_action ='GET') THEN
-	
+		set  @l_sql = CONCAT('select c.customer_name, c.customerUUID, u.*,l.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
+
+
+        if (_groupUUID is not null) THEN
+			set  @l_sql = CONCAT(@l_sql,',g.group_name, g.groupUUID ');
+		end if;
+
+		set  @l_sql = CONCAT(@l_sql,' from `user` u');
+		set  @l_sql = CONCAT(@l_sql,' left join customer c on (c.customerUUID=u.user_customerUUID)');
+		set  @l_sql = CONCAT(@l_sql,' left join user_profile p on (p.user_profile_userUUID = u.userUUID)');
+		set  @l_sql = CONCAT(@l_sql,' left join location l on (l.locationUUID = p.user_profile_locationUUID)');
+
+        if (_groupUUID is not null) THEN
+			set  @l_sql = CONCAT(@l_sql,' left join user_group_join gj on (gj.ugj_userUUID = u.userUUID)');
+			set  @l_sql = CONCAT(@l_sql,' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
+		end if;
+
+		set  @l_sql = CONCAT(@l_sql,' where ');
+
+        if (_customerId is not null) THEN
+			set @l_sql = CONCAT(@l_sql,'u.user_customerUUID = \'', _customerId,'\'');
+            set _commaNeeded=1;
+        END IF;
+ELSEIF(_action ='GET') THEN
+
 	IF(_customerId IS NULL or _customerId = '') THEN
 		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _customerId can not be empty';
 		LEAVE USER_user;
@@ -2015,13 +2043,13 @@ IF(_action ='GET') THEN
 		set  @l_sql = CONCAT(@l_sql,' left join customer c on (c.customerUUID=u.user_customerUUID)');
 		set  @l_sql = CONCAT(@l_sql,' left join user_profile p on (p.user_profile_userUUID = u.userUUID)');
 		set  @l_sql = CONCAT(@l_sql,' left join location l on (l.locationUUID = p.user_profile_locationUUID)');
-        
+
         if (_groupUUID is not null) THEN
 			set  @l_sql = CONCAT(@l_sql,' left join user_group_join gj on (gj.ugj_userUUID = u.userUUID)');
 			set  @l_sql = CONCAT(@l_sql,' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
 		end if;
-        
-		set  @l_sql = CONCAT(@l_sql,' where ');		
+
+		set  @l_sql = CONCAT(@l_sql,' where ');
 
         if (_customerId is not null) THEN
 			set @l_sql = CONCAT(@l_sql,'u.user_customerUUID = \'', _customerId,'\'');
@@ -2041,7 +2069,7 @@ IF(_action ='GET') THEN
 		set @l_sql = CONCAT(@l_sql,';');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
@@ -2062,30 +2090,30 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
 		insert into `user` (
 
 		userUUID, user_customerUUID, user_userName, user_loginEmail,
-        user_loginPW, user_statusId, 
-		user_securityBitwise, 
-		user_createdByUUID, user_updatedByUUID, user_updatedTS, user_createdTS, user_deleteTS    
+        user_loginPW, user_statusId,
+		user_securityBitwise,
+		user_createdByUUID, user_updatedByUUID, user_updatedTS, user_createdTS, user_deleteTS
 		)
 		values (
 		_user_userUUID, _customerId, _user_userName, _user_loginEmail,
-        _user_loginPW, 1, 
-		_user_securityBitwise, 
-		_userUUID, _userUUID, now(), now(), null 
+        _user_loginPW, 1,
+		_user_securityBitwise,
+		_userUUID, _userUUID, now(), now(), null
 		);
-        
+
         -- handle creating the profile record;
-        
+
         replace into user_profile (
         user_profile_userUUID, user_profile_avatarSrc, user_profile_phoneTypeId, user_profile_phone, user_profile_addressTypeId, user_profile_locationUUID, user_profile_preferenceJSON,
         user_profile_createdByUUID, user_profile_updatedByUUID, user_profile_updatedTS, user_profile_createdTS, user_profile_deleteTS
         ) values (
-        _user_userUUID, _user_profile_avatarSrc, 3, _user_profile_phone, 2, _user_profile_locationUUID, _user_profile_preferenceJSON, 
+        _user_userUUID, _user_profile_avatarSrc, 3, _user_profile_phone, 2, _user_profile_locationUUID, _user_profile_preferenceJSON,
         _userUUID, _userUUID, now(), now(), null
         );
-			
+
 	ELSE -- update
 
-		set  @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID =', _userUUID);		
+		set  @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID =', _userUUID);
 
         if (_user_userName is null) THEN
 			set @l_sql = CONCAT(@l_sql,',user_userName = \'', _user_userName,'\'');
@@ -2101,27 +2129,27 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
         END IF;
 
 		set @l_sql = CONCAT(@l_sql,' where _userUUID = \'', _user_userUUID,'\';');
-       
+
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
 
-		
+
         if (_user_statusId = 3) THEN
 			update `user` set user_deleteTS=now() where userUUID = _user_userUUID;
-        else 
+        else
 			update `user` set user_deleteTS=null where userUUID = _user_userUUID;
         END IF;
 
 
 		if (_user_profile_locationUUID is not null or _user_profile_phone is not null
         or _user_profile_preferenceJSON is not null or _user_profile_avatarSrc is not null) THEN
-        
+
 			set  @l_sql= null;
-            
-			set  @l_sql = CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID =', _userUUID);		
+
+			set  @l_sql = CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID =', _userUUID);
 
 			if (_user_profile_locationUUID is null) THEN
 				set @l_sql = CONCAT(@l_sql,',user_profile_locationUUID = \'', _user_profile_locationUUID,'\'');
@@ -2138,40 +2166,40 @@ ELSEIF(_action ='UPDATE' and _user_userUUID is not null) THEN
 
 
 			set @l_sql = CONCAT(@l_sql,' where user_profile_userUUID = \'', _user_userUUID,'\';');
-		   
+
 			IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
-				
+
 			PREPARE stmt FROM @l_sql;
 			EXECUTE stmt;
 			DEALLOCATE PREPARE stmt;
-        
+
         END IF;
 
-	END IF;	
+	END IF;
 
 ELSEIF(_action ='REMOVE' ) THEN
 
 	if (_groupUUID is not null) THEN
 
-		delete from user_group_join where ugj_groupUUID=_groupUUID and 
+		delete from user_group_join where ugj_groupUUID=_groupUUID and
         ugj_userUUID = _user_userUUID;
-    
+
     END IF;
-    
+
     if (_user_userUUID is not null) THEN
 		update `user` set user_deleteTS=now(), user_updatedByUUID=_userUUID, user_updatedTS=now()
 		where userUUID = _user_userUUID;
     END IF;
-    
-    
-    
-    
+
+
+
+
 ELSEIF(_action ='ADDGROUP' and _user_userUUID is not null and _groupUUID is not null) THEN
 
-	insert ignore into user_group_join 
+	insert ignore into user_group_join
     (ugj_groupUUID, ugj_userUUID, ugj_createdByUUID, ugj_createdTS)
     values (_groupUUID, _user_userUUID, _userUUID, now() );
-    
+
 ELSEIF(_action ='CHANGEPASSWORD' and _user_userUUID is not null and _user_loginPW is not null) THEN
 
 		update `user` set user_loginPW=_user_loginPW, user_updatedByUUID=_userUUID, user_updatedTS=now()
@@ -2188,113 +2216,113 @@ ELSE
 END IF;
 
 
-IF (_DEBUG=1) THEN 
+IF (_DEBUG=1) THEN
 	select _action,_user_userUUID, _customerId, _user_userName, _user_loginEmail,
         _user_loginPW,_user_securityBitwise, _userUUID,_groupUUID;
-    
+
 END IF;
 
 
 END$$
 
-DELIMITER ; 
+DELIMITER ;
 
 
 
 -- ==================================================================
 -- call ATT_getPicklist(null, null, 1); -- returns all the picklists
--- call ATT_getPicklist('att_userlevel_predefined', null, null); 
--- call ATT_getPicklist('checklist', 'a30af0ce5e07474487c39adab6269d5f', null); 
--- call ATT_getPicklist('group', 'a30af0ce5e07474487c39adab6269d5f', null); 
--- call ATT_getPicklist('asset', 'a30af0ce5e07474487c39adab6269d5f', null); 
--- call ATT_getPicklist('location', 'a30af0ce5e07474487c39adab6269d5f', null); 
--- call ATT_getPicklist('user', 'a30af0ce5e07474487c39adab6269d5f', null); 
+-- call ATT_getPicklist('att_userlevel_predefined', null, null);
+-- call ATT_getPicklist('checklist', 'a30af0ce5e07474487c39adab6269d5f', null);
+-- call ATT_getPicklist('group', 'a30af0ce5e07474487c39adab6269d5f', null);
+-- call ATT_getPicklist('asset', 'a30af0ce5e07474487c39adab6269d5f', null);
+-- call ATT_getPicklist('location', 'a30af0ce5e07474487c39adab6269d5f', null);
+-- call ATT_getPicklist('user', 'a30af0ce5e07474487c39adab6269d5f', null);
 
 DROP procedure IF EXISTS `ATT_getPicklist`;
 
 DELIMITER //
-CREATE PROCEDURE `ATT_getPicklist`( 
+CREATE PROCEDURE `ATT_getPicklist`(
 IN _tables varchar(1000),
-_customerId CHAR(36), 
+_customerId CHAR(36),
 _userId CHAR(36))
 getPicklist: BEGIN
-	
+
     IF (LOCATE('att_address_type', _tables) > 0) THEN
 		select 'att_address_type' as tableName, id as id, name as value, name as name from att_address_type order by name;
-	END IF; 
-    
+	END IF;
+
     IF (LOCATE('att_phone', _tables) > 0) THEN
 		select 'att_phone' as tableName, id as id, name as value, name as name from att_phone order by name;
-	END IF; 
-        
+	END IF;
+
     IF (LOCATE('customer', _tables) > 0) THEN
 		select 'customer' as tableName, customerUUID as id, customer_name as value, customer_name as name from customer order by customer_name;
-	END IF; 
+	END IF;
 
     IF (LOCATE('checklist', _tables) > 0) THEN
-    
+
 		if (_customerId is null) Then
 		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
 		LEAVE getPicklist;
         END IF;
-        
-		select 'checklist' as tableName, checklistUUID as id, checklist_name as value, checklist_name as name 
+
+		select 'checklist' as tableName, checklistUUID as id, checklist_name as value, checklist_name as name
         from checklist where checklist_customerUUID = _customerId
         order by checklist_name;
-	END IF; 
+	END IF;
 
 
     IF (LOCATE('group', _tables) > 0) THEN
-    
+
 		if (_customerId is null) Then
 		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
 		LEAVE getPicklist;
         END IF;
-        
-		select 'group' as tableName, groupUUID as id, group_name as value, group_name as name 
+
+		select 'group' as tableName, groupUUID as id, group_name as value, group_name as name
         from user_group where group_customerUUID = _customerId
         order by group_name;
-	END IF; 
+	END IF;
 
     IF (LOCATE('asset', _tables) > 0) THEN
-    
+
 		if (_customerId is null) Then
 		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
 		LEAVE getPicklist;
         END IF;
-        
-		select 'group' as tableName, assetUUID as id, asset_name as value, asset_name as name 
+
+		select 'group' as tableName, assetUUID as id, asset_name as value, asset_name as name
         from asset where asset_customerUUID = _customerId
         order by asset_name;
-	END IF; 
+	END IF;
 
     IF (LOCATE('location', _tables) > 0) THEN
-    
+
 		if (_customerId is null) Then
 		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
 		LEAVE getPicklist;
         END IF;
-        
-		select 'location' as tableName, locationUUID as id, location_name as value, location_name as name 
+
+		select 'location' as tableName, locationUUID as id, location_name as value, location_name as name
         from location where location_customerUUID = _customerId
         order by location_name;
-	END IF; 
+	END IF;
 
     IF (LOCATE('user', _tables) > 0) THEN
-    
+
 		if (_customerId is null) Then
 		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
 		LEAVE getPicklist;
         END IF;
-        
-		select 'user' as tableName, userUUID as id, user_userName as value, user_userName as name 
+
+		select 'user' as tableName, userUUID as id, user_userName as value, user_userName as name
         from `user` where user_customerUUID = _customerId and user_statusId=1
         order by user_userName;
-	END IF; 
-    
+	END IF;
+
     IF (LOCATE('att_userlevel_predefined', _tables) > 0) THEN
 		select 'att_userlevel_predefined' as tableName, description as id, bitwise as value, bitwise as name from att_userlevel_predefined order by description;
-	END IF; 
+	END IF;
 
 END //
 DELIMITER ;
@@ -2344,7 +2372,7 @@ DECLARE _brandId CHAR(36);
 
 if (_action = 'ADDUSERSECURITY') THEN
 
-	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise 
+	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise
 	INTO
 	_customerId,_user_securityBitwise,_user_individualSecurityBitwise
     from `user`
@@ -2355,10 +2383,10 @@ if (_action = 'ADDUSERSECURITY') THEN
 	update `user` set user_individualSecurityBitwise=_user_individualSecurityBitwise where userUUID=_targetUserId;
 
 	set _action = 'CALCULATE';
-    
+
 ELSEif (_action = 'REMOVESECURITY') THEN
 
-	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise 
+	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise
 	INTO
 	_customerId,_user_securityBitwise,_user_individualSecurityBitwise
     from `user`
@@ -2375,7 +2403,7 @@ END IF;
 if (_action = 'CALCULATE') THEN
 
 	-- user
-	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise 
+	select user_customerUUID,user_securityBitwise,user_individualSecurityBitwise
 	INTO
 	_customerId,_user_securityBitwise,_user_individualSecurityBitwise
     from `user`
@@ -2383,9 +2411,9 @@ if (_action = 'CALCULATE') THEN
 
 	-- customer
 	select customer_securityBitwise into _customer_securityBitwise from customer where customerUUID = _customerId;
-	
+
     -- brand
-    select ifnull(brand_securityBitwise,0) into _brand_securityBitwise 
+    select ifnull(brand_securityBitwise,0) into _brand_securityBitwise
     from customer_brand b
     left join customer c on (c.customer_brandUUID = b.brandUUID) where c.customerUUID = _customerId;
 
@@ -2470,64 +2498,64 @@ DECLARE _expireDate datetime;
 
 
 IF(_action ='GETAPP') THEN
-	
-	select * from (select * from notification_queue where notification_type='APP' 
+
+	select * from (select * from notification_queue where notification_type='APP'
     and notification_toUserUUID = _userUUID and notification_expireOn > now() and notification_readyOn < now()
     and notification_statusId =1
     union all
-	select * from notification_queue where notification_type='APP' 
-    and notification_toGroupUUID in ( select ugj_groupUUID from user_group_join where ugj_userUUID=_userUUID) 
+	select * from notification_queue where notification_type='APP'
+    and notification_toGroupUUID in ( select ugj_groupUUID from user_group_join where ugj_userUUID=_userUUID)
     and notification_expireOn > now() and notification_readyOn < now()
     and notification_statusId =1) no left join user u on no.notification_fromUserUUID=u.userUUID;
 
 ELSEIF(_action ='GETSMS') THEN
 
-	select * from notification_queue where notification_type='SMS'and notification_expireOn > now() 
+	select * from notification_queue where notification_type='SMS'and notification_expireOn > now()
     and notification_readyOn < now() and notification_statusId =1;
 
 ELSEIF(_action ='GETEMAIL') THEN
 
-	select * from notification_queue where notification_type='EMAIL'and notification_expireOn > now() 
+	select * from notification_queue where notification_type='EMAIL'and notification_expireOn > now()
     and notification_readyOn < now() and notification_statusId =1;
 
 ELSEIF(_action ='CREATE') THEN
 
-	if (_notification_readyOn IS NOT NULL) THEN 
-		set _readyDate = (STR_TO_DATE(_notification_readyOn, _dateFormat)); 
-    ELSE 
+	if (_notification_readyOn IS NOT NULL) THEN
+		set _readyDate = (STR_TO_DATE(_notification_readyOn, _dateFormat));
+    ELSE
 		set _readyDate = now();
     END IF;
-	
-    if (_notification_expireOn IS NOT NULL) THEN 
+
+    if (_notification_expireOn IS NOT NULL) THEN
 		set _expireDate = (STR_TO_DATE(_notification_expireOn, _dateFormat));
-    ELSE 
+    ELSE
 		set _expireDate = DATE_ADD(now() , INTERVAL 2 WEEK);
     END IF;
 
 	-- attempt to find duplicates
 
-	-- select userUUID into _notificationFoundId from `notification_queue` 
+	-- select userUUID into _notificationFoundId from `notification_queue`
     -- where notification_subject=_notification_subject;
 
 	IF (_notificationFoundId is null) THEN
 
 		insert into `notification_queue` (
-notification_type, 
-notification_toEmail, notification_toSMS, notification_toGroupUUID, notification_toAppUUID, notification_toUserUUID, 
-notification_fromAppUUID, notification_fromUserUUID, 
-notification_readyOn, notification_expireOn, 
-notification_statusId, notification_content, notification_subject, notification_hook, 
-notification_createdTS   
+notification_type,
+notification_toEmail, notification_toSMS, notification_toGroupUUID, notification_toAppUUID, notification_toUserUUID,
+notification_fromAppUUID, notification_fromUserUUID,
+notification_readyOn, notification_expireOn,
+notification_statusId, notification_content, notification_subject, notification_hook,
+notification_createdTS
 		)
 		values (
-_notification_type, 
-_notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID, _notification_toUserUUID, 
-_notification_fromAppUUID, _notification_fromUserUUID, 
-_readyDate, _expireDate, 
-1, _notification_content, _notification_subject, _notification_hook, 
-now()  
+_notification_type,
+_notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID, _notification_toUserUUID,
+_notification_fromAppUUID, _notification_fromUserUUID,
+_readyDate, _expireDate,
+1, _notification_content, _notification_subject, _notification_hook,
+now()
 		);
-	
+
     END IF;
 
 ELSEIF(_action ='DELETE') THEN
@@ -2539,43 +2567,43 @@ ELSEIF(_action ='DELETE') THEN
 		elseif (_notification_toGroupUUID is not null) then
 			DELETE from notification_queue where notification_toGroupUUID = _notification_toGroupUUID; -- deleted
 		END IF;
-        
+
 ELSEIF(_action ='CLEANUP') THEN
 
 		DELETE from notification_queue where notification_expireOn < now();
 		DELETE from notification_queue where notification_statusId = 3; -- deleted
-        
+
 ELSEIF(_action ='ACKNOWLEDGE' and _notificationId is not null) THEN
 
 	update notification_queue set notification_statusId=3 where notificationId=_notificationId;
-    
+
 ELSE
 	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call NOTIFICATION_notification: _action is of type invalid';
 	LEAVE NOTIFICATION_notification;
 END IF;
 
 
-IF (_DEBUG=1) THEN 
-	select _action,_notification_type, 
-_notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID, _notification_toUserUUID, 
-_notification_fromAppUUID, _notification_fromUserUUID, 
-_readyDate, _expireDate, 
+IF (_DEBUG=1) THEN
+	select _action,_notification_type,
+_notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID, _notification_toUserUUID,
+_notification_fromAppUUID, _notification_fromUserUUID,
+_readyDate, _expireDate,
 _notification_statusId, _notification_content, _notification_subject, _notification_hook;
-    
+
 END IF;
 
 
 END$$
 
-DELIMITER ; 
+DELIMITER ;
 
 
 
 -- ==================================================================
 
-/* 
-call USER_login(_action, _userId, _entityId, 
-_USER_loginEmail, _USER_loginPW, _USER_loginEmailValidationCode, _USER_loginEnabled, 
+/*
+call USER_login(_action, _userId, _entityId,
+_USER_loginEmail, _USER_loginPW, _USER_loginEmailValidationCode, _USER_loginEnabled,
 _USER_loginPWReset);
 
 
@@ -2601,9 +2629,9 @@ IN _userId  CHAR(36),
 
 IN _entityId CHAR(36),
 IN _USER_loginEmail VARCHAR(100),
-IN _USER_loginPW VARCHAR(100), 
-IN _USER_loginEmailValidationCode VARCHAR(100), 
-IN _USER_loginEnabled INT, 
+IN _USER_loginPW VARCHAR(100),
+IN _USER_loginEmailValidationCode VARCHAR(100),
+IN _USER_loginEnabled INT,
 IN _USER_loginPWReset INT
 )
 USER_login: BEGIN
@@ -2632,14 +2660,14 @@ END IF;
 
 IF(_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not null) THEN
 
-  
+
     select userUUID, user_customerUUID, user_userName, user_loginEnabled , user_loginPW, user_loginEmailVerified, user_securityBitwise, user_individualSecurityBitwise
     into _entityId, _customerUUID, _userName, _USER_loginEnabled,_password,_USER_loginEmailVerified, _securityBitwise, _individualSecurityBitwise
-    from `user` where 
-    user_loginEmail=_USER_loginEmail; 
+    from `user` where
+    user_loginEmail=_USER_loginEmail;
 
   if (DEBUG=1) THEN select _action,_USER_loginEmail,_USER_loginPW,_entityId, _USER_loginEnabled,_password,_USER_loginEmailVerified; END IF;
-    
+
   if (_entityId is null) THEN
     SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call USER_login: user not found';
       LEAVE USER_login;
@@ -2659,10 +2687,10 @@ IF(_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not n
       SIGNAL SQLSTATE '41007'  SET MESSAGE_TEXT = 'call USER_login: password not correct';
       LEAVE USER_login;
     END IF;
-    
+
     if (_DISABLE_MFA = 0) THEN
 		select SESSION_generateAccessCode(4) into _USER_loginEmailValidationCode;
-    
+
 
 		  update `user` set user_loginLast=now(), user_loginSessionExpire= DATE_ADD( now(), INTERVAL 4 MINUTE ),
 			user_loginEmailValidationCode=_USER_loginEmailValidationCode,
@@ -2686,22 +2714,22 @@ IF(_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not n
 		concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),
 		concat('You have 4 minutes to enter this access code: ',_USER_loginEmailValidationCode),null
 		);
-        
+
         select user_profile_locationUUID into _startLocationUUID from user_profile where user_profile_userUUID = _entityId;
         IF(_startLocationUUID is null) THEN
             select locationUUID into _startLocationUUID from location where location_customerUUID = _customerUUID and location_isPrimary = 1 LIMIT 1;
 		END IF;
         select _entityId as entityId, _USER_loginEmailValidationCode as accessCode, 4 as expiresInMinutes, _startLocationUUID as startLocationUUID, _userName as userName, _securityBitwise as securityBitwise, _individualSecurityBitwise as individualSecurityBitwise, _customerUUID as customerUUID;
 
-    ELSE 
-    
+    ELSE
+
         -- call ENTITY_session('CREATE', _entityId,null,@accessToken);
 		select SESSION_generateSession(25) into _USER_loginEmailValidationCode;
-        
+
         update `user` set user_loginEmailValidationCode=null,user_loginSession=_USER_loginEmailValidationCode,
          user_loginLast= now(), user_loginSessionExpire=DATE_ADD( now(), INTERVAL 8 HOUR )
         where userUUID=_entityId;
-    
+
 		select user_profile_locationUUID into _startLocationUUID from user_profile where user_profile_userUUID = _entityId;
         IF(_startLocationUUID is null) THEN
             select locationUUID into _startLocationUUID from location where location_customerUUID = _customerUUID and location_isPrimary = 1 LIMIT 1;
@@ -2710,14 +2738,14 @@ IF(_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not n
 
 	END IF;
 
-     
-    -- TODO, handle login in attempts and lockout in the future.    
-    
+
+    -- TODO, handle login in attempts and lockout in the future.
+
 ELSEIF(_action = 'MFA' and _USER_loginEmail is NOT null and _USER_loginEmailValidationCode is not null) THEN
 
     select userUUID, user_customerUUID, user_userName, user_loginEnabled, user_loginPW,user_loginEmailVerified, user_securityBitwise, user_individualSecurityBitwise
     into _entityId, _customerUUID, _userName, _USER_loginEnabled,_password,_USER_loginEmailVerified, _securityBitwise, _individualSecurityBitwise
-    from `user` where 
+    from `user` where
     user_loginEmail=_USER_loginEmail and user_loginEmailValidationCode = _USER_loginEmailValidationCode
     and now() < user_loginSessionExpire;
 
@@ -2725,37 +2753,37 @@ ELSEIF(_action = 'MFA' and _USER_loginEmail is NOT null and _USER_loginEmailVali
   if (DEBUG=1) THEN select _action,_entityId, _USER_loginEnabled,_USER_loginEmailValidationCode,_USER_loginEmail; END IF;
 
   if (_entityId is not null) THEN
-    
+
         -- call ENTITY_session('CREATE', _entityId,null,@accessToken);
 		select SESSION_generateSession(25) into _USER_loginEmailValidationCode;
-        
+
         update `user` set user_loginEmailValidationCode=null,user_loginSession=_USER_loginEmailValidationCode,
          user_loginLast= now(), user_loginSessionExpire=DATE_ADD( now(), INTERVAL 8 HOUR )
         where userUUID=_entityId;
-        
+
 	select user_profile_locationUUID into _startLocationUUID from user_profile where user_profile_userUUID = _entityId;
 	IF(_startLocationUUID is null) THEN
 		select locationUUID into _startLocationUUID from location where location_customerUUID = _customerUUID and location_isPrimary = 1 LIMIT 1;
 	END IF;
-    
+
     select _entityId as entityId, _USER_loginEmailValidationCode as sessionToken, _startLocationUUID as startLocationUUID, _userName as userName, _securityBitwise as securityBitwise, _individualSecurityBitwise as individualSecurityBitwise, _customerUUID as customerUUID;
-        
+
     else
       SIGNAL SQLSTATE '45004'  SET MESSAGE_TEXT = 'Your authentication code has expired or does not match.', MYSQL_ERRNO =12;
       LEAVE USER_login;
-    
+
     END IF;
 
 ELSEIF(_action = 'FORGOTPASSWORD' and _USER_loginEmail is not null) THEN
 
         -- set _USER_loginEmailValidationCode = SESSION_generateAccessCode(7);
-    select userUUID, user_loginEnabled, `user_loginPW`,user_loginEmailVerified 
-    into _entityId, _USER_loginEnabled,_USER_loginPW,_USER_loginEmailVerified 
-    from `user` where 
-      user_loginEmail=_USER_loginEmail and user_loginEnabled=1; 
-    
+    select userUUID, user_loginEnabled, `user_loginPW`,user_loginEmailVerified
+    into _entityId, _USER_loginEnabled,_USER_loginPW,_USER_loginEmailVerified
+    from `user` where
+      user_loginEmail=_USER_loginEmail and user_loginEnabled=1;
+
         if (_entityId is not null and _USER_loginEnabled>0 and  _USER_loginEmailVerified is not null) THEN
-    
+
         -- update contact set password=_USER_loginEmailValidationCode, emailValidationCode=_USER_loginEmailValidationCode where contactId=_entityId;
     -- call updateNotificationQueue('ADD',null,null,'PASSWORD_TEMPORARY','EMAIL',null,_entityId,null,0,null,null);
 call NOTIFICATION_notification(
@@ -2767,18 +2795,18 @@ null,null,
 concat('Your password is: ',_USER_loginPW, ' Please change once you log back in.'),
 'Password Reminder',null
 );
-    
+
         END IF;
 
     if (DEBUG=1) THEN select _action,_entityId,_USER_loginPW,_USER_loginEnabled,_USER_loginEmailVerified; END IF;
-    
+
 ELSEIF(_action = 'RESETPASSWORD' and _entityId is not null and _USER_loginPW is not null) THEN
-      
-    select  user_loginEnabled, user_loginPW,user_loginEmailVerified 
-    into  _USER_loginEnabled,_password,_USER_loginEmailVerified 
-    from `user` where 
-      userUUID=_entityId; 
-    
+
+    select  user_loginEnabled, user_loginPW,user_loginEmailVerified
+    into  _USER_loginEnabled,_password,_USER_loginEmailVerified
+    from `user` where
+      userUUID=_entityId;
+
         if (_entityId is not null and _USER_loginEnabled>0 and _USER_loginEmailVerified is not null) THEN
 
       update `user` set user_loginEmailValidationCode=null,
@@ -2787,46 +2815,46 @@ ELSEIF(_action = 'RESETPASSWORD' and _entityId is not null and _USER_loginPW is 
 
     end if;
   -- update entity set USER_loginPW=_USER_loginPW, USER_loginPWReset=0  where entityId=_entityId;
-    
+
     if (DEBUG=1) THEN select _action,_entityId,_password as oldPass,_USER_loginPW,_USER_loginEnabled,_USER_loginEmailVerified; END IF;
 
     -- call updateNotificationQueue('ADD',null,'MFA','EMAIL',null,_entityId,null,0,null,null);
 
 ELSEIF(_action = 'ACCESS' and _USER_loginEnabled is NOT null and _entityId is not null ) THEN
-    
+
     if (_USER_loginEnabled=0) THEN
- 
-		update `user` set user_loginEnabled=0, user_loginPWReset=1, user_loginPWExpire=now(), 
-        user_loginEmailValidationCode=null,user_loginSession=null 
+
+		update `user` set user_loginEnabled=0, user_loginPWReset=1, user_loginPWExpire=now(),
+        user_loginEmailValidationCode=null,user_loginSession=null
         where userUUID=_entityId;
 
     ELSE
-        
+
 		if (_USER_loginEmail is not null) then
-			update `user` set user_loginEmail=_USER_loginEmail where userUUID=_entityId; 
+			update `user` set user_loginEmail=_USER_loginEmail where userUUID=_entityId;
         END IF;
 
 		if (_USER_loginPW is not null) then
-			update `user` set user_loginPW=_USER_loginPW where userUUID=_entityId; 
+			update `user` set user_loginPW=_USER_loginPW where userUUID=_entityId;
         END IF;
 
-		select  user_loginEnabled, user_loginPW,user_loginEmail 
-		into  _USER_loginEnabled,_password,_USER_loginEmail 
-		from `user` where 
-		  userUUID=_entityId; 
+		select  user_loginEnabled, user_loginPW,user_loginEmail
+		into  _USER_loginEnabled,_password,_USER_loginEmail
+		from `user` where
+		  userUUID=_entityId;
 
 		if (_password is null) then
-			update `user` set user_loginPW=SESSION_generateAccessCode(7) where userUUID=_entityId; 
+			update `user` set user_loginPW=SESSION_generateAccessCode(7) where userUUID=_entityId;
         END IF;
-		
+
 
 		if (_USER_loginEmail is null) then
 			  SIGNAL SQLSTATE '45007'  SET MESSAGE_TEXT = 'User login can not be enabled if email is not valid.', MYSQL_ERRNO =12;
 			  LEAVE USER_login;
         END IF;
-        
+
         set _USER_loginEmailValidationCode = SESSION_generateAccessCode(7);
-        
+
 		update `user` set user_loginEnabled=1, user_loginEmailValidationCode=_USER_loginEmailValidationCode where userUUID=_entityId;
 		-- call updateNotificationQueue('ADD',null,null,'INVITELOGIN','EMAIL',null,_entityId,null,0,null,null);
 
@@ -2841,18 +2869,18 @@ concat('Please verify your email: http://action=VERIFY'),
 );
 
   END IF;
-    
+
   if (DEBUG=1) THEN select _action,_entityId,_USER_loginEnabled,_USER_loginEmailValidationCode; END IF;
-    
+
 ELSEIF(_action = 'RESENDMFA' and _entityId is not null) THEN
 
     set _USER_loginEmailValidationCode= SESSION_generateAccessCode(4) ;
- 
+
   update `user` set user_loginLast=now(), user_loginSessionExpire= DATE_ADD( now(), INTERVAL 4 MINUTE ),
     user_loginEmailValidationCode=_USER_loginEmailValidationCode,
         user_loginFailedAttempts=0 where userUUID=_entityId;
 
-    
+
 call NOTIFICATION_notification(
 'CREATE',null,
 'MFA',null,'SMS',
@@ -2881,7 +2909,7 @@ ELSEIF(_action = 'VERIFYEMAIL' and _USER_loginEmailValidationCode is NOT null an
 
   select userUUID into _entityId from `user` where user_loginEmail=_USER_loginEmail
     and user_loginEmailValidationCode=_USER_loginEmailValidationCode;
-    
+
 
   if (DEBUG=1) THEN select _action,_entityId,_USER_loginEmail,_USER_loginEmailValidationCode; END IF;
 
@@ -2891,7 +2919,7 @@ ELSEIF(_action = 'VERIFYEMAIL' and _USER_loginEmailValidationCode is NOT null an
         END IF;
 
   update `user` set user_loginEmailVerified=now(),user_loginEmailValidationCode=null where  userUUID= _entityId;
-        
+
 END IF;
 
 END$$
@@ -2905,10 +2933,10 @@ DELIMITER ;
 /*
 call CHECKLIST_checklist(
 _action,_userUUID,_customerUUID,
-_checklistUUID, _assetUUID,_historyUUID, _workorderUUID, 
+_checklistUUID, _assetUUID,_historyUUID, _workorderUUID,
 _checklist_statusId,_checklist_name, _checklist_recommendedFrequency,_checklist_rulesJSON,
-_checklist_itemUUID,_checklist_item_statusId,_checklist_item_sortOrder, 
-_checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON, 
+_checklist_itemUUID,_checklist_item_statusId,_checklist_item_sortOrder,
+_checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON,
 _checklist_item_successPrompt, _checklist_item_successRange,
 checklist_history_item_resultFlag,checklist_history_item_resultText
 );
@@ -2958,22 +2986,22 @@ CREATE PROCEDURE `CHECKLIST_checklist` (
 IN _action VARCHAR(100),
 IN _userUUID char(36),
 IN _customerUUID char(36),
-IN _checklistUUID char(36), 
-IN _assetUUID char(36), 
-IN _historyUUID char(36), 
-IN _workorderUUID char(36), 
-IN _checklist_statusId INT, 
-IN _checklist_name varchar(255), 
+IN _checklistUUID char(36),
+IN _assetUUID char(36),
+IN _historyUUID char(36),
+IN _workorderUUID char(36),
+IN _checklist_statusId INT,
+IN _checklist_name varchar(255),
 IN _checklist_recommendedFrequency varchar(25), -- [HOURLY,DAILY,WEEKLY,MONTHLY,YEARLY]
 IN _checklist_rulesJSON TEXT,
 
 IN _checklist_itemUUID char(36),
-IN _checklist_item_statusId INT, -- 0,1 
-IN _checklist_item_sortOrder INT, 
-IN _checklist_item_prompt varchar(255), 
-IN _checklist_item_type varchar(255), 
-IN _checklist_item_optionSetJSON TEXT, 
-IN _checklist_item_successPrompt varchar(255), 
+IN _checklist_item_statusId INT, -- 0,1
+IN _checklist_item_sortOrder INT,
+IN _checklist_item_prompt varchar(255),
+IN _checklist_item_type varchar(255),
+IN _checklist_item_optionSetJSON TEXT,
+IN _checklist_item_successPrompt varchar(255),
 IN _checklist_item_successRange varchar(255),
 
 IN _checklist_history_item_resultFlag INT,
@@ -3005,7 +3033,7 @@ IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not
 
 		set  @l_sql = CONCAT('select c.*,i.* from checklist_history c ');
 		set  @l_sql = CONCAT(@l_sql,'left join checklist_item_history i on (i.checklist_history_item_historyUUID = c.checklist_historyUUID) ');
-		set  @l_sql = CONCAT(@l_sql,' where ');		
+		set  @l_sql = CONCAT(@l_sql,' where ');
 
         if ( _historyUUID is not null) THEN
 			set @l_sql = CONCAT(@l_sql,'c.checklist_historyUUID = \'', _historyUUID,'\'');
@@ -3029,16 +3057,16 @@ IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not
 		set @l_sql = CONCAT(@l_sql,';');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
 
 ELSEIF(_action ='GET_TEMPLATE' and (_checklistUUID is not null or _checklist_itemUUID is not null)) THEN
-	
+
 		set  @l_sql = CONCAT('select c.*,i.* from checklist c ');
 		set  @l_sql = CONCAT(@l_sql,'left join checklist_item i on (i.checklist_item_checklistUUID = c.checklistUUID) ');
-		set  @l_sql = CONCAT(@l_sql,' where ');		
+		set  @l_sql = CONCAT(@l_sql,' where ');
 
         if ( _checklistUUID is not null) THEN
 			set @l_sql = CONCAT(@l_sql,'c.checklistUUID = \'', _checklistUUID,'\'');
@@ -3053,7 +3081,7 @@ ELSEIF(_action ='GET_TEMPLATE' and (_checklistUUID is not null or _checklist_ite
 		set @l_sql = CONCAT(@l_sql,' order by checklist_item_sortOrder;');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
@@ -3064,36 +3092,36 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 	if (_customerUUID is null) THEN
 		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _customerUUID required';
 		LEAVE CHECKLIST_checklist;
-	END IF;    
+	END IF;
 	if (_checklistUUID is null or _assetUUID is null) THEN
 		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _checklistUUID,assetUUID,_historyUUID required';
 		LEAVE CHECKLIST_checklist;
-	END IF;    
+	END IF;
 	if (_historyUUID is null) THEN
 		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _historyUUID required';
 		LEAVE CHECKLIST_checklist;
-	END IF;    
+	END IF;
 
 	IF (_action ='FAIL_CHECKLIST_CREATEWO') THEN
-    
+
 		-- consider getting checklist_history_checklistUUID,checklist_history_assetUUID
-		-- checklist_history_checklistUUID, checklist_history_customerUUID, checklist_history_workorderUUID, 
-        -- checklist_history_assetUUID, checklist_history_statusId, checklist_history_resultFlag, 
+		-- checklist_history_checklistUUID, checklist_history_customerUUID, checklist_history_workorderUUID,
+        -- checklist_history_assetUUID, checklist_history_statusId, checklist_history_resultFlag,
         -- checklist_history_name, checklist_history_rulesJSON
-        
-		select checklist_history_workorderUUID,checklist_history_checklistUUID,checklist_history_assetUUID 
+
+		select checklist_history_workorderUUID,checklist_history_checklistUUID,checklist_history_assetUUID
 			into _workorderUUID, _checklistUUID,_assetUUID
-			from checklist_history 
+			from checklist_history
 			where checklist_historyUUID = _historyUUID;
 
 		update  checklist_history set checklist_history_resultFlag=2,checklist_history_updatedTS=now(),
 			checklist_history_updatedByUUID=_userUUID
 			where checklist_historyUUID = _historyUUID;
-		
+
 		update  workorder set workorder_completeDate=Date(now()), workorder_updatedTS = now(),
 			workorder_updatedByUUID = _userUUID, workorder_status = 'Complete'
 			where workorderUUID = _workorderUUID;
-        
+
         set _workorderUUID = null;
         set _historyUUID= UUID();
 
@@ -3107,16 +3135,16 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 	select asset_locationUUID,asset_name into _workorder_locationUUID, _assetName from asset where assetUUID =_assetUUID;
 
 	select checklist_name,checklist_rulesJSON into _checklist_name,_checklist_rulesJSON from checklist where checklistUUID =_checklistUUID;
-    
+
     -- need to create a new checklist and workorder
     if (_foundId is null) THEN
 
 		if (_workorderUUID is null) then select UUID() into _workorderUUID; end if;
 
-		
+
         insert into checklist_history (
-        checklist_historyUUID, checklist_history_checklistUUID, checklist_history_customerUUID, 
-        checklist_history_workorderUUID, checklist_history_assetUUID, checklist_history_statusId, 
+        checklist_historyUUID, checklist_history_checklistUUID, checklist_history_customerUUID,
+        checklist_history_workorderUUID, checklist_history_assetUUID, checklist_history_statusId,
         checklist_history_name, checklist_history_rulesJSON,
         checklist_history_resultFlag,
         checklist_history_createdByUUID, checklist_history_updatedByUUID, checklist_history_updatedTS, checklist_history_createdTS
@@ -3128,7 +3156,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
         _userUUID,_userUUID,now(),now()
         );
 
-        select group_concat(checklist_itemUUID) into _ids  from checklist_item 
+        select group_concat(checklist_itemUUID) into _ids  from checklist_item
         where checklist_item_checklistUUID = _checklistUUID and checklist_item_statusId =1
         order by checklist_item_sortOrder;
 
@@ -3136,58 +3164,58 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
         -- reOrder of the stages for old tasktype
          if(_ids is not null) then
-          looper: loop 
+          looper: loop
                SET strLen = CHAR_LENGTH(_ids);
-                
+
               set _id = SUBSTRING_INDEX(_ids, ',', 1);
-              
+
               select UUID() into _checklist_itemUUID;
-        
+
         select UUID(),checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON, checklist_item_successPrompt, checklist_item_successRange
-        into  _checklist_itemUUID, _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type, 
+        into  _checklist_itemUUID, _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type,
         _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange
         from checklist_item where  checklist_itemUUID= _id;
 
 
 		insert into checklist_item_history (
-        checklist_history_itemUUID, checklist_history_item_historyUUID, checklist_history_item_statusId, 
-        checklist_history_item_sortOrder, checklist_history_item_prompt, checklist_history_item_type, 
+        checklist_history_itemUUID, checklist_history_item_historyUUID, checklist_history_item_statusId,
+        checklist_history_item_sortOrder, checklist_history_item_prompt, checklist_history_item_type,
         checklist_history_item_optionSetJSON, checklist_history_item_successPrompt, checklist_history_item_successRange,
         checklist_history_item_resultFlag,
         checklist_history_item_createdByUUID, checklist_history_item_updatedByUUID, checklist_history_item_updatedTS, checklist_history_item_createdTS
         )
         values (
-        _checklist_itemUUID, _historyUUID, 1, 
-        _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type, 
+        _checklist_itemUUID, _historyUUID, 1,
+        _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type,
         _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange,
         0,
-        _userUUID,_userUUID,now(),now()        
+        _userUUID,_userUUID,now(),now()
         );
-        
-        -- select              
-		-- _checklist_itemUUID, _historyUUID, checklist_item_statusId, checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON, checklist_item_successPrompt, checklist_item_successRange, _userUUID, _userUUID, now(), now(), null              
+
+        -- select
+		-- _checklist_itemUUID, _historyUUID, checklist_item_statusId, checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON, checklist_item_successPrompt, checklist_item_successRange, _userUUID, _userUUID, now(), now(), null
         -- into table checklist_item_history
         -- from checklist_item where  checklist_itemUUID= _id;
 
-              
+
               SET SubStrLen = CHAR_LENGTH(SUBSTRING_INDEX(_ids, ',', 1))+2;
               SET _ids = MID(_ids, SubStrLen, strLen);
-              
+
               if(_ids = '') then
                 leave looper;
               end if;
             end loop;
          end if;
-         
-			-- create WO if it does not exist, but make sure to update the historyUUID 
+
+			-- create WO if it does not exist, but make sure to update the historyUUID
 			set _foundId = null;
-			
+
 			select workorderUUID into _foundId from workorder where workorderUUID=_workorderUUID;
-			
+
 			if (_foundId is null) THEN
-			
+
 				if (_DEBUG=1) THEN select 'CREATE WO ',_workorderUUID,' ',_assetUUID,' ',_workorder_locationUUID,' ',_checklist_name;  END IF;
-				
+
                 call WORKORDER_workOrder('CREATE', _customerUUID,_userUUID,
 				_workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID,
 				_historyUUID,1,'CHECKLIST',_checklist_name,null,_assetName,
@@ -3195,9 +3223,9 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 				null,1,'DAILY',null,
 				null
 				);
-				
+
 -- 	 		ELSE
-            
+
 				-- this will replace the checklistUUID for the historyUUID version of it.
 				-- update workorder set workorder_checklistUUID = _historyUUID where workorderUUID=_workorderUUID;
 /*
@@ -3207,15 +3235,15 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 				_workorder_actions,null,null,null,
 				null,1,'DAILY',null,
 				null
-				);		
-*/				
+				);
+*/
 			END IF;
 
 	ELSE -- history found, so update records
-    
-		if ( _checklist_statusId is not null or _checklist_name is not null) THEN 
-       
-			set  @l_sql = CONCAT('update checklist_history set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');		
+
+		if ( _checklist_statusId is not null or _checklist_name is not null) THEN
+
+			set  @l_sql = CONCAT('update checklist_history set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');
 
 			if (_checklist_name is not null) THEN
 				set @l_sql = CONCAT(@l_sql,', checklist_history_name= \'', _checklist_name,'\'');
@@ -3226,18 +3254,18 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
 
 			set @l_sql = CONCAT(@l_sql,' where checklist_historyUUID = \'', _historyUUID,'\';');
-		   
-			IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-				
+
+			IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
 			PREPARE stmt FROM @l_sql;
 			EXECUTE stmt;
 			DEALLOCATE PREPARE stmt;
-		
+
         END IF;
-  
-		if ( _checklist_item_statusId is not null or _checklist_name is not null) THEN 
-       
-			set  @l_sql = CONCAT('update checklist_item_history set checklist_history_item_updatedTS=now(), checklist_history_item_updatedByUUID=\'', _userUUID,'\'');		
+
+		if ( _checklist_item_statusId is not null or _checklist_name is not null) THEN
+
+			set  @l_sql = CONCAT('update checklist_item_history set checklist_history_item_updatedTS=now(), checklist_history_item_updatedByUUID=\'', _userUUID,'\'');
 
 			if (_checklist_history_item_resultText is not null) THEN
 				set @l_sql = CONCAT(@l_sql,', checklist_history_item_resultText= \'', _checklist_history_item_resultText,'\'');
@@ -3250,64 +3278,64 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 			END IF;
 
 			set @l_sql = CONCAT(@l_sql,' where  checklist_history_itemUUID= \'', _checklist_itemUUID,'\';');
-		   
-			IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-				
+
+			IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
 			PREPARE stmt FROM @l_sql;
 			EXECUTE stmt;
 			DEALLOCATE PREPARE stmt;
-        
-        
+
+
 		END IF;
-		
+
     END IF;
 
 
-    
-    
-    
+
+
+
     -- 1b. determine if workorder aready exists
 		-- (note, this can be called from WO create as well.  Depends on from who the caller is
 			-- from workorder create
-            -- from start checklist 
-    
+            -- from start checklist
+
     -- 2. if not, then copy a checklistUUID into a new history instance.
-    
+
     -- 3. else update history.
 		-- update mastor record if noted
         -- update item record if noted
-        
+
     -- 4. if all items on the checklist are completed, then close the WO
-        
+
 ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
 	-- 1. update template
-    
+
 	if (_customerUUID is null) THEN
 		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _customerUUID required';
 		LEAVE CHECKLIST_checklist;
-	END IF;    
+	END IF;
 
 	-- 1. determine if history aready exists
     select checklistUUID into _foundId from checklist where checklistUUID=_checklistUUID;
- 
+
     if (_foundId is null) THEN
-    
+
 		if (_checklist_recommendedFrequency is null) THEN set _checklist_recommendedFrequency='WEEKLY'; END IF;
-        
+
 		insert into checklist (
-checklistUUID, checklist_customerUUID, checklist_statusId, checklist_name, checklist_recommendedFrequency, 
-checklist_rulesJSON, 
-checklist_createdByUUID, checklist_updatedByUUID, checklist_updatedTS, checklist_createdTS        
+checklistUUID, checklist_customerUUID, checklist_statusId, checklist_name, checklist_recommendedFrequency,
+checklist_rulesJSON,
+checklist_createdByUUID, checklist_updatedByUUID, checklist_updatedTS, checklist_createdTS
         ) values (
-_checklistUUID, _customerUUID, 1, _checklist_name, _checklist_recommendedFrequency, 
-_checklist_rulesJSON, 
+_checklistUUID, _customerUUID, 1, _checklist_name, _checklist_recommendedFrequency,
+_checklist_rulesJSON,
 _userUUID, _userUUID, now(), now()
          );
-    
+
     ELSE
 
-		set  @l_sql = CONCAT('update checklist set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');		
+		set  @l_sql = CONCAT('update checklist set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');
 
         if (_checklist_rulesJSON is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',checklist_rulesJSON = \'', _checklist_rulesJSON,'\'');
@@ -3324,21 +3352,21 @@ _userUUID, _userUUID, now(), now()
 
 
 		set @l_sql = CONCAT(@l_sql,' where checklistUUID = \'', _checklistUUID,'\';');
-       
-        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
 
-    
+
     END IF;
-    
+
     select checklist_itemUUID into _foundId from checklist_item where checklist_itemUUID=_checklist_itemUUID;
- 
+
     if (_foundId is null and _checklist_itemUUID is not null) THEN
-            
-		insert into checklist_itemUUID (
+
+		insert into checklist_item (
  checklist_itemUUID, checklist_item_checklistUUID, checklist_item_customerUUID, checklist_item_statusId,
  checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON,
  checklist_item_successPrompt, checklist_item_successRange,
@@ -3349,10 +3377,10 @@ _userUUID, _userUUID, now(), now()
  _checklist_item_successPrompt, _checklist_item_successRange,
  _userUUID, _userUUID, now(), now()
          );
-    
+
     ELSE
 
-		set  @l_sql = CONCAT('update checklist_item set checklist_item_updatedTS=now(), checklist_item_updatedByUUID=\'', _userUUID,'\'');		
+		set  @l_sql = CONCAT('update checklist_item set checklist_item_updatedTS=now(), checklist_item_updatedByUUID=\'', _userUUID,'\'');
 
         if (_checklist_item_successRange is not null) THEN
 			set @l_sql = CONCAT(@l_sql,',checklist_item_successRange = \'', _checklist_item_successRange,'\'');
@@ -3377,66 +3405,66 @@ _userUUID, _userUUID, now(), now()
         END IF;
 
 		set @l_sql = CONCAT(@l_sql,' where checklist_itemUUID = \'', _checklist_itemUUID,'\';');
-              
-        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
-			
+
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
-        
+
     END IF;
-    
+
 
 ELSEIF(_action ='PASS_CHECKLIST') THEN
 
 
-	select checklist_history_workorderUUID into _workorderUUID from checklist_history 
+	select checklist_history_workorderUUID into _workorderUUID from checklist_history
 		where checklist_historyUUID = _historyUUID;
 
 	update  checklist_history set checklist_history_resultFlag=1,checklist_history_updatedTS=now(),
 		checklist_history_updatedByUUID=_userUUID
 		where checklist_historyUUID = _historyUUID;
-	
+
     update  workorder set workorder_completeDate=Date(now()), workorder_updatedTS = now(),
 		workorder_updatedByUUID = _userUUID, workorder_status = 'Complete'
 		where workorderUUID = _workorderUUID;
 
 		if (_DEBUG=1) THEN select _action, _workorderUUID,' ',_historyUUID;  END IF;
-     
+
 ELSEIF(_action ='FAIL_CHECKLIST') THEN
 
-	select checklist_history_workorderUUID into _workorderUUID from checklist_history 
+	select checklist_history_workorderUUID into _workorderUUID from checklist_history
 		where checklist_historyUUID = _historyUUID;
 
 	update  checklist_history set checklist_history_resultFlag=2,checklist_history_updatedTS=now(),
 		checklist_history_updatedByUUID=_userUUID
 		where checklist_historyUUID = _historyUUID;
-	
+
     update  workorder set workorder_completeDate=Date(now()), workorder_updatedTS = now(),
 		workorder_updatedByUUID = _userUUID, workorder_status = 'Complete'
 		where workorderUUID = _workorderUUID;
-    
+
 
 ELSEIF(_action ='DELETE') THEN
 
 	-- 1. if delete of a checklist history, then make sure wo is deleted.
-    
+
     select _action;
-        
+
 ELSE
 	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _action is of type invalid';
 	LEAVE CHECKLIST_checklist;
 END IF;
 
 
-IF (_DEBUG=1) THEN 
+IF (_DEBUG=1) THEN
 	select _action;
 END IF;
 
 
 END$$
 
-DELIMITER ; 
+DELIMITER ;
 
 
 
