@@ -479,18 +479,48 @@ END$$
 /*
 call WORKORDER_workOrder(_action, _customerId,_userUUID
 _workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,_workorder_assetUUID,
-_workorder_checklistUUID,_workorder_status,_workorder_type,_workorder_name,_workorder_number,_workorder_details,
+_workorder_checklistUUID,_workorder_checklistHistoryUUID,_workorder_status,_workorder_type,_workorder_name,_workorder_number,_workorder_details,
 _workorder_actions,_workorder_priority,_workorder_dueDate,_workorder_completeDate,
-_workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
+_workorder_scheduleDate,_workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
 _wapj_quantity
 );
 
 call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f',1,
 '0d59f068ed4c462aaaa23c5acd71e4d6',null,null,null,null,
-null,null,null,null,null,null,
-null,null,null,null,
+null,null,null,null,null,null,null
+null,null,null,null,null,
 null,null,null,null,
 null);
+
+call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f',1,
+null,null,null,null,null,
+null,null,null,null,null,null,null,
+null,null,null,null,null,
+null,null,null,null,
+null);
+
+call WORKORDER_workOrder('CREATE', 'a30af0ce5e07474487c39adab6269d5f',1,
+UUID(),null,null,null,null,
+'2b61b61eb4d141799a9560cccb109f59',null,null,null,null,null,null,
+null,null,null,null,
+'24-09-2020',null,5,'DAILY',null,
+null);
+
+call WORKORDER_workOrder('START', 'a30af0ce5e07474487c39adab6269d5f',1,
+'666e2c60-feb7-11ea-a1a5-4e53d94465b4',null,null,null,null,
+null,null,null,null,null,null,null,
+null,null,null,null,null,
+null,null,null,null,
+null);
+
+call WORKORDER_workOrder('COMPLETE', 'a30af0ce5e07474487c39adab6269d5f',1,
+'666e2c60-feb7-11ea-a1a5-4e53d94465b4',null,null,null,null,
+null,null,null,null,null,null,null,
+null,null,null,null,null,
+null,null,null,null,
+null);
+
+
 */
 DROP procedure IF EXISTS `WORKORDER_workOrder`;
 
@@ -506,6 +536,7 @@ IN _workorder_userUUID VARCHAR(100),
 IN _workorder_groupUUID VARCHAR(100),
 IN _workorder_assetUUID VARCHAR(100),
 IN _workorder_checklistUUID VARCHAR(100),
+IN _workorder_checklistHistoryUUID VARCHAR(100),
 IN _workorder_status varchar(100),
 IN _workorder_type VARCHAR(100),
 IN _workorder_name VARCHAR(100),
@@ -515,6 +546,7 @@ IN _workorder_actions TEXT,
 IN _workorder_priority VARCHAR(100),
 IN _workorder_dueDate VARCHAR(100),
 IN _workorder_completeDate VARCHAR(100),
+IN _workorder_scheduleDate VARCHAR(100),
 IN _workorder_rescheduleDate VARCHAR(100),
 IN _workorder_frequency INT,
 IN _workorder_frequencyScope VARCHAR(100),
@@ -523,13 +555,19 @@ IN _wapj_quantity INT
 )
 WORKORDER_workOrder: BEGIN
 
-DECLARE _DEBUG INT DEFAULT 0;
+DECLARE _DEBUG INT DEFAULT 1;
 
 DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
 DECLARE _maxWO INT;
 DECLARE _commaNeeded INT;
 DECLARE _workorder_definition varchar(100);
 DECLARE _checklist_historyUUID char(36);
+DECLARE _workorder_tag varchar(100);
+DECLARE strLen    INT DEFAULT 0;
+DECLARE SubStrLen INT DEFAULT 0;
+DECLARE _woDates varchar(5000);
+DECLARE _date varchar(100);
+
 
 IF(_action ='GET') THEN
 	
@@ -593,33 +631,143 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
 	-- RULES and CONVERSIONS
 	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 	if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
+	
+    if (_workorder_scheduleDate IS NOT NULL) THEN 
+		set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
+	ELSE 
+		set _workorder_scheduleDate=DATE(now());
+    END IF;
+    
 	if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
 
 
-	-- TODO get configuration for workorder naming
+	if (_workorder_checklistUUID is not null AND _workorder_frequency>1) THEN
+    
+		select checklist_name,checklist_name,checklist_name,'CHECKLIST' 
+        into _workorder_name,_workorder_details,_workorder_actions,_workorder_type
+        from checklist where checklistUUID = _workorder_checklistUUID;
+        
+		if (_workorder_frequencyScope = 'DAILY') THEN
+		
+select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from 
+(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
+ (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+ (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+ (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+ (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+ (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency DAY)
+and dayname(selected_date) in ('Monday','Tuesday','Wednesday','Thursday','Friday')
+order by v.selected_date;
+
+        ELSEIF (_workorder_frequencyScope = 'WEEKLY') THEN
+		
+select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from 
+(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
+ (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+ (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+ (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+ (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+ (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency WEEK)
+and dayname(selected_date) in ('Monday')
+order by v.selected_date;
+            
+        ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
+
+select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from 
+(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
+ (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+ (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+ (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+ (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+ (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency MONTH)
+and dayname(selected_date) in ('Monday') and (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) = 1
+order by v.selected_date;
+		
+		END IF;
+        
+        set _workorderUUID = null; -- force creating of new WO's
+        
+    ELSE -- just create one.  maybe turn the WO creation into a loop, and the above calculates the loop
+
+		set _woDates = _workorder_scheduleDate;
+        
+	END IF;
+
+IF (_DEBUG=1) THEN select _action,_woDates; END IF;
+
+
     set _workorder_definition = 'CM-';
+    set _workorder_tag = concat(_workorder_checklistUUID,':',_workorder_frequencyScope,':',_workorder_frequency);
+	set _workorder_status = 'Open';
+
+
+            IF (CHAR_LENGTH(_woDates) > 0) THEN
+			do_this:
+			   LOOP
+				 SET strLen = CHAR_LENGTH(_woDates);
+				                        
+				 SET _date=SUBSTRING_INDEX(_woDates, ',', 1);
+
+
+	-- TODO get configuration for workorder naming
     select count(*) into _maxWO from workorder;
 	set _workorder_number = CONCAT(_workorder_definition,_maxWO);
-	set _workorder_status = 'Open';
-	
+	set _workorder_scheduleDate = STR_TO_DATE(_date, _dateFormat);
+	if (_workorderUUID is null) THEN set _workorderUUID=UUID(); END IF;
+	if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = STR_TO_DATE(_date, _dateFormat); END IF;
+	if (_workorder_priority is null) THEN set _workorder_priority='Normal'; END IF;
+    
     -- based on frequencyScope and frequency, create 1-M WO's
     -- TODO
 	insert into workorder (workorderUUID,
     workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID, 
     workorder_assetUUID, workorder_checklistUUID, workorder_status, workorder_type, 
     workorder_number, workorder_name, workorder_details, workorder_actions, workorder_priority, 
-    workorder_dueDate, workorder_rescheduleDate, workorder_completeDate, workorder_frequency, 
-    workorder_frequencyScope,
+    workorder_dueDate, workorder_scheduleDate,workorder_rescheduleDate, workorder_completeDate, workorder_frequency, 
+    workorder_frequencyScope,workorder_tag,
 	workorder_createdByUUID, workorder_updatedByUUID, workorder_updatedTS, workorder_createdTS
     ) values (_workorderUUID,
     _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
     _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type, 
     _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority, 
-    _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
-    _workorder_frequencyScope, 
+    _workorder_dueDate, _workorder_scheduleDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
+    _workorder_frequencyScope, _workorder_tag,
     _userUUID, _userUUID, now(), now()
     );
+
+
+
+IF (_DEBUG=1) THEN 
+	select _action,_workorderUUID,
+    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
+    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type, 
+    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority, 
+    _workorder_dueDate,_workorder_scheduleDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
+    _workorder_frequencyScope, _workorder_tag
+    _userUUID;
+END IF;
+
+
+	set _workorderUUID=null;
 	
+
+
+				 SET SubStrLen = CHAR_LENGTH(SUBSTRING_INDEX(_woDates, ',', 1))+2;
+				 SET _woDates = MID(_woDates, SubStrLen, strLen);
+
+				 IF _woDates = '' or _woDates is null THEN
+				   LEAVE do_this;
+				 END IF;
+                 
+			 END LOOP do_this;
+             
+			END IF;
+
+
+
 
 ELSEIF(_action ='UPDATE') THEN
 
@@ -680,8 +828,12 @@ ELSEIF(_action ='START') THEN
 
         -- check to see if this WO was a checklist, and complete it.
         -- this checklistUUID is the template.  It will get changed to history when started.
-        select workorder_checklistUUID into _workorder_checklistUUID from workorder where workorderUUID=_workorderUUID; 
+        select workorder_assetUUID,workorder_userUUID,workorder_checklistUUID 
+        into _workorder_assetUUID,_workorder_userUUID,_workorder_checklistUUID 
+        from workorder where workorderUUID=_workorderUUID; 
 		
+        if (_workorder_userUUID is null) THEN set _workorder_userUUID=_userUUID(); END IF;
+        
         if (_workorder_checklistUUID is not null) THEN
 
         	-- create new historical
@@ -697,26 +849,29 @@ ELSEIF(_action ='START') THEN
         END IF;		
 
 		update workorder set workorder_status='IN_PROGRESS', workorder_completeDate =null, 
-        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID , workorder_checklistUUID=_checklist_historyUUID
+        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID , 
+        workorder_checklistHistoryUUID=_checklist_historyUUID,workorder_userUUID=_workorder_userUUID
         where workorderUUID=_workorderUUID;
 
-
-
+IF (_DEBUG=1) THEN 
+	select _action,_workorderUUID, _userUUID,_workorder_checklistUUID, _workorder_assetUUID,_checklist_historyUUID;
+END IF;
 
 
 ELSEIF(_action ='COMPLETE') THEN
 
+        select workorder_userUUID,workorder_checklistHistoryUUID 
+        into _workorder_userUUID,_workorder_checklistHistoryUUID 
+        from workorder where workorderUUID=_workorderUUID; 
+
 		update workorder set workorder_status='Complete', workorder_completeDate = DATE(now()), 
-        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID 
+        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID ,workorder_userUUID=_workorder_userUUID
         where workorderUUID=_workorderUUID;
 
-        -- check to see if this WO was a checklist, and complete it.
-        select workorder_checklistUUID into _workorder_checklistUUID from workorder where workorderUUID=_workorderUUID; 
-		
-        if (_workorder_checklistUUID is not null) THEN
+        if (_workorder_checklistHistoryUUID is not null) THEN
 			call CHECKLIST_checklist(
 			'PASS_CHECKLIST',_userUUID,null,
-			null, null, _workorder_checklistUUID, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+			null, null, _workorder_checklistHistoryUUID, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
 				);
 
 		END IF;
@@ -737,14 +892,7 @@ END IF;
 
 
 IF (_DEBUG=1) THEN 
-	select _action,_workorderUUID,
-    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID, 
-    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type, 
-    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority, 
-    _workorder_dueDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency, 
-    _workorder_frequencyScope, 
-    _userUUID;
-    
+	select 'FINISHED',_action,_workorderUUID, _userUUID;
 END IF;
 
 
@@ -2899,7 +3047,6 @@ END$$
 
 DELIMITER ;
 
-
 -- ==================================================================
 
 /*
@@ -3065,8 +3212,8 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _customerUUID required';
 		LEAVE CHECKLIST_checklist;
 	END IF;    
-	if (_checklistUUID is null or _assetUUID is null) THEN
-		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _checklistUUID,assetUUID,_historyUUID required';
+	if (_checklistUUID is null) THEN
+		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _checklistUUID required';
 		LEAVE CHECKLIST_checklist;
 	END IF;    
 	if (_historyUUID is null) THEN
@@ -3190,8 +3337,8 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 				
                 call WORKORDER_workOrder('CREATE', _customerUUID,_userUUID,
 				_workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID,
-				_historyUUID,1,'CHECKLIST',_checklist_name,null,_assetName,
-				_assetName,1,null,null,
+				_checklistUUID,_historyUUID,1,'CHECKLIST',_checklist_name,null,_assetName,
+				_assetName,1,null,null,null,
 				null,1,'DAILY',null,
 				null
 				);
@@ -3437,6 +3584,7 @@ END IF;
 END$$
 
 DELIMITER ; 
+
 
 
 
