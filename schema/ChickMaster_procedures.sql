@@ -3391,6 +3391,11 @@ _checklist_item_successPrompt, _checklist_item_successRange,
 checklist_history_item_resultFlag,checklist_history_item_resultText
 );
 
+call CHECKLIST_checklist(
+'GET_HISTORY','1',null,
+'2b61b61eb4d141799a9560cccb109f59', null, null, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+);
+
 -- creates a cl and wo
 call CHECKLIST_checklist(
 'UPDATE_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
@@ -3490,7 +3495,7 @@ IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not
             set _commaNeeded=1;
         END IF;
         if ( _checklistUUID is not null) THEN
-			set @l_sql = CONCAT(@l_sql,'c.checklist_history_checklistUUID. = \'', _checklistUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'c.checklist_history_checklistUUID = \'', _checklistUUID,'\'');
             set _commaNeeded=1;
         END IF;
         if ( _checklist_itemUUID is not null) THEN
@@ -3915,8 +3920,6 @@ END IF;
 END$$
 
 DELIMITER ;
-
-
 
 
 
