@@ -105,12 +105,8 @@ BEGIN
 
     IF (_action = 'GET') THEN
 
-        SET @l_SQL = 'SELECT * FROM diagnostic_tree ';
-
-        IF (_diagnosticUUID IS NOT NULL or _diagnostic_startNodeUUID IS NOT NULL or _diagnostic_name IS NOT NULL) THEN
-            SET @l_SQL = CONCAT(@l_SQL, '  WHERE ');
-        END IF;
-
+        SET @l_SQL = 'SELECT * FROM diagnostic_tree WHERE diagnostic_statusId = 1';
+        
         IF (_diagnosticUUID IS NOT NULL) THEN
             IF (commaNeeded > 0) THEN set @l_sql = CONCAT(@l_sql, ' AND '); END IF;
             SET @l_SQL = CONCAT(@l_SQL, ' diagnosticUUID =\'', _diagnosticUUID, '\'');
