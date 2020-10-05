@@ -592,7 +592,7 @@ IN _wapj_quantity INT
 )
 WORKORDER_workOrder: BEGIN
 
-DECLARE _DEBUG INT DEFAULT 1;
+DECLARE _DEBUG INT DEFAULT 0;
 
 DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
 DECLARE _maxWO INT;
@@ -729,7 +729,7 @@ order by v.selected_date;
         
     ELSE -- just create one.  maybe turn the WO creation into a loop, and the above calculates the loop
 
-		set _woDates = _workorder_scheduleDate;
+		set _woDates =  DATE_FORMAT(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d'), _dateFormat);
         
 	END IF;
 
