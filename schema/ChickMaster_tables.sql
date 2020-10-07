@@ -287,12 +287,14 @@ CREATE TABLE `notification_queue` (
    	notification_toEmail varchar(100) NULL,
    	notification_toSMS varchar(25) NULL,
     notification_toGroupUUID CHAR(25) NULL,
-   	notification_toAppUUID CHAR(36) NULL,  
+    notification_toAppUUID CHAR(36) NULL,  
+    notification_toAssetUUID CHAR(36) NULL,  
    	notification_toUserUUID CHAR(36) NULL,  
     notification_fromAppUUID CHAR(36) NULL,  
    	notification_fromUserUUID CHAR(36) NOT NULL,
    	notification_readyOn timestamp NOT NULL,
-   	notification_expireOn timestamp NOT NULL,
+    notification_expireOn timestamp NOT NULL,
+    notification_isClearable INT NULL DEFAULT 1,
    	notification_statusId INT NOT NULL DEFAULT 0, -- 0 not processed, 1+ processed
    	notification_content TEXT NULL, -- email payload
    	notification_subject varchar(255) NULL, -- email,SMS payload

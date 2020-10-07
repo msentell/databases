@@ -2828,6 +2828,7 @@ BEGIN
                 and notification_expireOn > now()
                 and notification_readyOn < now()
                 and notification_statusId = 1
+                and notification_assetUUID is null
               union all
               select *
               from notification_queue
@@ -2836,7 +2837,8 @@ BEGIN
                     (select ugj_groupUUID from user_group_join where ugj_userUUID = _userUUID)
                 and notification_expireOn > now()
                 and notification_readyOn < now()
-                and notification_statusId = 1) no
+                and notification_statusId = 1
+                and notification_assetUUID is null) no
                  left join user u on no.notification_fromUserUUID = u.userUUID;
 
     ELSEIF (_action = 'GETSMS') THEN
@@ -2847,6 +2849,16 @@ BEGIN
           and notification_expireOn > now()
           and notification_readyOn < now()
           and notification_statusId = 1;
+
+    ELSEIF (_action = 'GETASSET') THEN
+
+        select *
+        from notification_queue
+        where notification_type = 'APP'
+          and notification_expireOn > now()
+          and notification_readyOn < now()
+          and notification_statusId = 1
+          and notification_assetUUID = _notification_toAppUUID;
 
     ELSEIF (_action = 'GETEMAIL') THEN
 
@@ -2913,7 +2925,7 @@ BEGIN
 
     ELSEIF (_action = 'ACKNOWLEDGE' and _notificationId is not null) THEN
 
-        update notification_queue set notification_statusId=3 where notificationId = _notificationId;
+        update notification_queue set notification_statusId=3 where notificationId = _notificationId and notification_isClearable=1;
 
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call NOTIFICATION_notification: _action is of type invalid';
