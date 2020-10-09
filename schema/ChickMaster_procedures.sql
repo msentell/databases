@@ -834,11 +834,13 @@ ELSEIF(_action ='UPDATE') THEN
         if (_workorder_rescheduleDate IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', _workorder_rescheduleDate,'\'');
         END IF;
-        if (_workorder_userUUID IS NOT NULL) THEN
+        if (_workorder_userUUID IS NOT NULL and _workorder_groupUUID IS NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_userUUID = \'', _workorder_userUUID,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = NULL');
         END IF;
-        if (_workorder_groupUUID  IS NOT NULL) THEN
+        if (_workorder_groupUUID  IS NOT NULL and _workorder_userUUID IS NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = \'', _workorder_groupUUID ,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_userUUID = NULL');
         END IF;
         set _workorder_scheduledate= STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
        IF (_DEBUG=1) THEN select _workorder_scheduleDate,_workorder_scheduledate; END IF;
