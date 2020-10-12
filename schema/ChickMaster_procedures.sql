@@ -478,14 +478,23 @@ DROP procedure IF EXISTS `BUTTON_options`;
 
 DELIMITER $$
 CREATE PROCEDURE BUTTON_options(IN _action VARCHAR(100),
-                                IN _asset_partUUID CHAR(36),
+                                IN _id CHAR(36),
                                 IN _otherOptions varchar(255))
 BUTTON_options:
 BEGIN
 
-    -- TODO, select security to turn on/off
--- 'CONTACT,CHAT,STARTCHECKLIST,ADDLOG'
-    select ap.asset_partUUID,
+    DECLARE _partId varchar(100);
+
+    If (_action = 'ASSET') THEN
+		select a.asset_partUUID into _partId from asset a where assetUUID = _id;
+	ELSEIF (_action = 'ASSET-PART') THEN
+		set _partId=_id;
+    END IF;
+    
+    If (_partId IS NOT NULL) THEN
+		-- TODO, select security to turn on/off
+		-- 'CONTACT,CHAT,STARTCHECKLIST,ADDLOG'
+		select ap.asset_partUUID,
            (case when asset_part_isPurchasable = 1 is not null then 1 else 0 end)       BUTTON_viewOrderParts,
            (case when asset_part_diagnosticUUID is not null then 1 else 0 end)       as BUTTON_diagnoseAProblem,
            (select count(apaj_asset_partUUID)
@@ -505,8 +514,9 @@ BEGIN
            (case when locate('STARTCHECKLIST', _otherOptions) > 0 THEN 1 ELSE 0 END) as BUTTON_startAChecklist,
            (case when locate('ADDLOG', _otherOptions) > 0 THEN 1 ELSE 0 END)         as BUTTON_addALogEntry,
            ap.*
-    from asset_part ap
-    where asset_partUUID = _asset_partUUID;
+		from asset_part ap
+		where asset_partUUID = _partId;
+    END IF;
 
 END$$
 

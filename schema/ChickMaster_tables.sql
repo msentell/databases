@@ -289,6 +289,7 @@ CREATE TABLE `notification_queue` (
     notification_toGroupUUID CHAR(25) NULL,
     notification_toAppUUID CHAR(36) NULL,  
     notification_toAssetUUID CHAR(36) NULL,  
+    notification_priority varchar(25) NULL DEFAULT 'LOW', -- LOW, MEDIUM, HIGH
    	notification_toUserUUID CHAR(36) NULL,  
     notification_fromAppUUID CHAR(36) NULL,  
    	notification_fromUserUUID CHAR(36) NOT NULL,
