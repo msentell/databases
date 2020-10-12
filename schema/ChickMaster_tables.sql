@@ -84,7 +84,7 @@ CREATE TABLE `customer_brand` (
     brandId INT  NOT NULL,
     brand_name varchar(50)  NULL,
     brand_logo varchar(255)  NULL,
-    brand_securityBitwise BIGINT  NULL, 
+    brand_securityBitwise BIGINT  NULL,
     brand_preferenceJSON text  NULL, -- JSON PAYLOAD
     brand_createdByUUID CHAR(36)  NULL,
    	brand_created datetime  NULL default now(),
@@ -96,7 +96,7 @@ DROP TABLE IF EXISTS customer;
 
 CREATE TABLE `customer` (
     customerUUID CHAR(36)  NOT NULL,
-    customer_externalName INT   NULL,
+    customer_externalName varchar(50)   NULL,
     -- customer_brandId INT   NULL,
     customer_statusId INT   NULL DEFAULT 1,
     customer_name varchar(50)  NULL,
@@ -192,7 +192,7 @@ DROP TABLE IF EXISTS user_profile;
 CREATE TABLE `user_profile` (
     -- user_profileId INT  NOT NULL   AUTO_INCREMENT,
     user_profile_userUUID CHAR(36)  NOT NULL,
-    
+
     user_profile_avatarSrc varchar(255)   NULL,
     user_profile_phoneTypeId INT NULL DEFAULT 1,
     user_profile_phone varchar(255)   NULL,
@@ -287,11 +287,11 @@ CREATE TABLE `notification_queue` (
    	notification_toEmail varchar(100) NULL,
    	notification_toSMS varchar(25) NULL,
     notification_toGroupUUID CHAR(25) NULL,
-    notification_toAppUUID CHAR(36) NULL,  
-    notification_toAssetUUID CHAR(36) NULL,  
+    notification_toAppUUID CHAR(36) NULL,
+    notification_toAssetUUID CHAR(36) NULL,
     notification_priority varchar(25) NULL DEFAULT 'LOW', -- LOW, MEDIUM, HIGH
-   	notification_toUserUUID CHAR(36) NULL,  
-    notification_fromAppUUID CHAR(36) NULL,  
+   	notification_toUserUUID CHAR(36) NULL,
+    notification_fromAppUUID CHAR(36) NULL,
    	notification_fromUserUUID CHAR(36) NOT NULL,
    	notification_readyOn timestamp NOT NULL,
     notification_expireOn timestamp NOT NULL,
@@ -352,12 +352,12 @@ CREATE TABLE `location` (
     location_statusId INT   NULL DEFAULT 1,
 
     location_type varchar(255) NULL, -- [user defined types,]
-    location_name varchar(255) NULL, 
-    location_description varchar(1000) NULL, 
+    location_name varchar(255) NULL,
+    location_description varchar(1000) NULL,
     location_isPrimary SMALLINT NOT NULL DEFAULT 0,
     location_imageUrl varchar(255) NULL,
     location_hotSpotJSON text NULL, -- JSON payload
- 
+
     -- location_coordinate	POINT not null, -- can't have default
     location_addressTypeId INT NULL DEFAULT 1,
     location_address varchar(255) NULL,
@@ -394,9 +394,9 @@ CREATE TABLE `asset` (
     asset_customerUUID CHAR(36)  NOT NULL,
     asset_statusId INT   NULL DEFAULT 1,
 
-    asset_name varchar(255) NULL, 
-    asset_shortName varchar(255) NULL, 
- 
+    asset_name varchar(255) NULL,
+    asset_shortName varchar(255) NULL,
+
     asset_installDate DATE  NULL,
 
     asset_createdByUUID CHAR(36)  NULL,
@@ -417,7 +417,7 @@ CREATE TABLE `asset_alert` (
     alert_assetUUID CHAR(36)  NOT NULL,
    	alert_statusId INT   NULL DEFAULT 1,
 
-    asset_description varchar(1000) NULL, 
+    asset_description varchar(1000) NULL,
 
     alert_createdByUUID CHAR(36)  NULL,
     alert_acknowledgedByUUID CHAR(36)  NULL,
@@ -436,12 +436,12 @@ DROP TABLE IF EXISTS attachment;
 CREATE TABLE `attachment` (
     attachmentUUID CHAR(36)  NOT NULL,
    	attachment_statusId INT   NULL DEFAULT 1,
-    attachment_fileURL varchar(255) NULL, 
-    attachment_shortName varchar(100) NULL, 
-    attachment_description varchar(1000)  NULL, 
-    attachment_mimeType varchar(25) NULL, 
+    attachment_fileURL varchar(255) NULL,
+    attachment_shortName varchar(100) NULL,
+    attachment_description varchar(1000)  NULL,
+    attachment_mimeType varchar(25) NULL,
     attachment_customerUUID CHAR(36)  NOT NULL,
- 
+
     attachment_createdByUUID CHAR(36)  NULL,
     attachment_updatedByUUID CHAR(36)  NULL,
    	attachment_updatedTS datetime  NULL,
@@ -468,18 +468,18 @@ DROP TABLE IF EXISTS part_template;
 
 CREATE TABLE `part_template` (
     -- part_partUUID CHAR(36)  NOT NULL,
-    part_sku varchar(100) NOT NULL, 
+    part_sku varchar(100) NOT NULL,
     part_brandId INT NULL,
    	part_statusId INT NULL DEFAULT 1,
 
-    part_name varchar(255) NOT NULL, 
-    part_shortName varchar(100) NULL, 
-    part_description varchar(1000) NULL, 
-    part_userInstruction varchar(255) NULL, 
-    part_imageURL varchar(255) NULL, 
-    part_imageThumbURL varchar(255) NULL, 
+    part_name varchar(255) NOT NULL,
+    part_shortName varchar(100) NULL,
+    part_description varchar(1000) NULL,
+    part_userInstruction varchar(255) NULL,
+    part_imageURL varchar(255) NULL,
+    part_imageThumbURL varchar(255) NULL,
     part_hotSpotJSON text NULL, -- JSON payload
-    part_isPurchasable SMALLINT NULL DEFAULT 1, 
+    part_isPurchasable SMALLINT NULL DEFAULT 1,
 
     -- part_knowledgeBaseUUID CHAR(36)   NULL, -- turned into a join
     part_diagnosticUUID CHAR(36)   NULL,
@@ -504,7 +504,7 @@ CREATE TABLE `part_join_template` (
     -- pj_parent_partUUID CHAR(36)  NOT NULL,
     -- pj_child_partUUID CHAR(36)  NOT NULL,
     pj_parent_part_sku varchar(100)  NOT NULL,
-    pj_child_part_sku varchar(100)  NOT NULL,  	
+    pj_child_part_sku varchar(100)  NOT NULL,
     pj_createdTS datetime  NULL default now(),
 
   	PRIMARY KEY (pj_parent_partUUID,pj_child_partUUID))
@@ -533,14 +533,14 @@ CREATE TABLE `asset_part` (
    	asset_part_statusId INT NULL DEFAULT 1,
 
     asset_part_sku varchar(100) NULL,  -- can be null if their own part, but will take the original
-    asset_part_name varchar(255) NOT NULL, 
-    asset_part_description varchar(1000) NULL, 
-    asset_part_userInstruction varchar(255) NULL, 
-    asset_part_shortName varchar(100) NULL, 
-    asset_part_imageURL varchar(255) NULL, 
-    asset_part_imageThumbURL varchar(255) NULL, 
+    asset_part_name varchar(255) NOT NULL,
+    asset_part_description varchar(1000) NULL,
+    asset_part_userInstruction varchar(255) NULL,
+    asset_part_shortName varchar(100) NULL,
+    asset_part_imageURL varchar(255) NULL,
+    asset_part_imageThumbURL varchar(255) NULL,
     asset_part_hotSpotJSON text NULL, -- JSON payload
-    asset_part_isPurchasable SMALLINT NULL DEFAULT 1, 
+    asset_part_isPurchasable SMALLINT NULL DEFAULT 1,
 
     -- asset_part_knowledgeBaseUUID CHAR(36)   NULL,
     asset_part_diagnosticUUID CHAR(36)   NULL,
@@ -586,15 +586,15 @@ DROP TABLE IF EXISTS knowledge_base;
 CREATE TABLE `knowledge_base` (
     knowledgeUUID CHAR(36)  NOT NULL,
    	knowledge_statusId INT   NULL DEFAULT 1,
-    knowledge_imageURL varchar(255) NULL, 
-    knowledge_tags varchar(500) NULL, -- comma seperated tags 
+    knowledge_imageURL varchar(255) NULL,
+    knowledge_tags varchar(500) NULL, -- comma seperated tags
     knowledge_categories varchar(500) NULL, -- comma seperated tags
-    knowledge_title varchar(100) NULL, 
-    knowledge_content varchar(1000)  NULL, 
+    knowledge_title varchar(100) NULL,
+    knowledge_content varchar(1000)  NULL,
     knowledge_customerUUID CHAR(36)  NULL,
-    knowledge_likes int NULL DEFAULT 0, 
+    knowledge_likes int NULL DEFAULT 0,
     knowledge_dislikes int NULL DEFAULT 0,
-	  knowledge_relatedArticles TEXT NULL, -- json 
+	  knowledge_relatedArticles TEXT NULL, -- json
     knowledge_createdByUUID CHAR(32)  NULL,
     knowledge_updatedByUUID CHAR(32)  NULL,
    	knowledge_updatedTS datetime  NULL,
@@ -621,8 +621,8 @@ DROP TABLE IF EXISTS diagnostic_tree;
 CREATE TABLE `diagnostic_tree` (
     diagnosticUUID CHAR(36)  NOT NULL,
    	diagnostic_statusId INT   NULL DEFAULT 1,
-    diagnostic_name varchar(100) NULL, 
-    diagnostic_description text  NULL, 
+    diagnostic_name varchar(100) NULL,
+    diagnostic_description text  NULL,
     diagnostic_startNodeUUID CHAR(36) NULL,
 
     diagnostic_createdByUUID CHAR(36)  NULL,
@@ -640,10 +640,10 @@ CREATE TABLE `diagnostic_node` (
     diagnostic_nodeUUID CHAR(36)  NOT NULL,
     diagnostic_node_diagnosticUUID CHAR(36)  NOT NULL,
    	diagnostic_node_statusId INT   NULL DEFAULT 1,
-    diagnostic_node_title varchar(100) NULL, 
-    diagnostic_node_warning varchar(255) NULL, 
-    diagnostic_node_prompt varchar(255) NULL, 
-    diagnostic_node_optionPrompt varchar(255) NULL, 
+    diagnostic_node_title varchar(100) NULL,
+    diagnostic_node_warning varchar(255) NULL,
+    diagnostic_node_prompt varchar(255) NULL,
+    diagnostic_node_optionPrompt varchar(255) NULL,
     diagnostic_node_hotSpotJSON text NULL, -- JSON payload
     diagnostic_node_imageSetJSON text NULL, -- JSON payload
     diagnostic_node_optionSetJSON text NULL, -- JSON payload
@@ -673,11 +673,11 @@ CREATE TABLE `workorder` (
     workorder_tag varchar(100)  NULL, -- used to help group WO's for actions.
    	workorder_status varchar(25)   NULL DEFAULT 'PENDING', -- PENDING,ASSIGNED,COMPLETE
    	workorder_type varchar(25)  NULL, -- user defined
-	
-    workorder_number varchar(100) NULL, 
-    workorder_name varchar(100) NULL, 
-    workorder_details text NULL, 
-    workorder_actions text NULL, 
+
+    workorder_number varchar(100) NULL,
+    workorder_name varchar(100) NULL,
+    workorder_details text NULL,
+    workorder_actions text NULL,
     workorder_priority varchar(25) NULL DEFAULT 'LOW', -- LOW, MEDIUM, HIGH
 
    	workorder_dueDate date  NULL,
@@ -686,7 +686,7 @@ CREATE TABLE `workorder` (
    	workorder_completeDate date  NULL,
    	workorder_frequency int  NULL DEFAULT 1,
    	workorder_frequencyScope varchar(25)  NULL DEFAULT 'DAILY', -- DAILY, WEEKLY, MONTHLY
-	
+
     workorder_createdByUUID CHAR(36)  NULL,
     workorder_updatedByUUID CHAR(36)  NULL,
    	workorder_updatedTS datetime  NULL,
@@ -723,15 +723,15 @@ CREATE TABLE `workorder_template` (
     workorder_template_assetUUID CHAR(36)  NULL,
     workorder_template_checklistUUID CHAR(36)  NULL,
    	workorder_type varchar(25)  NULL, -- user defined
-	
-    workorder_template_name varchar(100) NULL, 
-    workorder_template_details text NULL, 
-    workorder_template_actions text NULL, 
+
+    workorder_template_name varchar(100) NULL,
+    workorder_template_details text NULL,
+    workorder_template_actions text NULL,
     workorder_template_priority varchar(25) NULL DEFAULT 'LOW', -- LOW, MEDIUM, HIGH
 
    	workorder_template_frequency int  NULL DEFAULT 1,
    	workorder_template_frequencyScope varchar(25)  NULL DEFAULT 'SINGLE', -- DAILY, WEEKLY, MONTHLY, SINGLE
-	
+
     workorder_createdByUUID CHAR(36)  NULL,
     workorder_updatedByUUID CHAR(36)  NULL,
    	workorder_updatedTS datetime  NULL,
@@ -747,11 +747,11 @@ DROP TABLE IF EXISTS checklist;
 
 CREATE TABLE `checklist` (
     checklistUUID CHAR(36)  NOT NULL,
-    checklist_customerUUID CHAR(36) NULL, 
+    checklist_customerUUID CHAR(36) NULL,
    	checklist_statusId INT   NULL DEFAULT 1,
-    checklist_name varchar(100) NULL, 
-    checklist_recommendedFrequency varchar(255)  NULL, 
-    checklist_rulesJSON text  NULL, 
+    checklist_name varchar(100) NULL,
+    checklist_recommendedFrequency varchar(255)  NULL,
+    checklist_rulesJSON text  NULL,
 
     checklist_createdByUUID CHAR(36)  NULL,
     checklist_updatedByUUID CHAR(36)  NULL,
@@ -770,14 +770,14 @@ CREATE TABLE `checklist_item` (
     checklist_item_checklistUUID CHAR(36)  NOT NULL,
     checklist_item_customerUUID CHAR(36)  NULL,
    	checklist_item_statusId INT   NULL DEFAULT 1,
-    
+
     checklist_item_sortOrder INT  NOT NULL DEFAULT 1,
-    checklist_item_prompt varchar(255) NULL, 
-    checklist_item_type varchar(255) NULL DEFAULT 'TEXT', -- DECIMAL,TEXT,BOOLEAN 
+    checklist_item_prompt varchar(255) NULL,
+    checklist_item_type varchar(255) NULL DEFAULT 'TEXT', -- DECIMAL,TEXT,BOOLEAN
     checklist_item_optionSetJSON text NULL, -- JSON payload
-    checklist_item_successPrompt varchar(255) NULL, 
-    checklist_item_successRange varchar(255) NULL, 
-    
+    checklist_item_successPrompt varchar(255) NULL,
+    checklist_item_successRange varchar(255) NULL,
+
     checklist_item_createdByUUID CHAR(36)  NULL,
     checklist_item_updatedByUUID CHAR(36)  NULL,
    	checklist_item_updatedTS datetime  NULL,
@@ -793,10 +793,10 @@ DROP TABLE IF EXISTS maestro_event;
 
 CREATE TABLE `maestro_event` (
     maestro_eventUUID CHAR(36)  NOT NULL,
-    maestro_event_customerUUID CHAR(36) NULL, 
+    maestro_event_customerUUID CHAR(36) NULL,
    	maestro_event_statusId INT   NULL DEFAULT 1,
-    maestro_event_type varchar(25) NULL DEFAULT 'SYSTEM', -- ALARM, SYSTEM 
-    maestro_event_description varchar(255)  NULL, 
+    maestro_event_type varchar(25) NULL DEFAULT 'SYSTEM', -- ALARM, SYSTEM
+    maestro_event_description varchar(255)  NULL,
 
     maestro_event_createdByUUID CHAR(36)  NULL,
     maestro_event_acknowledgedByUUID CHAR(36)  NULL,
@@ -815,13 +815,13 @@ DROP TABLE IF EXISTS checklist_history;
 CREATE TABLE `checklist_history` (
     checklist_historyUUID CHAR(36)  NOT NULL,
     checklist_history_checklistUUID CHAR(36)  NOT NULL,
-    checklist_history_customerUUID CHAR(36) NOT NULL, 
+    checklist_history_customerUUID CHAR(36) NOT NULL,
     checklist_history_workorderUUID CHAR(36) NULL,
     checklist_history_assetUUID CHAR(36) NULL,
     checklist_history_statusId INT   NULL DEFAULT 1,
     checklist_history_resultFlag INT   NULL DEFAULT 0, -- 0=open, 1=success, 2=fail
-    checklist_history_name varchar(100) NULL, 
-    checklist_history_rulesJSON text  NULL, 
+    checklist_history_name varchar(100) NULL,
+    checklist_history_rulesJSON text  NULL,
 
     checklist_history_createdByUUID CHAR(36)  NULL,
     checklist_history_updatedByUUID CHAR(36)  NULL,
@@ -841,14 +841,14 @@ CREATE TABLE `checklist_item_history` (
     checklist_history_item_statusId INT   NULL DEFAULT 1,
     checklist_history_item_resultFlag INT   NULL DEFAULT 0, -- 0=open, 1=success, 2=fail
     checklist_history_item_resultText varchar(255),
-    
+
     checklist_history_item_sortOrder INT  NOT NULL DEFAULT 1,
-    checklist_history_item_prompt varchar(255) NULL, 
-    checklist_history_item_type varchar(255) NULL DEFAULT 'TEXT', -- DECIMAL,TEXT,BOOLEAN 
+    checklist_history_item_prompt varchar(255) NULL,
+    checklist_history_item_type varchar(255) NULL DEFAULT 'TEXT', -- DECIMAL,TEXT,BOOLEAN
     checklist_history_item_optionSetJSON text NULL, -- JSON payload
-    checklist_history_item_successPrompt varchar(255) NULL, 
-    checklist_history_item_successRange varchar(255) NULL, 
-    
+    checklist_history_item_successPrompt varchar(255) NULL,
+    checklist_history_item_successRange varchar(255) NULL,
+
     checklist_history_item_createdByUUID CHAR(36)  NULL,
     checklist_history_item_updatedByUUID CHAR(36)  NULL,
     checklist_history_item_updatedTS datetime  NULL,
@@ -867,7 +867,7 @@ DROP TABLE IF EXISTS privilege_bitwise;
 
 CREATE TABLE `privilege_bitwise` (
    	privilege_key varchar(25)   NOT NULL,
-    privilege_category varchar(25) NULL DEFAULT 'SYSTEM', -- ALARM, SYSTEM 
+    privilege_category varchar(25) NULL DEFAULT 'SYSTEM', -- ALARM, SYSTEM
     privilege_bitWise bigint  NULL,
   	PRIMARY KEY (privilege_key)
     )
@@ -877,7 +877,7 @@ DROP TABLE IF EXISTS privilege_bitwise;
 
 CREATE TABLE `privilege_bitwise` (
    	privilege_key varchar(25)   NOT NULL,
-    privilege_category varchar(25) NULL DEFAULT 'SYSTEM', -- ALARM, SYSTEM 
+    privilege_category varchar(25) NULL DEFAULT 'SYSTEM', -- ALARM, SYSTEM
     privilege_bitWise bigint  NULL,
   	PRIMARY KEY (privilege_key)
     )
@@ -889,9 +889,9 @@ DROP TABLE IF EXISTS translations;
 
 CREATE TABLE `translations` (
     translationId INT   NOT NULL   AUTO_INCREMENT,
-    translation_languageCode varchar(10) NOT NULL, 
-    translation_uuid CHAR(36) NOT NULL, 
-    translation_field varchar(50) NOT NULL, 
+    translation_languageCode varchar(10) NOT NULL,
+    translation_uuid CHAR(36) NOT NULL,
+    translation_field varchar(50) NOT NULL,
     translation_text text  NULL,
     PRIMARY KEY (translationId),
     index uuid_idx (translation_uuid,translation_field,translation_languageCode)
