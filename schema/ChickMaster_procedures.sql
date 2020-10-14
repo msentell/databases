@@ -490,7 +490,7 @@ BEGIN
 	ELSEIF (_action = 'ASSET-PART') THEN
 		set _partId=_id;
     END IF;
-    
+
     If (_partId IS NOT NULL) THEN
 		-- TODO, select security to turn on/off
 		-- 'CONTACT,CHAT,STARTCHECKLIST,ADDLOG'
@@ -1196,7 +1196,9 @@ CREATE PROCEDURE `CUSTOMER_customer`(IN _action VARCHAR(100),
                                      IN _customerName VARCHAR(100),
                                      IN _customerLogo VARCHAR(255),
                                      IN _customerSecurityBitwise BIGINT,
-                                     IN _customerPreferenceJSON TEXT)
+                                     IN _customerPreferenceJSON TEXT,
+                                     IN _xRefName VARCHAR(255),
+                                     IN _xRefId VARCHAR(255))
 CUSTOMER_customer:
 BEGIN
     DECLARE _DEBUG INT DEFAULT 1;
@@ -1219,9 +1221,13 @@ BEGIN
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
     ELSEIF (_action = 'GET') THEN
-        IF (_customerUUID IS NULL or _customerUUID = '') THEN
+        IF (_customerUUID IS NULL or _customerUUID = '') AND (_xRefId IS NULL or _xRefId = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
             LEAVE CUSTOMER_customer;
+        END IF;
+        IF (_xRefName IS NOT NULL AND _xRefName > '' AND _xRefId IS NOT NULL AND _xRefId > '') THEN
+           SELECT * FROM customer c INNER JOIN customer_xref x on c.customerUUID = x.customerUUID WHERE x.customerx_externalName = _xRefName AND x.customerx_externalId = _xRefId;
+           LEAVE CUSTOMER_customer;
         END IF;
         SELECT * FROM customer WHERE customerUUID = _customerUUID;
     ELSEIF (_action = 'CREATE') THEN
