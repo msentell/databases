@@ -117,7 +117,7 @@ CREATE TABLE `customer_xref` (
     customerXrefId INT  NOT NULL   AUTO_INCREMENT,
     customerUUID CHAR(36)  NOT NULL,
     customerx_externalName varchar(255)   NULL,
-    customerx_externalId INT   NULL,
+    customerx_externalId varchar(255)   NULL,
     customerx_createdByUUID CHAR(36)  NULL,
     customerx_updatedByUUID CHAR(36)  NULL,
    	customerx_updatedTS datetime  NULL,
