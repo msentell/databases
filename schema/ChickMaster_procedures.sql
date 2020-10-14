@@ -215,13 +215,12 @@ DELIMITER ;
 
 
 -- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON,diagnostic_node_warning,diagnostic_node_warningSeverity);
--- call DIAGNOSTIC_node('GETNODE', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null,null);
+-- call DIAGNOSTIC_node('GETNODE', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null,null);
 -- call DIAGNOSTIC_node('GET', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null,null, null, null, null, null, null,null,null,null,null);
 -- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON',null,null);
 -- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON','diagnostic_node_warning',diagnostic_node_warningSeverity);
 -- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null,null,null);
 -- call DIAGNOSTIC_node('UPDATE','1','5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null ,'testing_tiltle rtghjy', 'diagnosticnodeprompt', 'diagnostic_node_optionPrompt', '[{"coordinates":[{}],"color":"red","forwardId":"1599760999552"}]', 'https://jcmi.sfo2.digitaloceanspaces.com/demodata/Hendrix/diagnostics/Heating1.JPG', 'false','hello','hijky');
-
 DROP procedure IF EXISTS `DIAGNOSTIC_node`;
 
 
@@ -250,11 +249,6 @@ BEGIN
         LEAVE DIAGNOSTIC_node;
     END IF;
 
-    IF (_userUUID IS NULL) THEN
-        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _userUUID missing';
-        LEAVE DIAGNOSTIC_node;
-    END IF;
-
     IF (_action = 'GETNODE') THEN
 
         If (_diagnostic_node_diagnosticUUID is not null and _diagnostic_nodeUUID is null) THEN
@@ -274,7 +268,13 @@ BEGIN
 
         END IF;
 
-    ELSEIF (_action = 'GET') THEN
+    ELSE
+     IF (_userUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _userUUID missing';
+        LEAVE DIAGNOSTIC_node;
+    END IF;
+
+    IF (_action = 'GET') THEN
 
         SET @l_SQL = 'SELECT * FROM diagnostic_node ';
 
@@ -409,12 +409,8 @@ BEGIN
         -- TBD, figure out what cleanup may be involved
 
     END IF;
-
+END IF;
 END$$
-
-
-DELIMITER ;
-
 
 -- ==================================================================
 -- call DIAGNOSTIC_getNode(null,1,1,'633a54011d76432b9fa18b0b6308c189',null); -- will get the starting tree node
