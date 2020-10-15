@@ -3031,7 +3031,6 @@ BEGIN
     DECLARE _password varchar(100);
     DECLARE _USER_loginEmailVerified DATETIME;
     DECLARE _customerUUID varchar(100);
-    DECLARE _startLocationUUID varchar(100);
     DECLARE _securityBitwise varchar(100);
     DECLARE _individualSecurityBitwise varchar(100);
 
@@ -3121,22 +3120,9 @@ BEGIN
                     concat('You have 4 minutes to enter this access code: ', _USER_loginEmailValidationCode), null
                 );
 
-            select user_profile_locationUUID
-            into _startLocationUUID
-            from user_profile
-            where user_profile_userUUID = _entityId;
-            IF (_startLocationUUID is null) THEN
-                select locationUUID
-                into _startLocationUUID
-                from location
-                where location_customerUUID = _customerUUID
-                  and location_isPrimary = 1
-                LIMIT 1;
-            END IF;
             select _entityId                      as entityId,
                    _USER_loginEmailValidationCode as accessCode,
                    4                              as expiresInMinutes,
-                   _startLocationUUID             as startLocationUUID,
                    _userName                      as userName,
                    _securityBitwise               as securityBitwise,
                    _individualSecurityBitwise     as individualSecurityBitwise,
@@ -3154,21 +3140,8 @@ BEGIN
                 user_loginSessionExpire=DATE_ADD(now(), INTERVAL 8 HOUR)
             where userUUID = _entityId;
 
-            select user_profile_locationUUID
-            into _startLocationUUID
-            from user_profile
-            where user_profile_userUUID = _entityId;
-            IF (_startLocationUUID is null) THEN
-                select locationUUID
-                into _startLocationUUID
-                from location
-                where location_customerUUID = _customerUUID
-                  and location_isPrimary = 1
-                LIMIT 1;
-            END IF;
             select _entityId                      as entityId,
                    _USER_loginEmailValidationCode as sessionToken,
-                   _startLocationUUID             as startLocationUUID,
                    _userName                      as userName,
                    _securityBitwise               as securityBitwise,
                    _individualSecurityBitwise     as individualSecurityBitwise,
@@ -3212,22 +3185,8 @@ BEGIN
                 user_loginSessionExpire=DATE_ADD(now(), INTERVAL 8 HOUR)
             where userUUID = _entityId;
 
-            select user_profile_locationUUID
-            into _startLocationUUID
-            from user_profile
-            where user_profile_userUUID = _entityId;
-            IF (_startLocationUUID is null) THEN
-                select locationUUID
-                into _startLocationUUID
-                from location
-                where location_customerUUID = _customerUUID
-                  and location_isPrimary = 1
-                LIMIT 1;
-            END IF;
-
             select _entityId                      as entityId,
                    _USER_loginEmailValidationCode as sessionToken,
-                   _startLocationUUID             as startLocationUUID,
                    _userName                      as userName,
                    _securityBitwise               as securityBitwise,
                    _individualSecurityBitwise     as individualSecurityBitwise,
