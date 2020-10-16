@@ -347,7 +347,7 @@ DROP TABLE IF EXISTS location;
 -- INSERT INTO `location` (`location_coordinate`) VALUES (POINT(40.71727401 -74.00898606));
 
 CREATE TABLE `location` (
-    locationUUID CHAR(36)  NOT NULL,
+    locationUUID CHAR(60)  NOT NULL,
     location_customerUUID CHAR(36)  NOT NULL,
     location_statusId INT   NULL DEFAULT 1,
 
@@ -388,9 +388,9 @@ ENGINE = InnoDB ;
 DROP TABLE IF EXISTS asset;
 
 CREATE TABLE `asset` (
-    assetUUID CHAR(36)  NOT NULL,
+    assetUUID CHAR(60)  NOT NULL,
     asset_locationUUID CHAR(36)  NULL,
-    asset_partUUID CHAR(36)  NULL,
+    asset_partUUID CHAR(60)  NULL,
     asset_customerUUID CHAR(36)  NOT NULL,
     asset_statusId INT   NULL DEFAULT 1,
 
@@ -526,7 +526,7 @@ ENGINE = InnoDB ;
 DROP TABLE IF EXISTS asset_part;
 
 CREATE TABLE `asset_part` (
-    asset_partUUID CHAR(36)  NOT NULL, -- this is a new id and not = to template part
+    asset_partUUID CHAR(60)  NOT NULL, -- this is a new id and not = to template part
 --    asset_template_partUUID CHAR(36)  NULL, -- reference back to a part in a template if needed.
     asset_part_template_part_sku varchar(100)  NULL, -- reference back to a part in a template if needed.
     asset_part_customerUUID CHAR(36)  NOT NULL,
