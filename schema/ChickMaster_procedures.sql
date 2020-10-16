@@ -2802,7 +2802,8 @@ call NOTIFICATION_notification(
 null,null,1,null,null,
 null,2,
 '22-05-2020T01:25Z','22-05-2021T01:25Z',
-'Content','_notification_subject','_notification_hook'
+'Content','_notification_subject','_notification_hook',
+_notification_assestUUID,_notification_priority
 );
 
 
@@ -2835,7 +2836,9 @@ CREATE PROCEDURE `NOTIFICATION_notification`(IN _action VARCHAR(100),
                                              IN _notification_expireOn VARCHAR(36),
                                              IN _notification_content TEXT,
                                              IN _notification_subject VARCHAR(255),
-                                             IN _notification_hook VARCHAR(255))
+                                             IN _notification_hook VARCHAR(255),
+                                             IN _notification_assestUUID VARCHAR(255),
+                                             IN _notification_priority VARCHAR(25)),
 NOTIFICATION_notification:
 BEGIN
 
@@ -2889,7 +2892,7 @@ BEGIN
           and notification_expireOn > now()
           and notification_readyOn < now()
           and notification_statusId = 1
-          and notification_assetUUID = _notification_toAppUUID;
+          and notification_assetUUID = _notification_assestUUID;
 
     ELSEIF (_action = 'GETEMAIL') THEN
 
@@ -2927,14 +2930,15 @@ BEGIN
                                               notification_fromAppUUID, notification_fromUserUUID,
                                               notification_readyOn, notification_expireOn,
                                               notification_statusId, notification_content, notification_subject,
-                                              notification_hook,
+                                              notification_hook,notification_priority,
                                               notification_createdTS)
             values (_notification_type,
                     _notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID,
                     _notification_toUserUUID,
                     _notification_fromAppUUID, _notification_fromUserUUID,
                     _readyDate, _expireDate,
-                    1, _notification_content, _notification_subject, _notification_hook,
+                    1, _notification_content, _notification_subject,
+                    _notification_hook,_notification_priority,
                     now());
 
         END IF;
