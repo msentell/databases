@@ -72,7 +72,7 @@ insert into att_userlevel_predefined(description,bitwise) values ('Site Manager'
 insert into att_userlevel_predefined(description,bitwise) values ('Maintenance',8);
 insert into att_userlevel_predefined(description,bitwise) values ('Operator',16);
 
-
+/*
 -- =====================================
 -- CUSTOMER AND USERS
 -- todo: create user/customer in their own space
@@ -126,7 +126,7 @@ CREATE TABLE `customer_xref` (
    	PRIMARY KEY (customerXrefId),
    	INDEX customerId_idx (customerUUID))
 ENGINE = InnoDB   AUTO_INCREMENT=1000;
-
+*/
 
 DROP TABLE IF EXISTS customer_attachment_join;
 
@@ -138,7 +138,7 @@ CREATE TABLE `customer_attachment_join` (
     PRIMARY KEY (caj_customerUUID,caj_attachmentUUID))
 ENGINE = InnoDB ;
 
-
+/*
 DROP TABLE IF EXISTS user;
 
 CREATE TABLE `user` (
@@ -185,7 +185,7 @@ CREATE TABLE `user_xref` (
   	PRIMARY KEY (userXrefId),
    	INDEX userId_idx (userUUID))
 ENGINE = InnoDB   AUTO_INCREMENT=1000;
-
+*/
 
 DROP TABLE IF EXISTS user_profile;
 
