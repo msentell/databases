@@ -3,7 +3,6 @@
 -- call IMAGES_getImageLayer('ASSET',1,1,1,1);
 -- call IMAGES_getImageLayer('ASSET-PART',1,1,1,1);
 
-
 DROP procedure IF EXISTS `IMAGES_getImageLayer`;
 
 DELIMITER $$
@@ -15,7 +14,8 @@ CREATE PROCEDURE IMAGES_getImageLayer(IN _action VARCHAR(100),
 IMAGES_getImageLayer:
 BEGIN
 
-
+	DECLARE _startLocationUUID varchar(100);
+    
     IF (_id is NULL OR _id = '') THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid value id';
     ELSEIF (_action is NULL OR _action = '') THEN
@@ -36,8 +36,24 @@ BEGIN
 
 
     If (_action = 'LOCATION') THEN
+		If (_id ='-1') THEN
+			SELECT user_profile_locationUUID INTO _startLocationUUID FROM user_profile WHERE user_profile_userUUID = _userId;
+            IF (_startLocationUUID is null) THEN
+				SELECT locationUUID INTO _startLocationUUID
+                FROM location
+                WHERE location_customerUUID = _customerId
+                AND location_isPrimary = 1
+                LIMIT 1;
+			END IF;
+            If (_startLocationUUID is not null) THEN
+				SELECT loc.* 
+                from location loc
+                where loc.location_customerUUID = _customerId
+                AND loc.location_isPrimary = _startingPoint
+                AND loc.locationUUID = _startLocationUUID;
+            END IF;
 
-        if (_startingPoint is not null) THEN
+        ELSEIF (_startingPoint is not null) THEN
 
             SELECT loc.*
             from location loc
