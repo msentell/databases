@@ -883,6 +883,36 @@ CREATE TABLE `privilege_bitwise` (
     )
 ENGINE = InnoDB ;
 
+DROP TABLE IF EXISTS barcodes;
+
+CREATE TABLE `barcodes` (
+    barcodeId INT NOT NULL AUTO_INCREMENT,
+    barcode_uuid CHAR(36) NOT NULL,
+    barcode_type CHAR(100)  NULL,
+    barcode_destinationURL VARCHAR(255) NULL,
+    barcode_status CHAR(100) NULL DEFAULT 'ACTIVE',
+    barcode_isRegistered BOOLEAN DEFAULT false,
+    barcode_partSKU VARCHAR(255) NULL,
+    barcode_assetUUID VARCHAR(36) NULL,
+    barcode_customerUUID VARCHAR(36) NULL,
+    barcode_createdByUUID CHAR(36)  NULL,
+    barcode_updatedByUUID CHAR(36)  NULL,
+   	barcode_updatedTS datetime  NULL,
+  	barcode_createdTS datetime  NULL default now(),
+   	barcode_deleteTS datetime  NULL,
+   	PRIMARY KEY (barcodeId),
+   	INDEX barcodeUUID_idx (barcode_uuid)
+);
+
+DROP TRIGGER IF EXISTS before_insert_on_barcode_set_uuids
+DELIMITER //
+CREATE TRIGGER before_insert_on_barcode_set_uuids
+  BEFORE INSERT ON barcodes
+  FOR EACH ROW
+    BEGIN
+      SET new.barcode_uuid = replace(uuid(),'-','');
+    END ;  //
+DELIMITER ;
 
 
 DROP TABLE IF EXISTS translations;
