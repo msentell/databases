@@ -15,7 +15,7 @@ IMAGES_getImageLayer:
 BEGIN
 
 	DECLARE _startLocationUUID varchar(100);
-    
+
     IF (_id is NULL OR _id = '') THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid value id';
     ELSEIF (_action is NULL OR _action = '') THEN
@@ -46,7 +46,7 @@ BEGIN
                 LIMIT 1;
 			END IF;
             If (_startLocationUUID is not null) THEN
-				SELECT loc.* 
+				SELECT loc.*
                 from location loc
                 where loc.location_customerUUID = _customerId
                 AND loc.location_isPrimary = _startingPoint
@@ -1110,92 +1110,171 @@ DELIMITER ;
 -- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
 -- call USER_userGroup('GET-LIST', 1, 1, null, null);
 -- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
-
-DROP procedure IF EXISTS `USER_userGroup`;
-
+DROP procedure IF EXISTS `BARCODE_barcode`;
 DELIMITER $$
-CREATE PROCEDURE `USER_userGroup`(IN _action VARCHAR(100),
-                                  IN _userUUID VARCHAR(100),
-                                  IN _customerUUID VARCHAR(100),
-                                  IN _groupUUID VARCHAR(100),
-                                  IN _groupName VARCHAR(255))
-USER_userGroup:
+CREATE PROCEDURE `BARCODE_barcode`(IN _action VARCHAR(100),
+                                   IN _userUUID VARCHAR(100),
+                                   IN _barcodeUUID VARCHAR(100),
+                                   IN _barcodeType VARCHAR(100),
+                                   IN _barcodeDestinationURL VARCHAR(255),
+                                   IN _barcodeStatus VARCHAR(100),
+                                   IN _barcodeIsRegistered BOOLEAN,
+                                   IN _barcodePartSKU VARCHAR(100),
+                                   IN _barcodeAssetUUID VARCHAR(100),
+                                   IN _barcodeCustomerUUID VARCHAR(100)
+)
+BARCODE_barcode:
 BEGIN
-    DECLARE _DEBUG INT DEFAULT 0;
+    DECLARE _DEBUG INT DEFAULT 1;
     IF (_action IS NULL or _action = '') THEN
-        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_userGroup: _action can not be empty';
-        LEAVE USER_userGroup;
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call BARCODE_barcode: _action can not be empty';
+        LEAVE BARCODE_barcode;
     END IF;
 
-    IF (_userUUID IS NULL) THEN
-        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _userUUID missing';
-        LEAVE USER_userGroup;
+    IF (_userUUID IS NULL OR _userUUID = '') THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _userUUID missing';
+        LEAVE BARCODE_barcode;
     END IF;
 
     IF (_action = 'GET-LIST') THEN
-        SET @l_sql = 'SELECT * FROM user_group';
-        IF _customerUUID IS NOT NULL AND _customerUUID != '' THEN
-            SET @l_sql = CONCAT(@l_sql, ' WHERE group_customerUUID = \'', _customerUUID, '\'');
-        END IF;
-        IF (_DEBUG = 1) THEN SELECT _action, @l_sql; END IF;
-        PREPARE stmt FROM @l_sql;
-        EXECUTE stmt;
-        DEALLOCATE PREPARE stmt;
-
+        SELECT * FROM barcode;
     ELSEIF (_action = 'GET') THEN
-        set @l_sql = 'SELECT ug.* FROM user_group ug';
-        IF (_groupUUID IS NULL OR _groupUUID = '') THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupUUID missing';
-            LEAVE USER_userGroup;
+        IF (_barcodeUUID IS NULL or _barcodeUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
+            LEAVE BARCODE_barcode;
         END IF;
-        SELECT ug.* FROM user_group ug WHERE ug.groupUUID = _groupUUID;
+        SELECT * FROM barcode WHERE barcode_uuid = _barcodeUUID;
     ELSEIF (_action = 'CREATE') THEN
-        IF (_groupUUID IS NULL OR _groupUUID = '') THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupUUID missing';
-            LEAVE USER_userGroup;
-        END IF;
-        IF (_groupName IS NULL OR _groupName = '') THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupName missing';
-            LEAVE USER_userGroup;
-        END IF;
-        IF (_customerUUID IS NULL OR _customerUUID = '') THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _customerUUID missing';
-            LEAVE USER_userGroup;
-        END IF;
-        INSERT INTO user_group (groupUUID, group_customerUUID, group_name, group_createdByUUID, group_createdTS,
-                                group_updatedByUUID, group_updatedTS)
-        VALUES (_groupUUID, _customerUUID, _groupName, _userUUID, now(), _userUUID, now());
+        INSERT INTO barcode (    barcode_type,barcode_destinationURL,barcode_status,
+                                 barcode_isRegistered,barcode_partSKU,barcode_assetUUID,barcode_customerUUID,
+                                 barcode_createdByUUID,barcode_updatedByUUID,barcode_updatedTS)
+        VALUES (_barcodeType, _barcodeDestinationURL, _barcodeStatus, _barcodeIsRegistered, _barcodePartSKU, _barcodeAssetUUID,
+                _barcodeCustomerUUID, now(), _userUUID, now());
     ELSEIF (_action = 'UPDATE') THEN
-        IF (_groupUUID IS NULL) THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call USER_userGroup: _groupUUID missing';
-            LEAVE USER_userGroup;
+        IF (_barcodeUUID IS NULL or _barcodeUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
+            LEAVE BARCODE_barcode;
         END IF;
-        SET @l_sql = CONCAT('UPDATE user_group SET group_updatedTS=now(), group_updatedByUUID=\'', _userUUID, '\'');
-        IF (_customerUUID IS NOT NULL AND _customerUUID != '') THEN
-            SET @l_sql = CONCAT(@l_sql, ',group_customerUUID = \'', _customerUUID, '\'');
+        SET @l_sql = CONCAT('UPDATE barcode SET barcode_updatedTS=now(), barcode_updatedByUUID=\'', _userUUID, '\'');
+        IF (_barcodeType IS NOT NULL AND _barcodeType != '') THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_type = \'', _barcodeType, '\'');
         END IF;
-        IF (_groupName IS NOT NULL) THEN
-            SET @l_sql = CONCAT(@l_sql, ',group_name = \'', _groupName, '\'');
+        IF (_barcodeDestinationURL IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_destinationURL = \'', _barcodeDestinationURL, '\'');
         END IF;
-        SET @l_sql = CONCAT(@l_sql, ' WHERE groupUUID = \'', _groupUUID, '\'');
+        IF (_barcodeStatus IS NOT NULL AND _barcodeStatus != '') THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_status = \'', _barcodeStatus, '\'');
+        END IF;
+        IF (_barcodeIsRegistered IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_isRegistered = \'', _barcodeIsRegistered, '\'');
+        END IF;
+        IF (_barcodePartSKU IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_partSKU = \'', _barcodePartSKU, '\'');
+        END IF;
+        IF (_barcodeAssetUUID IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_assetUUID = \'', _barcodeAssetUUID, '\'');
+        END IF;
+        IF (_barcodeCustomerUUID IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_customerUUID = \'', _barcodeCustomerUUID, '\'');
+        END IF;
+        SET @l_sql = CONCAT(@l_sql, ' WHERE barcode_uuid = \'', _barcodeUUID, '\'');
         -- to do: securityBitwise
         IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
 
         PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
-    ELSEIF (_action = 'REMOVE' AND _groupUUID IS NOT NULL AND _groupUUID != '') THEN
-        DELETE FROM user_group WHERE groupUUID = _groupUUID;
+    ELSEIF (_action = 'REMOVE' AND _barcodeUUID IS NOT NULL AND _barcodeUUID != '') THEN
+        DELETE FROM barcode WHERE barcode_uuid = _barcodeUUID;
     END IF;
 
 END$$
 
 DELIMITER ;
 
--- ==================================================================
--- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
--- call USER_userGroup('GET-LIST', 1, 1, null, null);
--- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
+DROP procedure IF EXISTS `BARCODE_barcode`;
+
+DELIMETER $$
+CREATE PROCEDURE `BARCODE_barcode`(IN _action VARCHAR(100),
+                                     IN _userUUID VARCHAR(100),
+                                     IN _barcodeUUID VARCHAR(100),
+                                     IN _barcodeType VARCHAR(100),
+                                     IN _barcodeDestinationURL VARCHAR(255),
+                                     IN _barcodeStatus VARCHAR(100),
+                                     IN _barcodeIsRegistered BOOLEAN,
+                                     IN _barcodePartSKU VARCHAR(100),
+                                     IN _barcodeAssetUUID VARCHAR(100),
+                                     IN _barcodeCustomerUUID VARCHAR(100)
+                                     )
+BARCODE_barcode:
+BEGIN
+    DECLARE _DEBUG INT DEFAULT 1;
+    IF (_action IS NULL or _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call BARCODE_barcode: _action can not be empty';
+        LEAVE BARCODE_barcode;
+    END IF;
+
+    IF (_userUUID IS NULL OR _userUUID = '') THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _userUUID missing';
+        LEAVE BARCODE_barcode;
+    END IF;
+
+    IF (_action = 'GET-LIST') THEN
+        SELECT * FROM barcode;
+    ELSEIF (_action = 'GET') THEN
+        IF (_barcodeUUID IS NULL or _barcodeUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
+            LEAVE BARCODE_barcode;
+        END IF;
+        SELECT * FROM barcode WHERE barcode_uuid = _barcodeUUID;
+    ELSEIF (_action = 'CREATE') THEN
+        INSERT INTO barcode (    barcode_type,barcode_destinationURL,barcode_status,
+                                 barcode_isRegistered,barcode_partSKU,barcode_assetUUID,barcode_customerUUID,
+                                 barcode_createdByUUID,barcode_updatedByUUID,barcode_updatedTS)
+        VALUES (_barcodeType, _barcodeDestinationURL, _barcodeStatus, _barcodeIsRegistered, _barcodePartSKU, _barcodeAssetUUID,
+                _barcodeCustomerUUID, now(), _userUUID, now());
+    ELSEIF (_action = 'UPDATE') THEN
+        IF (_barcodeUUID IS NULL or _barcodeUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
+            LEAVE BARCODE_barcode;
+        END IF;
+        SET @l_sql = CONCAT('UPDATE barcode SET barcode_updatedTS=now(), barcode_updatedByUUID=\'', _userUUID, '\'');
+        IF (_barcodeType IS NOT NULL AND _barcodeType != '') THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_type = \'', _barcodeType, '\'');
+        END IF;
+        IF (_barcodeDestinationURL IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_destinationURL = \'', _barcodeDestinationURL, '\'');
+        END IF;
+        IF (_barcodeStatus IS NOT NULL AND _barcodeStatus != '') THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_status = \'', _barcodeStatus, '\'');
+        END IF;
+        IF (_barcodeIsRegistered IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_isRegistered = \'', _barcodeIsRegistered, '\'');
+        END IF;
+        IF (_barcodePartSKU IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_partSKU = \'', _barcodePartSKU, '\'');
+        END IF;
+        IF (_barcodeAssetUUID IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_assetUUID = \'', _barcodeAssetUUID, '\'');
+        END IF;
+        IF (_barcodeCustomerUUID IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_customerUUID = \'', _barcodeCustomerUUID, '\'');
+        END IF;
+        SET @l_sql = CONCAT(@l_sql, ' WHERE barcode_uuid = \'', _barcodeUUID, '\'');
+        -- to do: securityBitwise
+        IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSEIF (_action = 'REMOVE' AND _barcodeUUID IS NOT NULL AND _barcodeUUID != '') THEN
+        DELETE FROM barcode WHERE barcode_uuid = _barcodeUUID;
+    END IF;
+
+    END$$
+
+Delimiter ;
+
 
 DROP procedure IF EXISTS `CUSTOMER_customer`;
 
