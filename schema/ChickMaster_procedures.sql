@@ -1121,6 +1121,7 @@ CREATE PROCEDURE `BARCODE_barcode`(IN _action VARCHAR(100),
                                    IN _barcodeIsRegistered BOOLEAN,
                                    IN _barcodePartSKU VARCHAR(100),
                                    IN _barcodeAssetUUID VARCHAR(100),
+                                   IN _barcodeLocationUUID VARCHAR(100),
                                    IN _barcodeCustomerUUID VARCHAR(100)
 )
 BARCODE_barcode:
@@ -1146,10 +1147,10 @@ BEGIN
         SELECT * FROM barcode WHERE barcode_uuid = _barcodeUUID;
     ELSEIF (_action = 'CREATE') THEN
         INSERT INTO barcode (    barcode_type,barcode_destinationURL,barcode_status,
-                                 barcode_isRegistered,barcode_partSKU,barcode_assetUUID,barcode_customerUUID,
+                                 barcode_isRegistered,barcode_partSKU,barcode_assetUUID,barcode_locationUUID, barcode_customerUUID,
                                  barcode_createdByUUID,barcode_updatedByUUID,barcode_updatedTS)
         VALUES (_barcodeType, _barcodeDestinationURL, _barcodeStatus, _barcodeIsRegistered, _barcodePartSKU, _barcodeAssetUUID,
-                _barcodeCustomerUUID, now(), _userUUID, now());
+                _barcodeLocationUUID,_barcodeCustomerUUID, now(), _userUUID, now());
     ELSEIF (_action = 'UPDATE') THEN
         IF (_barcodeUUID IS NULL or _barcodeUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
@@ -1176,6 +1177,9 @@ BEGIN
         END IF;
         IF (_barcodeCustomerUUID IS NOT NULL) THEN
             SET @l_sql = CONCAT(@l_sql, ',barcode_customerUUID = \'', _barcodeCustomerUUID, '\'');
+        END IF;
+        IF (_barcodeLocationUUID IS NOT NULL) THEN
+            SET @l_sql = CONCAT(@l_sql, ',barcode_locationUUID = \'', _barcodeLocationUUID, '\'');
         END IF;
         SET @l_sql = CONCAT(@l_sql, ' WHERE barcode_uuid = \'', _barcodeUUID, '\'');
         -- to do: securityBitwise

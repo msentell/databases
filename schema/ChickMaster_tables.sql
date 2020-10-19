@@ -895,6 +895,7 @@ CREATE TABLE `barcode` (
     barcode_partSKU VARCHAR(255) NULL,
     barcode_assetUUID VARCHAR(36) NULL,
     barcode_customerUUID VARCHAR(36) NULL,
+    barcode_locationUUID VARCHAR(36) NULL,
     barcode_createdByUUID CHAR(36)  NULL,
     barcode_updatedByUUID CHAR(36)  NULL,
    	barcode_updatedTS datetime  NULL,
