@@ -2819,7 +2819,7 @@ null,null,1,null,null,
 null,2,
 '22-05-2020T01:25Z','22-05-2021T01:25Z',
 'Content','_notification_subject','_notification_hook',
-_notification_assestUUID,_notification_priority
+_notification_assetUUID,_notification_priority
 );
 
 
@@ -2853,7 +2853,7 @@ CREATE PROCEDURE `NOTIFICATION_notification`(IN _action VARCHAR(100),
                                              IN _notification_content TEXT,
                                              IN _notification_subject VARCHAR(255),
                                              IN _notification_hook VARCHAR(255),
-                                             IN _notification_assestUUID VARCHAR(255),
+                                             IN _notification_assetUUID VARCHAR(255),
                                              IN _notification_priority VARCHAR(25),
                                              IN _notification_isClearable INT)
 NOTIFICATION_notification:
@@ -2909,7 +2909,7 @@ BEGIN
           and notification_expireOn > now()
           and notification_readyOn < now()
           and notification_statusId = 1
-          and notification_assetUUID = _notification_assestUUID;
+          and notification_assetUUID = _notification_assetUUID;
 
     ELSEIF (_action = 'GETEMAIL') THEN
 
@@ -2948,7 +2948,7 @@ BEGIN
                                               notification_readyOn, notification_expireOn,
                                               notification_statusId, notification_content, notification_subject,
                                               notification_hook,notification_priority,notification_isClearable,
-                                              notification_assestUUID,notification_createdTS)
+                                              notification_assetUUID,notification_createdTS)
             values (_notification_type,
                     _notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID,
                     _notification_toUserUUID,
@@ -2956,7 +2956,7 @@ BEGIN
                     _readyDate, _expireDate,
                     1, _notification_content, _notification_subject,
                     _notification_hook,_notification_priority,_notification_isClearable,
-                    _notification_assestUUID,now());
+                    _notification_assetUUID,now());
 
         END IF;
 
