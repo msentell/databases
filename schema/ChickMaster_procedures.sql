@@ -1137,15 +1137,15 @@ BEGIN
     END IF;
 
     IF (_action = 'GET-LIST') THEN
-        SELECT * FROM barcode;
+        SELECT * FROM barcodes;
     ELSEIF (_action = 'GET') THEN
         IF (_barcodeUUID IS NULL or _barcodeUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
             LEAVE BARCODE_barcode;
         END IF;
-        SELECT * FROM barcode WHERE barcode_uuid = _barcodeUUID;
+        SELECT * FROM barcodes WHERE barcode_uuid = _barcodeUUID;
     ELSEIF (_action = 'CREATE') THEN
-        INSERT INTO barcode (    barcode_type,barcode_destinationURL,barcode_status,
+        INSERT INTO barcodes (    barcode_type,barcode_destinationURL,barcode_status,
                                  barcode_isRegistered,barcode_partSKU,barcode_assetUUID,barcode_customerUUID,
                                  barcode_createdByUUID,barcode_updatedByUUID,barcode_updatedTS)
         VALUES (_barcodeType, _barcodeDestinationURL, _barcodeStatus, _barcodeIsRegistered, _barcodePartSKU, _barcodeAssetUUID,
@@ -1155,7 +1155,7 @@ BEGIN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
             LEAVE BARCODE_barcode;
         END IF;
-        SET @l_sql = CONCAT('UPDATE barcode SET barcode_updatedTS=now(), barcode_updatedByUUID=\'', _userUUID, '\'');
+        SET @l_sql = CONCAT('UPDATE barcodes SET barcode_updatedTS=now(), barcode_updatedByUUID=\'', _userUUID, '\'');
         IF (_barcodeType IS NOT NULL AND _barcodeType != '') THEN
             SET @l_sql = CONCAT(@l_sql, ',barcode_type = \'', _barcodeType, '\'');
         END IF;
@@ -1184,97 +1184,20 @@ BEGIN
         PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
+    ELSEIF (_action = 'DELETE' AND _barcodeUUID IS NOT NULL AND _barcodeUUID != '') THEN
+
+        UPDATE barcodes SET barcode_deleteTS=now(), barcode_updatedByUUID=_userUUID, barcode_status='DELETED' WHERE barcode_uuid=_barcodeUUID;
     ELSEIF (_action = 'REMOVE' AND _barcodeUUID IS NOT NULL AND _barcodeUUID != '') THEN
-        DELETE FROM barcode WHERE barcode_uuid = _barcodeUUID;
+        IF (_userUUID IS NULL OR _userUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _userUUID missing';
+            LEAVE BARCODE_barcode;
+        END IF;
+        DELETE FROM barcodes WHERE barcode_uuid = _barcodeUUID;
     END IF;
 
 END$$
 
 DELIMITER ;
-
-DROP procedure IF EXISTS `BARCODE_barcode`;
-
-DELIMETER $$
-CREATE PROCEDURE `BARCODE_barcode`(IN _action VARCHAR(100),
-                                     IN _userUUID VARCHAR(100),
-                                     IN _barcodeUUID VARCHAR(100),
-                                     IN _barcodeType VARCHAR(100),
-                                     IN _barcodeDestinationURL VARCHAR(255),
-                                     IN _barcodeStatus VARCHAR(100),
-                                     IN _barcodeIsRegistered BOOLEAN,
-                                     IN _barcodePartSKU VARCHAR(100),
-                                     IN _barcodeAssetUUID VARCHAR(100),
-                                     IN _barcodeCustomerUUID VARCHAR(100)
-                                     )
-BARCODE_barcode:
-BEGIN
-    DECLARE _DEBUG INT DEFAULT 1;
-    IF (_action IS NULL or _action = '') THEN
-        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call BARCODE_barcode: _action can not be empty';
-        LEAVE BARCODE_barcode;
-    END IF;
-
-    IF (_userUUID IS NULL OR _userUUID = '') THEN
-        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _userUUID missing';
-        LEAVE BARCODE_barcode;
-    END IF;
-
-    IF (_action = 'GET-LIST') THEN
-        SELECT * FROM barcode;
-    ELSEIF (_action = 'GET') THEN
-        IF (_barcodeUUID IS NULL or _barcodeUUID = '') THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
-            LEAVE BARCODE_barcode;
-        END IF;
-        SELECT * FROM barcode WHERE barcode_uuid = _barcodeUUID;
-    ELSEIF (_action = 'CREATE') THEN
-        INSERT INTO barcode (    barcode_type,barcode_destinationURL,barcode_status,
-                                 barcode_isRegistered,barcode_partSKU,barcode_assetUUID,barcode_customerUUID,
-                                 barcode_createdByUUID,barcode_updatedByUUID,barcode_updatedTS)
-        VALUES (_barcodeType, _barcodeDestinationURL, _barcodeStatus, _barcodeIsRegistered, _barcodePartSKU, _barcodeAssetUUID,
-                _barcodeCustomerUUID, now(), _userUUID, now());
-    ELSEIF (_action = 'UPDATE') THEN
-        IF (_barcodeUUID IS NULL or _barcodeUUID = '') THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
-            LEAVE BARCODE_barcode;
-        END IF;
-        SET @l_sql = CONCAT('UPDATE barcode SET barcode_updatedTS=now(), barcode_updatedByUUID=\'', _userUUID, '\'');
-        IF (_barcodeType IS NOT NULL AND _barcodeType != '') THEN
-            SET @l_sql = CONCAT(@l_sql, ',barcode_type = \'', _barcodeType, '\'');
-        END IF;
-        IF (_barcodeDestinationURL IS NOT NULL) THEN
-            SET @l_sql = CONCAT(@l_sql, ',barcode_destinationURL = \'', _barcodeDestinationURL, '\'');
-        END IF;
-        IF (_barcodeStatus IS NOT NULL AND _barcodeStatus != '') THEN
-            SET @l_sql = CONCAT(@l_sql, ',barcode_status = \'', _barcodeStatus, '\'');
-        END IF;
-        IF (_barcodeIsRegistered IS NOT NULL) THEN
-            SET @l_sql = CONCAT(@l_sql, ',barcode_isRegistered = \'', _barcodeIsRegistered, '\'');
-        END IF;
-        IF (_barcodePartSKU IS NOT NULL) THEN
-            SET @l_sql = CONCAT(@l_sql, ',barcode_partSKU = \'', _barcodePartSKU, '\'');
-        END IF;
-        IF (_barcodeAssetUUID IS NOT NULL) THEN
-            SET @l_sql = CONCAT(@l_sql, ',barcode_assetUUID = \'', _barcodeAssetUUID, '\'');
-        END IF;
-        IF (_barcodeCustomerUUID IS NOT NULL) THEN
-            SET @l_sql = CONCAT(@l_sql, ',barcode_customerUUID = \'', _barcodeCustomerUUID, '\'');
-        END IF;
-        SET @l_sql = CONCAT(@l_sql, ' WHERE barcode_uuid = \'', _barcodeUUID, '\'');
-        -- to do: securityBitwise
-        IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
-
-        PREPARE stmt FROM @l_sql;
-        EXECUTE stmt;
-        DEALLOCATE PREPARE stmt;
-    ELSEIF (_action = 'REMOVE' AND _barcodeUUID IS NOT NULL AND _barcodeUUID != '') THEN
-        DELETE FROM barcode WHERE barcode_uuid = _barcodeUUID;
-    END IF;
-
-    END$$
-
-Delimiter ;
-
 
 DROP procedure IF EXISTS `CUSTOMER_customer`;
 
