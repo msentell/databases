@@ -883,9 +883,9 @@ CREATE TABLE `privilege_bitwise` (
     )
 ENGINE = InnoDB ;
 
-DROP TABLE IF EXISTS barcodes;
+DROP TABLE IF EXISTS barcode;
 
-CREATE TABLE `barcodes` (
+CREATE TABLE `barcode` (
     barcodeId INT NOT NULL AUTO_INCREMENT,
     barcode_uuid CHAR(36) NOT NULL,
     barcode_type CHAR(100)  NULL,
@@ -907,7 +907,7 @@ CREATE TABLE `barcodes` (
 DROP TRIGGER IF EXISTS before_insert_on_barcode_set_uuids
 DELIMITER //
 CREATE TRIGGER before_insert_on_barcode_set_uuids
-  BEFORE INSERT ON barcodes
+  BEFORE INSERT ON barcode
   FOR EACH ROW
     BEGIN
       SET new.barcode_uuid = replace(uuid(),'-','');
