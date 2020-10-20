@@ -1545,10 +1545,14 @@ BEGIN
             -- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
 
             SET @l_SQL = CONCAT(
-                    'SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`, \'',
-                    _type, '\' as `Type`
-			FROM asset_part where asset_part_statusId = 1 and asset_part_name like \'', _name,
-                    '\'  and  asset_part_customerUUID= \'', _customerUUID, '\'');
+                    'SELECT * FROM ( 
+                        SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source  
+                        FROM asset_part WHERE asset_part_statusId = 1 AND asset_part_name LIKE \'', _name, '\'  AND  asset_part_customerUUID= \'', _customerUUID, '\'
+                        UNION
+                        SELECT part_sku as objUUID,part_imageURL as ImageURL,part_imageThumbURL as ThumbURL, part_name  as `name`, \'ASSET_PART\' as `Type`, \'FACTORY-PART\' as source 
+                        FROM part_template pt WHERE part_statusId = 1 AND part_name LIKE \'', _name,'\') ap 
+                        LEFT JOIN part_template pt ON (ap.source = \'FACTORY-PART\' AND ap.objUUID = pt.part_sku)
+                        ORDER BY name');
 
         ELSEif (_type = 'LOCATION') THEN
             -- SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type`
@@ -2112,7 +2116,7 @@ ASSETPART_assetpart:
 BEGIN
 
 
-    DECLARE DEBUG INT DEFAULT 1;
+    DECLARE DEBUG INT DEFAULT 0;
 
 
     IF (_action IS NULL OR _action = '') THEN
@@ -2189,6 +2193,8 @@ BEGIN
                 _asset_part_imageURL, _asset_part_imageThumbURL, _asset_part_hotSpotJSON, _asset_part_isPurchasable,
                 _asset_part_diagnosticUUID, _asset_part_magentoUUID, _asset_part_vendor,
                 _userUUID, _userUUID, now(), now(), null);
+        
+        select * from asset_part where asset_partUUID = _asset_partUUID;
 
     ELSEIF (_action = 'UPDATE') THEN
 
