@@ -670,22 +670,22 @@ BEGIN
     IF (_action = 'GET-LIST') THEN
 
         set @l_sql = CONCAT(
-                'select c.customer_name, c.customerUUID, u.*,l.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
+                'select c.customer_name, c.customerUUID, u.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
 
 
-        if (_groupUUID is not null) THEN
-            set @l_sql = CONCAT(@l_sql, ',g.group_name, g.groupUUID ');
-        end if;
+        -- if (_groupUUID is not null) THEN
+        --     set @l_sql = CONCAT(@l_sql, ',g.group_name, g.groupUUID ');
+        -- end if;
 
         set @l_sql = CONCAT(@l_sql, ' from `user` u');
         set @l_sql = CONCAT(@l_sql, ' left join customer c on (c.customerUUID=u.user_customerUUID)');
         set @l_sql = CONCAT(@l_sql, ' left join user_profile p on (p.user_profile_userUUID = u.userUUID)');
-        set @l_sql = CONCAT(@l_sql, ' left join location l on (l.locationUUID = p.user_profile_locationUUID)');
+        -- set @l_sql = CONCAT(@l_sql, ' left join location l on (l.locationUUID = p.user_profile_locationUUID)');
 
-        if (_groupUUID is not null) THEN
-            set @l_sql = CONCAT(@l_sql, ' left join user_group_join gj on (gj.ugj_userUUID = u.userUUID)');
-            set @l_sql = CONCAT(@l_sql, ' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
-        end if;
+        -- if (_groupUUID is not null) THEN
+        --     set @l_sql = CONCAT(@l_sql, ' left join user_group_join gj on (gj.ugj_userUUID = u.userUUID)');
+        --     set @l_sql = CONCAT(@l_sql, ' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
+        -- end if;
 
         if (_customerId is not null) THEN
             set @l_sql = CONCAT(@l_sql, 'where u.user_customerUUID = \'', _customerId, '\'');
@@ -702,22 +702,22 @@ BEGIN
         END IF;
 
         set @l_sql = CONCAT(
-                'select c.customer_name, c.customerUUID, u.*,l.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
+                'select c.customer_name, c.customerUUID, u.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
 
 
-        if (_groupUUID is not null) THEN
-            set @l_sql = CONCAT(@l_sql, ',g.group_name, g.groupUUID ');
-        end if;
+        -- if (_groupUUID is not null) THEN
+        --     set @l_sql = CONCAT(@l_sql, ',g.group_name, g.groupUUID ');
+        -- end if;
 
         set @l_sql = CONCAT(@l_sql, ' from `user` u');
         set @l_sql = CONCAT(@l_sql, ' left join customer c on (c.customerUUID=u.user_customerUUID)');
         set @l_sql = CONCAT(@l_sql, ' left join user_profile p on (p.user_profile_userUUID = u.userUUID)');
-        set @l_sql = CONCAT(@l_sql, ' left join location l on (l.locationUUID = p.user_profile_locationUUID)');
+        -- set @l_sql = CONCAT(@l_sql, ' left join location l on (l.locationUUID = p.user_profile_locationUUID)');
 
-        if (_groupUUID is not null) THEN
-            set @l_sql = CONCAT(@l_sql, ' left join user_group_join gj on (gj.ugj_userUUID = u.userUUID)');
-            set @l_sql = CONCAT(@l_sql, ' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
-        end if;
+        -- if (_groupUUID is not null) THEN
+        --     set @l_sql = CONCAT(@l_sql, ' left join user_group_join gj on (gj.ugj_userUUID = u.userUUID)');
+        --     set @l_sql = CONCAT(@l_sql, ' left join user_group g on (g.groupUUID = gj.ugj_groupUUID)');
+        -- end if;
 
         set @l_sql = CONCAT(@l_sql, ' where ');
 
@@ -730,11 +730,11 @@ BEGIN
             set @l_sql = CONCAT(@l_sql, 'u.userUUID = \'', _user_userUUID, '\'');
             set _commaNeeded = 1;
         END IF;
-        if (_groupUUID is not null) THEN
-            if (_commaNeeded = 1) THEN set @l_sql = CONCAT(@l_sql, ' AND '); END IF;
-            set @l_sql = CONCAT(@l_sql, 'g.groupUUID = \'', _groupUUID, '\'');
-            set _commaNeeded = 1;
-        END IF;
+        -- if (_groupUUID is not null) THEN
+        --     if (_commaNeeded = 1) THEN set @l_sql = CONCAT(@l_sql, ' AND '); END IF;
+        --     set @l_sql = CONCAT(@l_sql, 'g.groupUUID = \'', _groupUUID, '\'');
+        --     set _commaNeeded = 1;
+        -- END IF;
 
         set @l_sql = CONCAT(@l_sql, ';');
 
@@ -848,14 +848,14 @@ BEGIN
 
     ELSEIF (_action = 'REMOVE') THEN
 
-        if (_groupUUID is not null) THEN
+        -- if (_groupUUID is not null) THEN
 
-            delete
-            from user_group_join
-            where ugj_groupUUID = _groupUUID
-              and ugj_userUUID = _user_userUUID;
+        --     delete
+        --     from user_group_join
+        --     where ugj_groupUUID = _groupUUID
+        --       and ugj_userUUID = _user_userUUID;
 
-        END IF;
+        -- END IF;
 
         if (_user_userUUID is not null) THEN
             update `user`
@@ -866,11 +866,11 @@ BEGIN
         END IF;
 
 
-    ELSEIF (_action = 'ADDGROUP' and _user_userUUID is not null and _groupUUID is not null) THEN
+    -- ELSEIF (_action = 'ADDGROUP' and _user_userUUID is not null and _groupUUID is not null) THEN
 
-        insert ignore into user_group_join
-            (ugj_groupUUID, ugj_userUUID, ugj_createdByUUID, ugj_createdTS)
-        values (_groupUUID, _user_userUUID, _userUUID, now());
+    --     insert ignore into user_group_join
+    --         (ugj_groupUUID, ugj_userUUID, ugj_createdByUUID, ugj_createdTS)
+    --     values (_groupUUID, _user_userUUID, _userUUID, now());
 
     ELSEIF (_action = 'CHANGEPASSWORD' and _user_userUUID is not null and _user_loginPW is not null) THEN
 
