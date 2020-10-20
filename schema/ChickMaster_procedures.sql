@@ -1145,6 +1145,12 @@ BEGIN
             LEAVE BARCODE_barcode;
         END IF;
         SELECT * FROM barcode WHERE barcode_uuid = _barcodeUUID;
+    ELSEIF (_action = 'GET-URL') THEN
+        IF (_barcodeUUID IS NULL or _barcodeUUID = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call BARCODE_barcode: _barcodeUUID missing';
+            LEAVE BARCODE_barcode;
+        END IF;
+        SELECT barcode_destinationURL FROM barcode where barcode_uuid = _barcodeUUID AND barcode_destinationURL is not null;
     ELSEIF (_action = 'CREATE') THEN
         INSERT INTO barcode (    barcode_type,barcode_destinationURL,barcode_status,
                                  barcode_isRegistered,barcode_partSKU,barcode_assetUUID,barcode_locationUUID, barcode_customerUUID,
@@ -1545,12 +1551,12 @@ BEGIN
             -- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
 
             SET @l_SQL = CONCAT(
-                    'SELECT * FROM ( 
-                        SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source  
+                    'SELECT * FROM (
+                        SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
                         FROM asset_part WHERE asset_part_statusId = 1 AND asset_part_name LIKE \'', _name, '\'  AND  asset_part_customerUUID= \'', _customerUUID, '\'
                         UNION
-                        SELECT part_sku as objUUID,part_imageURL as ImageURL,part_imageThumbURL as ThumbURL, part_name  as `name`, \'ASSET_PART\' as `Type`, \'FACTORY-PART\' as source 
-                        FROM part_template pt WHERE part_statusId = 1 AND part_name LIKE \'', _name,'\') ap 
+                        SELECT part_sku as objUUID,part_imageURL as ImageURL,part_imageThumbURL as ThumbURL, part_name  as `name`, \'ASSET_PART\' as `Type`, \'FACTORY-PART\' as source
+                        FROM part_template pt WHERE part_statusId = 1 AND part_name LIKE \'', _name,'\') ap
                         LEFT JOIN part_template pt ON (ap.source = \'FACTORY-PART\' AND ap.objUUID = pt.part_sku)
                         ORDER BY name');
 
@@ -2107,7 +2113,7 @@ CREATE PROCEDURE `ASSETPART_assetpart`(IN _action VARCHAR(100),
                                        IN _asset_part_shortName VARCHAR(255),
                                        IN _asset_part_imageURL VARCHAR(255),
                                        IN _asset_part_imageThumbURL VARCHAR(255),
-                                       IN _asset_part_hotSpotJSON VARCHAR(255),
+                                       IN _asset_part_hotSpotJSON TEXT,
                                        IN _asset_part_isPurchasable VARCHAR(255),
                                        IN _asset_part_diagnosticUUID VARCHAR(255),
                                        IN _asset_part_magentoUUID VARCHAR(255),
@@ -2193,7 +2199,7 @@ BEGIN
                 _asset_part_imageURL, _asset_part_imageThumbURL, _asset_part_hotSpotJSON, _asset_part_isPurchasable,
                 _asset_part_diagnosticUUID, _asset_part_magentoUUID, _asset_part_vendor,
                 _userUUID, _userUUID, now(), now(), null);
-        
+
         select * from asset_part where asset_partUUID = _asset_partUUID;
 
     ELSEIF (_action = 'UPDATE') THEN
