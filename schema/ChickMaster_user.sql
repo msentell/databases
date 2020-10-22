@@ -641,6 +641,8 @@ call USER_user('LOGOUT', null,null,_user_userUUID,null,null,null,null,null,null,
 
 call USER_user('GETALLUSERS', 'a30af0ce5e07474487c39adab6269d5f',1,null,null,null,null,null,null,null,null,null,null,null);
 
+call USER_user('GET_LIST_OF_USER', null, null,'1\',\'2',null,null,null, null,null,null,null,null, null,null);
+
 */
 
 DROP procedure IF EXISTS `USER_user`;
@@ -902,7 +904,7 @@ BEGIN
         order by user_userName;
 
     ELSEIF (_action = 'GET_LIST_OF_USER') THEN
-		set @l_sql = CONCAT('SELECT * FROM `user` where userUUID IN (\'',_user_userUUID,'\')');
+		set @l_sql = CONCAT('SELECT userUUID, user_userName FROM `user` where userUUID IN (\'',_user_userUUID,'\')');
 		PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;

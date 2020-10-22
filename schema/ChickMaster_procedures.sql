@@ -2608,8 +2608,8 @@ BEGIN
                 and notification_expireOn > now()
                 and notification_readyOn < now()
                 and notification_statusId = 1
-                and notification_assetUUID is null) no
-                 left join user u on no.notification_fromUserUUID = u.userUUID;
+                and notification_assetUUID is null) no;
+                 -- left join user u on no.notification_fromUserUUID = u.userUUID;
 
     ELSEIF (_action = 'GETSMS') THEN
 
