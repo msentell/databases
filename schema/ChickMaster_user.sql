@@ -901,6 +901,11 @@ BEGIN
           and user_statusId = 1
         order by user_userName;
 
+    ELSEIF (_action = 'GET_LIST_OF_USER') THEN
+		set @l_sql = CONCAT('SELECT * FROM `user` where userUUID IN (\'',_user_userUUID,'\')');
+		PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
         LEAVE USER_user;
