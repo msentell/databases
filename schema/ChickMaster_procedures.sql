@@ -2302,7 +2302,6 @@ DELIMITER ;
 -- call ATT_getPicklist('group', 'a30af0ce5e07474487c39adab6269d5f', null);
 -- call ATT_getPicklist('asset', 'a30af0ce5e07474487c39adab6269d5f', null);
 -- call ATT_getPicklist('location', 'a30af0ce5e07474487c39adab6269d5f', null);
--- call ATT_getPicklist('user', 'a30af0ce5e07474487c39adab6269d5f', null);
 
 DROP procedure IF EXISTS `ATT_getPicklist`;
 
@@ -2382,19 +2381,19 @@ BEGIN
         order by location_name;
     END IF;
 
-    IF (LOCATE('user', _tables) > 0) THEN
+    -- IF (LOCATE('user', _tables) > 0) THEN
 
-        if (_customerId is null) Then
-            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
-            LEAVE getPicklist;
-        END IF;
+    --     if (_customerId is null) Then
+    --         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
+    --         LEAVE getPicklist;
+    --     END IF;
 
-        select 'user' as tableName, userUUID as id, user_userName as value, user_userName as name
-        from `user`
-        where user_customerUUID = _customerId
-          and user_statusId = 1
-        order by user_userName;
-    END IF;
+    --     select 'user' as tableName, userUUID as id, user_userName as value, user_userName as name
+    --     from `user`
+    --     where user_customerUUID = _customerId
+    --       and user_statusId = 1
+    --     order by user_userName;
+    -- END IF;
 
     IF (LOCATE('att_userlevel_predefined', _tables) > 0) THEN
         select 'att_userlevel_predefined' as tableName, description as id, bitwise as value, bitwise as name

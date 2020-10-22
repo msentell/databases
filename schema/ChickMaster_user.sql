@@ -639,6 +639,8 @@ call USER_user('CHANGEPASSWORD', null,_userUUID,_user_userUUID,null,null,_user_l
 
 call USER_user('LOGOUT', null,null,_user_userUUID,null,null,null,null,null,null,null,null,null,null);
 
+call USER_user('GETALLUSERS', 'a30af0ce5e07474487c39adab6269d5f',1,null,null,null,null,null,null,null,null,null,null,null);
+
 */
 
 DROP procedure IF EXISTS `USER_user`;
@@ -885,6 +887,19 @@ BEGIN
         update `user`
         set user_loginSessionExpire = now()
         where userUUID = _user_userUUID;
+
+    ELSEIF (_action = 'GETALLUSERS') THEN
+       
+        if (_customerId is null) Then
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _customerId can not be empty';
+            LEAVE USER_user;
+        END IF;
+
+        select 'user' as tableName, userUUID as id, user_userName as value, user_userName as name
+        from `user`
+        where user_customerUUID = _customerId
+          and user_statusId = 1
+        order by user_userName;
 
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
