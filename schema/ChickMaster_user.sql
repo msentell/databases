@@ -25,7 +25,7 @@ DROP TABLE IF EXISTS customer;
 CREATE TABLE `customer` (
     customerUUID CHAR(36)  NOT NULL,
     customer_externalName varchar(50)   NULL,
-    -- customer_brandId INT   NULL,
+    customer_brandUUID CHAR(36)   NULL,
     customer_statusId INT   NULL DEFAULT 1,
     customer_name varchar(50)  NULL,
     customer_logo varchar(255)  NULL,
@@ -151,7 +151,7 @@ DECLARE x INT DEFAULT 1;
     SET x=1;
     WHILE x <= _limit DO
         SET _code = CONCAT(_code, substring(_possible, FLOOR(RAND() * LENGTH(_possible) + 1), 1));
-        SET x= x+1;        
+        SET x= x+1;
     END WHILE;
 
 RETURN _code;
@@ -175,7 +175,7 @@ DECLARE x INT DEFAULT 1;
     SET x=1;
     WHILE x <= _limit DO
         SET _code = CONCAT(_code, substring(_possible, FLOOR(RAND() * LENGTH(_possible) + 1), 1));
-        SET x= x+1;        
+        SET x= x+1;
     END WHILE;
 
 RETURN _code;
@@ -891,7 +891,7 @@ BEGIN
         where userUUID = _user_userUUID;
 
     ELSEIF (_action = 'GETALLUSERS') THEN
-       
+
         if (_customerId is null) Then
             SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _customerId can not be empty';
             LEAVE USER_user;
