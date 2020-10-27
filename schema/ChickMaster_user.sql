@@ -706,7 +706,7 @@ BEGIN
         END IF;
 
         set @l_sql = CONCAT(
-                'select c.customer_name, c.customerUUID, u.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
+                'select c.customer_name, c.customerUUID, u.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc,p.user_profile_locationUUID ');
 
 
         -- if (_groupUUID is not null) THEN
@@ -785,20 +785,20 @@ BEGIN
 
             set @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID =', _userUUID);
 
-            if (_user_userName is null) THEN
+            if (_user_userName is not null) THEN
                 set @l_sql = CONCAT(@l_sql, ',user_userName = \'', _user_userName, '\'');
             END IF;
-            if (_user_loginEmail is null) THEN
+            if (_user_loginEmail is not null) THEN
                 set @l_sql = CONCAT(@l_sql, ',user_loginEmail = \'', _user_loginEmail, '\'');
             END IF;
-            if (_user_statusId is null) THEN
+            if (_user_statusId is not null) THEN
                 set @l_sql = CONCAT(@l_sql, ',user_statusId = ', _user_statusId);
             END IF;
-            if (_user_securityBitwise is null) THEN
+            if (_user_securityBitwise is not null) THEN
                 set @l_sql = CONCAT(@l_sql, ',user_securityBitwise = ', _user_securityBitwise);
             END IF;
 
-            set @l_sql = CONCAT(@l_sql, ' where _userUUID = \'', _user_userUUID, '\';');
+               set @l_sql = CONCAT(@l_sql, ' where userUUID = \'', _user_userUUID, '\';');
 
             IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
 
@@ -823,17 +823,17 @@ BEGIN
                         CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID =',
                                _userUUID);
 
-                if (_user_profile_locationUUID is null) THEN
+                if (_user_profile_locationUUID is not null) THEN
                     set @l_sql = CONCAT(@l_sql, ',user_profile_locationUUID = \'', _user_profile_locationUUID, '\'');
                 END IF;
-                if (_user_profile_phone is null) THEN
+                if (_user_profile_phone is not null) THEN
                     set @l_sql = CONCAT(@l_sql, ',user_profile_phone = \'', _user_profile_phone, '\'');
                 END IF;
-                if (_user_profile_preferenceJSON is null) THEN
+                if (_user_profile_preferenceJSON is not null) THEN
                     set @l_sql =
                             CONCAT(@l_sql, ',user_profile_preferenceJSON = \'', _user_profile_preferenceJSON, '\'');
                 END IF;
-                if (_user_profile_avatarSrc is null) THEN
+                if (_user_profile_avatarSrc is not null) THEN
                     set @l_sql = CONCAT(@l_sql, ',user_profile_avatarSrc = \'', _user_profile_avatarSrc, '\'');
                 END IF;
 

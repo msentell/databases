@@ -2380,6 +2380,18 @@ BEGIN
         where location_customerUUID = _customerId
         order by location_name;
     END IF;
+     IF (LOCATE('isPrimary', _tables) > 0) THEN
+
+        if (_customerId is null) Then
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
+            LEAVE getPicklist;
+        END IF;
+
+        select 'location' as tableName, locationUUID as id, location_name as value, location_name as name
+        from location
+        where location_customerUUID = _customerId and location_statusId = 1 and location_isPrimary = 1
+        order by location_name;
+    END IF;
 
     -- IF (LOCATE('user', _tables) > 0) THEN
 
