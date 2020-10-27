@@ -932,6 +932,40 @@ END$$
 
 DELIMITER ;
 
+DROP procedure IF EXISTS `ATT_getPicklist`;
 
+DELIMITER //
+CREATE PROCEDURE `ATT_getPicklist`(IN _tables varchar(1000),
+                                   _customerId CHAR(36),
+                                   _userId CHAR(36))
+getPicklist:
+BEGIN
+
+    IF (LOCATE('customer_brand', _tables) > 0) THEN
+        select 'customer_brand' as tableName, brandUUID as id, brandUUID as value, brand_name as label
+        from customer_brand
+        order by label;
+    END IF;
+
+     IF (LOCATE('customer', _tables) > 0) THEN
+        select 'customer' as tableName, customerUUID as id, customer_name as value, customer_name as name
+        from customer
+        order by customer_name;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+END //
+DELIMITER ;
 -- ==================================================================
 

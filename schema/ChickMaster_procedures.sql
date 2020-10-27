@@ -2322,6 +2322,10 @@ BEGIN
         select 'att_phone' as tableName, id as id, name as value, name as name from att_phone order by name;
     END IF;
 
+    IF (LOCATE('att_status', _tables) > 0) THEN
+        select 'att_status' as tableName, id as id, id as value, name as label from att_status order by label;
+    END IF;
+
     IF (LOCATE('customer', _tables) > 0) THEN
         select 'customer' as tableName, customerUUID as id, customer_name as value, customer_name as name
         from customer
@@ -3668,6 +3672,175 @@ END IF;
 
 
 END$$
+
+DELIMITER ;
+
+DROP procedure IF EXISTS `PARTTEMPLATE_parttemplate`;
+
+DELIMITER $$
+CREATE PROCEDURE `PARTTEMPLATE_parttemplate`(IN _action VARCHAR(100),
+                                       IN _userUUID VARCHAR(100),
+
+                                       IN _part_sku VARCHAR(100),
+                                       IN _part_statusId INT,
+                                       IN _part_name VARCHAR(255),
+                                       IN _part_shortName VARCHAR(255),
+                                       IN _part_brandId VARCHAR(255),
+                                       IN _part_imageURL VARCHAR(255),
+                                       IN _part_imageThumbURL VARCHAR(255),
+                                       IN _part_hotSpotJSON TEXT,
+                                       IN _part_isPurchasable BOOLEAN,
+                                       IN _part_diagnosticUUID VARCHAR(255),
+                                       IN _part_magentoUUID VARCHAR(255),
+                                       IN _part_vendor VARCHAR(255))
+PARTTEMPLATE_parttemplate:
+BEGIN
+
+
+    DECLARE DEBUG INT DEFAULT 0;
+    IF (_action IS NULL OR _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call PARTTEMPLATE_parttemplate: _action can not be empty';
+        LEAVE PARTTEMPLATE_parttemplate;
+    END IF;
+
+    IF (_userUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PARTTEMPLATE_parttemplate: _userUUID missing';
+        LEAVE PARTTEMPLATE_parttemplate;
+    END IF;
+
+    IF (_action = 'GET') THEN
+        IF (_part_sku IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PARTTEMPLATE_parttemplate: _part_sku missing';
+            LEAVE PARTTEMPLATE_parttemplate;
+        END IF;
+        select * from part_template where part_sku = _part_sku;
+    ELSEIF (_action = 'GET-LIST') THEN
+        SELECT * from part_template;
+    ELSEIF (_action = 'CREATE') THEN
+        IF (DEBUG = 1) THEN
+            select _action,
+                   _userUUID,
+                 _part_sku,
+                 _part_statusId,
+                 _part_name,
+                 _part_shortName,
+                 _part_brandId,
+                 _part_imageURL,
+                 _part_imageThumbURL,
+                 _part_hotSpotJSON,
+                 _part_isPurchasable,
+                 _part_diagnosticUUID,
+                 _part_magentoUUID,
+                 _part_vendor;
+        END IF;
+
+        IF (_part_sku IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PARTTEMPLATE_parttemplate: _part_sku missing';
+            LEAVE PARTTEMPLATE_parttemplate;
+        END IF;
+
+        if (_part_isPurchasable is null) then set _part_isPurchasable = 0; end if;
+
+        insert into part_template
+        (part_sku, part_statusId, part_name, part_shortName, part_brandId,
+         part_imageURL, part_imageThumbURL, part_hotSpotJSON, part_isPurchasable, part_diagnosticUUID,
+         part_magentoUUID, part_vendor,
+         part_createdByUUID, part_updatedByUUID, part_updatedTS, part_createdTS,
+         part_deleteTS)
+        values (_part_sku,
+                _part_statusId,
+                _part_name,
+                _part_shortName,
+                _part_brandId,
+                _part_imageURL,
+                _part_imageThumbURL,
+                _part_hotSpotJSON,
+                _part_isPurchasable,
+                _part_diagnosticUUID,
+                _part_magentoUUID,
+                _part_vendor,
+                _userUUID, _userUUID, now(), now(), null);
+
+        select * from part_template where part_sku = _part_sku;
+
+    ELSEIF (_action = 'UPDATE') THEN
+
+        IF (_part_sku IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PARTTEMPLATE_parttemplate: _part_sku missing';
+            LEAVE PARTTEMPLATE_parttemplate;
+        END IF;
+
+        set @l_sql = CONCAT('update part_template set part_updatedTS=now(), part_updatedByUUID=\'', _userUUID,
+                            '\'');
+
+        if (_part_sku is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_sku = \'', _part_sku, '\'');
+        END IF;
+        if (_part_statusId is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_statusId = ', _part_statusId);
+        END IF;
+        if (_part_name is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_name = \'', _part_name, '\'');
+        END IF;
+        if (_part_shortName is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_shortName = \'', _part_shortName, '\'');
+        END IF;
+        if (_part_brandId is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_brandId = \'', _part_brandId, '\'');
+        END IF;
+        if (_part_imageURL is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_imageURL = \'', _part_imageURL, '\'');
+        END IF;
+        if (_part_imageThumbURL is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_imageThumbURL = \'', _part_imageThumbURL, '\'');
+        END IF;
+        if (_part_hotSpotJSON is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_hotSpotJSON = \'', _part_hotSpotJSON, '\'');
+        END IF;
+        if (_part_isPurchasable is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_isPurchasable = \'', _part_isPurchasable, '\'');
+        END IF;
+        if (_part_diagnosticUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_diagnosticUUID = \'', _part_diagnosticUUID, '\'');
+        END IF;
+        if (_part_magentoUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_magentoUUID = \'', _part_magentoUUID, '\'');
+        END IF;
+        if (_part_vendor is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',part_vendor = \'', _part_vendor, '\'');
+        END IF;
+
+
+
+        set @l_sql = CONCAT(@l_sql, ' where part_sku = \'', _part_sku, '\';');
+
+        IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    ELSEIF (_action = 'REMOVE') THEN
+        delete from part_template where part_sku=_part_sku;
+
+    ELSEIF (_action = 'DELETE') THEN
+
+        IF (DEBUG = 1) THEN select _action, _part_sku; END IF;
+
+        IF (_part_sku IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call PARTTEMPLATE_parttemplate: _part_sku missing';
+            LEAVE PARTTEMPLATE_parttemplate;
+        END IF;
+
+        update part_template
+        set part_deleteTS=now(),
+            part_statusId=2
+        where part_sku = _part_sku;
+
+    END IF;
+
+END$$
+
 
 DELIMITER ;
 

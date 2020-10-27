@@ -469,7 +469,7 @@ DROP TABLE IF EXISTS part_template;
 CREATE TABLE `part_template` (
     -- part_partUUID CHAR(36)  NOT NULL,
     part_sku varchar(100) NOT NULL,
-    part_brandId INT NULL,
+    part_brandId varchar(36) NULL,
    	part_statusId INT NULL DEFAULT 1,
 
     part_name varchar(255) NOT NULL,
