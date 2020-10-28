@@ -330,13 +330,10 @@ BEGIN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _diagnostic_node_diagnosticUUID missing';
         LEAVE DIAGNOSTIC_node;
     END IF;
-
-    SET @l_SQL = 'SELECT * FROM asset_part ';
-    SET @l_SQL = CONCAT(@l_SQL, '  WHERE asset_part_diagnosticUUID =\'', _diagnostic_node_diagnosticUUID, '\'');
-    PREPARE stmt FROM @l_SQL;
-	EXECUTE stmt;
-	DEALLOCATE PREPARE stmt;
-
+	
+    SELECT * FROM (SELECT asset_partUUID as id,asset_part_template_part_sku as template_id,asset_part_name as name,asset_part_diagnosticUUID as diagnosticUUID ,'customer-parts' as type FROM cm_hms.asset_part
+	UNION All SELECT null as id,part_sku as template_id,part_name as name,part_diagnosticUUID as diagnosticUUID,'factory-part' as type from part_template) assert_details where template_id is not null and diagnosticUUID = _diagnostic_node_diagnosticUUID;
+    
     ELSEIF (_action = 'CREATE') THEN
 
         IF (DEBUG = 1) THEN
