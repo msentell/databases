@@ -336,7 +336,7 @@ BEGIN
     PREPARE stmt FROM @l_SQL;
 	EXECUTE stmt;
 	DEALLOCATE PREPARE stmt;
-    
+
     ELSEIF (_action = 'CREATE') THEN
 
         IF (DEBUG = 1) THEN
@@ -2149,13 +2149,13 @@ BEGIN
         LEAVE ASSETPART_assetpart;
     END IF;
 
-    IF (_customerUUID IS NULL) THEN
-        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _customerUUID missing';
-        LEAVE ASSETPART_assetpart;
-    END IF;
+
 
     IF (_action = 'GET') THEN
-
+        IF (_customerUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _customerUUID missing';
+            LEAVE ASSETPART_assetpart;
+        END IF;
 
         SET @l_SQL = 'SELECT * FROM asset_part ';
 
@@ -2170,7 +2170,8 @@ BEGIN
         PREPARE stmt FROM @l_SQL;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
-
+    ELSEIF (_action = 'GET-LIST') THEN
+        select * from asset_part;
     ELSEIF (_action = 'CREATE') THEN
 
         IF (DEBUG = 1) THEN
@@ -2193,7 +2194,10 @@ BEGIN
                    _asset_part_magentoUUID,
                    _asset_part_vendor;
         END IF;
-
+        IF (_customerUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _customerUUID missing';
+            LEAVE ASSETPART_assetpart;
+        END IF;
         IF (_asset_partUUID IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
             LEAVE ASSETPART_assetpart;
@@ -2218,7 +2222,10 @@ BEGIN
 
     ELSEIF (_action = 'UPDATE') THEN
 
-
+        IF (_customerUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _customerUUID missing';
+            LEAVE ASSETPART_assetpart;
+        END IF;
         IF (_asset_partUUID IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
             LEAVE ASSETPART_assetpart;
@@ -2283,7 +2290,7 @@ BEGIN
         DEALLOCATE PREPARE stmt;
 
     ELSEIF (_action = 'SET_DIGNOSTIC') THEN
-     
+
         IF (_asset_part_template_part_sku IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_part_template_part_sku missing';
             LEAVE ASSETPART_assetpart;
@@ -2291,18 +2298,18 @@ BEGIN
         ELSEIF (_asset_part_diagnosticUUID IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_part_diagnosticUUID missing';
             LEAVE ASSETPART_assetpart;
-        
+
         ELSE
             update asset_part set asset_part_updatedTS=now(),asset_part_diagnosticUUID = _asset_part_diagnosticUUID where asset_part_template_part_sku = _asset_part_template_part_sku;
             update part_template set part_updatedTS=now(),part_diagnosticUUID = _asset_part_diagnosticUUID where part_sku = _asset_part_template_part_sku;
         END IF;
 
     ELSEIF (_action = 'REMOVE_DIGNOSTIC') THEN
-     
+
         IF (_asset_part_template_part_sku IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_part_template_part_sku missing';
             LEAVE ASSETPART_assetpart;
-        
+
         ELSE
             update asset_part set asset_part_updatedTS=now(),asset_part_diagnosticUUID = null where asset_part_template_part_sku = _asset_part_template_part_sku;
             update part_template set part_updatedTS=now(),part_diagnosticUUID = null where part_sku = _asset_part_template_part_sku;
@@ -2410,6 +2417,12 @@ BEGIN
         where asset_customerUUID = _customerId
         order by asset_name;
     END IF;
+
+    IF (LOCATE('diagnostic_tree', _tables) > 0) THEN
+        select 'diagnostic_tree' as tableName, diagnosticUUID as id, diagnosticUUID as value, diagnostic_name as label
+        from diagnostic_tree
+        order by label;
+    end if;
 
     IF (LOCATE('location', _tables) > 0) THEN
 
