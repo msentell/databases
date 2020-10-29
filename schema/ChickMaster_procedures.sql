@@ -237,6 +237,8 @@ DELIMITER ;
 -- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null,null,null);
 -- call DIAGNOSTIC_node('UPDATE','1','5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null ,'testing_tiltle rtghjy', 'diagnosticnodeprompt', 'diagnostic_node_optionPrompt', '[{"coordinates":[{}],"color":"red","forwardId":"1599760999552"}]', 'https://jcmi.sfo2.digitaloceanspaces.com/demodata/Hendrix/diagnostics/Heating1.JPG', 'false','hello','hijky');
 -- call DIAGNOSTIC_node('GET_ASSETPARTS','1',null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null);
+-- call DIAGNOSTIC_node('GET_AVAILABLE_ASSETPARTS','1',null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null);
+
 
 DROP procedure IF EXISTS `DIAGNOSTIC_node`;
 
@@ -325,15 +327,37 @@ BEGIN
         DEALLOCATE PREPARE stmt;
 
     ELSEIF (_action = 'GET_ASSETPARTS') THEN
+	
+     SET @l_SQL = 'SELECT * FROM (SELECT asset_partUUID as id,asset_part_statusId as statusId,asset_part_template_part_sku as template_id,asset_part_name as name,asset_part_diagnosticUUID as diagnosticUUID ,''customer-parts'' as type FROM cm_hms.asset_part
+	UNION All SELECT null as id,part_statusId as statusId,part_sku as template_id,part_name as name,part_diagnosticUUID as diagnosticUUID,''factory-part'' as type from part_template) assert_details where template_id is not null and statusId = 1';
 
+    IF (_diagnostic_node_diagnosticUUID IS NOT NULL) THEN
+            SET @l_SQL = CONCAT(@l_SQL, ' and diagnosticUUID =\'', _diagnostic_node_diagnosticUUID, '\'');
+    END IF;
+    
+    SET @l_SQL = CONCAT(@l_SQL,';');
+    
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    ELSEIF (_action = 'GET_AVAILABLE_ASSETPARTS') THEN
+	
     IF (_diagnostic_node_diagnosticUUID IS NULL) THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _diagnostic_node_diagnosticUUID missing';
         LEAVE DIAGNOSTIC_node;
+    ELSE 
+        SET @l_SQL = 'SELECT * FROM (SELECT asset_partUUID as id,asset_part_statusId as statusId,asset_part_template_part_sku as template_id,asset_part_name as name,asset_part_diagnosticUUID as diagnosticUUID ,''customer-parts'' as type FROM cm_hms.asset_part
+	    UNION All SELECT null as id,part_statusId as statusId,part_sku as template_id,part_name as name,part_diagnosticUUID as diagnosticUUID,''factory-part'' as type from part_template) assert_details where template_id is not null and statusId = 1';
+
+        SET @l_SQL = CONCAT(@l_SQL, ' and diagnosticUUID !=\'', _diagnostic_node_diagnosticUUID, '\';');
+        
+            PREPARE stmt FROM @l_SQL;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
     END IF;
-	
-    SELECT * FROM (SELECT asset_partUUID as id,asset_part_template_part_sku as template_id,asset_part_name as name,asset_part_diagnosticUUID as diagnosticUUID ,'customer-parts' as type FROM cm_hms.asset_part
-	UNION All SELECT null as id,part_sku as template_id,part_name as name,part_diagnosticUUID as diagnosticUUID,'factory-part' as type from part_template) assert_details where template_id is not null and diagnosticUUID = _diagnostic_node_diagnosticUUID;
-    
+
     ELSEIF (_action = 'CREATE') THEN
 
         IF (DEBUG = 1) THEN
@@ -2105,8 +2129,8 @@ DELIMITER ;
 -- call ASSETPART_assetpart('CREATE', '1', '3792f636d9a843d190b8425cc06257f5',  10, 'asset_part_template_part_sku',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 1, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor');
 -- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, 'asset_part_template_part_sku2',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 0, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor');
 -- call ASSETPART_assetpart('DELETE', '1', '3792f636d9a843d190b8425cc06257f5',  10, null,null, null, null,null,null,null,null,null,null,null,null, null,null);
--- call ASSETPART_assetpart('SET_DIGNOSTIC', '1', 'a30af0ce5e07474487c39adab6269d5f',null,'004301AU',null, null, null, null,null, null, null, null, null, 0, 'tesing_updated_dignosticUUID', null, null);
--- call ASSETPART_assetpart('REMOVE_DIGNOSTIC', '1', 'a30af0ce5e07474487c39adab6269d5f',null,'004301AU',null, null, null, null,null, null, null, null,null, 0, null, null, null);
+-- call ASSETPART_assetpart('SET_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null, null, 0, 'tesing_updated_dignosticUUID', null, null);
+-- call ASSETPART_assetpart('REMOVE_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null,null, 0, null, null, null);
 
 DROP procedure IF EXISTS `ASSETPART_assetpart`;
 
