@@ -644,7 +644,8 @@ IN _workorder_rescheduleDate VARCHAR(100),
 IN _workorder_frequency INT,
 IN _workorder_frequencyScope VARCHAR(100),
 IN _wapj_asset_partUUID VARCHAR(100),
-IN _wapj_quantity INT
+IN _wapj_quantity INT,
+IN _daysToMaintain VARCHAR(100),
 )
 WORKORDER_workOrder: BEGIN
 
@@ -733,14 +734,33 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
 
 	if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
 
+    if(_workorder_name is null) then
+        select checklist_name
+        into _workorder_name
+        from checklist where checklistUUID = _workorder_checklistUUID;
+    END IF;
+
+    if(_workorder_details is null) then 
+        select checklist_name
+        into _workorder_details
+        from checklist where checklistUUID = _workorder_checklistUUID;
+    END IF;
+
+    if(_daysToMaintain is null) then 
+        IF (_workorder_frequencyScope = 'DAILY') then 
+         _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday';
+        ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then 
+         _daysToMaintain = 'Monday';
+    END IF
+
 
 	if (_workorder_checklistUUID is not null AND _workorder_frequency>1) THEN
 
-		select checklist_name,checklist_name,checklist_name,'CHECKLIST'
-        into _workorder_name,_workorder_details,_workorder_actions,_workorder_type
+		select checklist_name,'CHECKLIST'
+        into _workorder_actions,_workorder_type
         from checklist where checklistUUID = _workorder_checklistUUID;
 
-		if (_workorder_frequencyScope = 'DAILY') THEN
+        if (_workorder_frequencyScope = 'DAILY') THEN
 
 select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
 (select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
@@ -750,7 +770,7 @@ select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates fro
  (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
  (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
 where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency DAY)
-and dayname(selected_date) in ('Monday','Tuesday','Wednesday','Thursday','Friday')
+and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
 order by v.selected_date;
 
         ELSEIF (_workorder_frequencyScope = 'WEEKLY') THEN
@@ -763,7 +783,7 @@ select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates fro
  (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
  (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
 where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency WEEK)
-and dayname(selected_date) in ('Monday')
+and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
 order by v.selected_date;
 
         ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
@@ -776,7 +796,7 @@ select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates fro
  (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
  (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
 where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency MONTH)
-and dayname(selected_date) in ('Monday') and (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) = 1
+and FIND_IN_SET (dayname(selected_date),_daysToMaintain) and (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) = 1
 order by v.selected_date;
 
 		END IF;
@@ -1972,10 +1992,10 @@ DELIMITER ;
 
 -- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate);
 -- call ASSET_asset('GET', '1', 'a30af'GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null, null);
+-- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', null, null, '283821d8e6c647828eb01df0d82b0b74', null, null, null, null); 
 -- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now()));
 -- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now()));
 -- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null);
-
 
 DROP procedure IF EXISTS `ASSET_asset`;
 
@@ -2369,6 +2389,7 @@ DELIMITER ;
 -- call ATT_getPicklist('group', 'a30af0ce5e07474487c39adab6269d5f', null);
 -- call ATT_getPicklist('asset', 'a30af0ce5e07474487c39adab6269d5f', null);
 -- call ATT_getPicklist('location', 'a30af0ce5e07474487c39adab6269d5f', null);
+-- call ATT_getPicklist('att_priority', null, null);
 
 DROP procedure IF EXISTS `ATT_getPicklist`;
 
@@ -2488,6 +2509,10 @@ BEGIN
         select 'att_userlevel_predefined' as tableName, description as id, bitwise as value, bitwise as name
         from att_userlevel_predefined
         order by description;
+    END IF;
+
+    IF (LOCATE('att_priority', _tables) > 0) THEN
+        select * from att_priority;
     END IF;
 
 END //
