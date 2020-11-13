@@ -1,4 +1,5 @@
 use cm_hms_auth;
+use jcmi_core;
 DELIMITER ;
 
 DROP procedure IF EXISTS `CUSTOMER_customer`;

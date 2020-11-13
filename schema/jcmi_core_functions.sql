@@ -1,4 +1,4 @@
-
+use jcmi_core;
 DROP FUNCTION IF EXISTS SESSION_generateAccessCode;
 
 DELIMITER //
@@ -15,7 +15,7 @@ DECLARE x INT DEFAULT 1;
     SET x=1;
     WHILE x <= _limit DO
         SET _code = CONCAT(_code, substring(_possible, FLOOR(RAND() * LENGTH(_possible) + 1), 1));
-        SET x= x+1;        
+        SET x= x+1;
     END WHILE;
 
 RETURN _code;
@@ -39,7 +39,7 @@ DECLARE x INT DEFAULT 1;
     SET x=1;
     WHILE x <= _limit DO
         SET _code = CONCAT(_code, substring(_possible, FLOOR(RAND() * LENGTH(_possible) + 1), 1));
-        SET x= x+1;        
+        SET x= x+1;
     END WHILE;
 
 RETURN _code;
