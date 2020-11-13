@@ -1,3 +1,4 @@
+-- DEPRECATED...moved into jcmi_core_tables_and_procs
 use cm_hms_auth;
 use jcmi_core;
 DELIMITER ;
