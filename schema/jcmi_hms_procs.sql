@@ -79,7 +79,9 @@ BEGIN
 
     ELSEIF (_action = 'ASSET-PART') THEN
 
-        SELECT ap.* from asset_part ap where ap.asset_partUUID = _id;
+        select a.*,b.part_diagnosticUUID as part_dignosticUUID  from 
+        asset_part a left join part_template b on (a.asset_part_template_part_sku = b.part_sku)
+        where a.asset_partUUID = _id;
 
     END IF;
 
@@ -531,7 +533,11 @@ BUTTON_options:
 BEGIN
 
     DECLARE _partId varchar(100);
+	DECLARE _hasDignosticID BOOLEAN;
+	DECLARE asset_disgnosticUUID char(32);
+    DECLARE part_dignosticUUID char(32);
 
+        SET _hasDignosticID = 0;
     If (_action = 'ASSET') THEN
 		select a.asset_partUUID into _partId from asset a where assetUUID = _id;
 	ELSEIF (_action = 'ASSET-PART') THEN
@@ -539,11 +545,20 @@ BEGIN
     END IF;
 
     If (_partId IS NOT NULL) THEN
+
+        select a.asset_part_diagnosticUUID,b.part_diagnosticUUID into asset_disgnosticUUID,part_dignosticUUID from 
+        asset_part a left join part_template b on (a.asset_part_template_part_sku = b.part_sku)
+        where a.asset_partUUID = _partId ;
+
+        IF(asset_disgnosticUUID OR part_dignosticUUID ) THEN 
+        SET _hasDignosticID = 1;
+        END IF;
+
 		-- TODO, select security to turn on/off
 		-- 'CONTACT,CHAT,STARTCHECKLIST,ADDLOG'
 		select ap.asset_partUUID,
            (case when asset_part_isPurchasable = 1 is not null then 1 else 0 end)       BUTTON_viewOrderParts,
-           (case when asset_part_diagnosticUUID is not null then 1 else 0 end)       as BUTTON_diagnoseAProblem,
+           (_hasDignosticID)       as BUTTON_diagnoseAProblem,
            (select count(apaj_asset_partUUID)
             from asset_part_attachment_join
             where apaj_asset_partUUID = ap.asset_partUUID
