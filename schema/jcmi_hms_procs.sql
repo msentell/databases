@@ -533,11 +533,7 @@ BUTTON_options:
 BEGIN
 
     DECLARE _partId varchar(100);
-	DECLARE _hasDignosticID BOOLEAN;
-	DECLARE asset_disgnosticUUID char(32);
-    DECLARE part_dignosticUUID char(32);
 
-        SET _hasDignosticID = 0;
     If (_action = 'ASSET') THEN
 		select a.asset_partUUID into _partId from asset a where assetUUID = _id;
 	ELSEIF (_action = 'ASSET-PART') THEN
