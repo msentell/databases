@@ -329,7 +329,7 @@ BEGIN
 
     ELSEIF (_action = 'GET_ASSETPARTS') THEN
 
-     SET @l_SQL = 'SELECT * FROM (SELECT asset_partUUID as id,asset_part_statusId as statusId,asset_part_template_part_sku as template_id,asset_part_name as name,asset_part_diagnosticUUID as diagnosticUUID ,''customer-parts'' as type FROM cm_hms.asset_part
+     SET @l_SQL = 'SELECT * FROM (SELECT asset_partUUID as id,asset_part_statusId as statusId,asset_part_template_part_sku as template_id,asset_part_name as name,asset_part_diagnosticUUID as diagnosticUUID ,''customer-parts'' as type FROM asset_part
 	UNION All SELECT null as id,part_statusId as statusId,part_sku as template_id,part_name as name,part_diagnosticUUID as diagnosticUUID,''factory-part'' as type from part_template) assert_details where template_id is not null and statusId = 1';
 
     IF (_diagnostic_node_diagnosticUUID IS NOT NULL) THEN
@@ -348,7 +348,7 @@ BEGIN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call DIAGNOSTIC_node: _diagnostic_node_diagnosticUUID missing';
         LEAVE DIAGNOSTIC_node;
     ELSE
-        SET @l_SQL = 'SELECT * FROM (SELECT asset_partUUID as id,asset_part_statusId as statusId,asset_part_template_part_sku as template_id,asset_part_name as name,asset_part_diagnosticUUID as diagnosticUUID ,''customer-parts'' as type FROM cm_hms.asset_part
+        SET @l_SQL = 'SELECT * FROM (SELECT asset_partUUID as id,asset_part_statusId as statusId,asset_part_template_part_sku as template_id,asset_part_name as name,asset_part_diagnosticUUID as diagnosticUUID ,''customer-parts'' as type FROM asset_part
 	    UNION All SELECT null as id,part_statusId as statusId,part_sku as template_id,part_name as name,part_diagnosticUUID as diagnosticUUID,''factory-part'' as type from part_template) assert_details where template_id is not null and statusId = 1';
 
         SET @l_SQL = CONCAT(@l_SQL, ' and diagnosticUUID !=\'', _diagnostic_node_diagnosticUUID, '\';');
