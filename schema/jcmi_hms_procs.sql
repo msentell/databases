@@ -79,7 +79,9 @@ BEGIN
 
     ELSEIF (_action = 'ASSET-PART') THEN
 
-        SELECT ap.* from asset_part ap where ap.asset_partUUID = _id;
+        select a.*,b.part_diagnosticUUID as part_dignosticUUID  from 
+        asset_part a left join part_template b on (a.asset_part_template_part_sku = b.part_sku)
+        where a.asset_partUUID = _id;
 
     END IF;
 
@@ -541,27 +543,27 @@ BEGIN
     If (_partId IS NOT NULL) THEN
 		-- TODO, select security to turn on/off
 		-- 'CONTACT,CHAT,STARTCHECKLIST,ADDLOG'
-		select ap.asset_partUUID,
-           (case when asset_part_isPurchasable = 1 is not null then 1 else 0 end)       BUTTON_viewOrderParts,
-           (case when asset_part_diagnosticUUID is not null then 1 else 0 end)       as BUTTON_diagnoseAProblem,
-           (select count(apaj_asset_partUUID)
+		select ap.asset_partUUID,ap.asset_part_diagnosticUUID,pt.part_diagnosticUUID,
+			(case when asset_part_isPurchasable = 1 is not null then 1 else 0 end)       BUTTON_viewOrderParts,
+			(case when ap.asset_part_diagnosticUUID is not null or pt.part_diagnosticUUID is not null then 1 else 0 end)       BUTTON_viewOrderParts,
+			(select count(apaj_asset_partUUID)
             from asset_part_attachment_join
             where apaj_asset_partUUID = ap.asset_partUUID
             limit 1)                                                                 as BUTTON_viewManual,
-           (select count(pkj_part_partUUID)
+			(select count(pkj_part_partUUID)
             from part_knowledge_join
             where pkj_part_partUUID = ap.asset_partUUID
             limit 1)                                                                 as BUTTON_qa,
-           (select count(wapj_asset_partUUID)
+			(select count(wapj_asset_partUUID)
             from workorder_asset_part_join
             where wapj_asset_partUUID = ap.asset_partUUID
             limit 1)                                                                 as BUTTON_serviceHistory,
-           (case when locate('CONTACT', _otherOptions) > 0 THEN 1 ELSE 0 END)        as BUTTON_contactCheckMaster,
-           (case when locate('CHAT', _otherOptions) > 0 THEN 1 ELSE 0 END)           as BUTTON_liveChat,
-           (case when locate('STARTCHECKLIST', _otherOptions) > 0 THEN 1 ELSE 0 END) as BUTTON_startAChecklist,
-           (case when locate('ADDLOG', _otherOptions) > 0 THEN 1 ELSE 0 END)         as BUTTON_addALogEntry,
+			(case when locate('CONTACT', _otherOptions) > 0 THEN 1 ELSE 0 END)        as BUTTON_contactCheckMaster,
+			(case when locate('CHAT', _otherOptions) > 0 THEN 1 ELSE 0 END)           as BUTTON_liveChat,
+			(case when locate('STARTCHECKLIST', _otherOptions) > 0 THEN 1 ELSE 0 END) as BUTTON_startAChecklist,
+			(case when locate('ADDLOG', _otherOptions) > 0 THEN 1 ELSE 0 END)         as BUTTON_addALogEntry,
            ap.*
-		from asset_part ap
+		from asset_part ap left join part_template pt on (ap.asset_part_template_part_sku = pt.part_sku)
 		where asset_partUUID = _partId;
     END IF;
 
