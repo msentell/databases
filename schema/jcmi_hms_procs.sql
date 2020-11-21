@@ -522,6 +522,7 @@ END$$
 
 -- ==================================================================
 -- call BUTTON_options(null,'1c5a0f1a10b841699ee5b5f431d01e03','CONTACT|CHAT|STARTCHECKLIST|ADDLOG');
+-- call BUTTON_options('ASSET-PART','5eb71fddbe04419bb7fda53fb0ef31ae','CONTACT|CHAT|STARTCHECKLIST|ADDLOG');
 
 DROP procedure IF EXISTS `BUTTON_options`;
 
@@ -552,7 +553,7 @@ BEGIN
             limit 1)                                                                 as BUTTON_viewManual,
 			(select count(pkj_part_partUUID)
             from part_knowledge_join
-            where pkj_part_partUUID = ap.asset_partUUID
+            where pkj_part_partUUID = pt.part_sku
             limit 1)                                                                 as BUTTON_qa,
 			(select count(wapj_asset_partUUID)
             from workorder_asset_part_join
