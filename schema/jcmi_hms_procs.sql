@@ -1344,9 +1344,8 @@ Delimiter ;
 
 -- ==================================================================
 # KNOWLEDGE BASE
--- call USER_userGroup(_action, _userUUID, _customerUUID, _groupUUID, _groupName);
--- call USER_userGroup('GET-LIST', 1, 1, null, null);
--- call USER_userGroup('GET-LIST', 1,1,1, null,null ; GET GROUPS FOR SPECIFIC CUSTOMER
+-- call KB_knowledge_base(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+-- call KB_knowledge_base('GET-PART-KNOWLEDGE', null, null, null, null, null, null, null, null, null, null, '005-008-001');
 
 DROP procedure IF EXISTS `KB_knowledge_base`;
 
@@ -1361,7 +1360,8 @@ CREATE PROCEDURE `KB_knowledge_base`(IN _action VARCHAR(100),
                                      IN _knowledge_title VARCHAR(100),
                                      IN _knowledge_content VARCHAR(1000),
                                      IN _knowledge_customerUUID CHAR(36),
-                                     IN _knowledge_relatedArticle TEXT)
+                                     IN _knowledge_relatedArticle TEXT,
+                                     IN _part_sku VARCHAR(100))
 KB_knowledge_base:
 BEGIN
     DECLARE _DEBUG INT DEFAULT 1;
@@ -1370,7 +1370,7 @@ BEGIN
         LEAVE KB_knowledge_base;
     END IF;
 
-    IF (_userUUID IS NULL OR _userUUID = '') THEN
+    IF (_action != 'GET-PART-KNOWLEDGE' AND (_userUUID IS NULL OR _userUUID = '')) THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _userUUID missing';
         LEAVE KB_knowledge_base;
     END IF;
@@ -1382,7 +1382,15 @@ BEGIN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _knowledgebaseUUID missing';
             LEAVE KB_knowledge_base;
         END IF;
-        SELECT * FROM knowledge_base WHERE knowledgeUUID = _knowledgebaseUUID;
+		SELECT * FROM knowledge_base WHERE knowledgeUUID = _knowledgebaseUUID;
+	ELSEIF (_action = 'GET-PART-KNOWLEDGE') THEN
+		IF (_part_sku IS NULL or _part_sku = '') THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _part_sku missing';
+            LEAVE KB_knowledge_base;
+        END IF;
+		SELECT * FROM knowledge_base kb
+        LEFT JOIN part_knowledge_join pkj on pkj.pkj_part_knowledgeUUID = kb.knowledgeUUID
+        WHERE pkj.pkj_part_partUUID = _part_sku;
     ELSEIF (_action = 'CREATE') THEN
         IF (_knowledgebaseUUID IS NULL OR _knowledgebaseUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _knowledgebaseUUID missing';
