@@ -3948,6 +3948,48 @@ END$$
 
 DELIMITER ;
 
+-- ==================================================================
 
+-- call ATTACHMENT_attachment('5eb71fddbe04419bb7fda53fb0ef31ae','ASSET-PART')
+-- call ATTACHMENT_attachment('4e64ea9a159f45308019edcfd9dd9cd8','ASSET')
 
+DROP procedure IF EXISTS `ATTACHMENT_attachment`;
+
+DELIMITER $$
+CREATE PROCEDURE `ATTACHMENT_attachment`(IN _partId char(32),IN _partType char(32))
+ATTACHMENT_attachment:
+BEGIN
+    
+    DECLARE DEBUG INT DEFAULT 0;
+    DECLARE asset_part_id char(60);
+    
+    IF (_partId IS NULL) THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partId can not be empty';
+        LEAVE ATTACHMENT_attachment;
+    END IF;
+    
+    IF (_partType IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partType can not be empty';
+        LEAVE ATTACHMENT_attachment;
+    END IF;
+
+    IF(_partType = 'ASSET' or _partType = 'ASSET-PART') THEN
+    
+        IF(_partType = 'ASSET') THEN
+            SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
+        ELSE
+            asset_part_id = _partId;
+        END IF; 
+
+        SELECT * FROM attachment a LEFT JOIN asset_part_attachment_join apj ON (a.attachmentUUID = apj.apaj_attachmentUUID) 
+        WHERE apj.apaj_asset_partUUID = asset_part_id;
+
+    ELSE
+         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partType not matching with conditions';
+         LEAVE ATTACHMENT_attachment;
+    END IF;
+
+END$$
+
+DELIMITER ;
 
