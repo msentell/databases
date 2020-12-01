@@ -547,18 +547,18 @@ BEGIN
 		select ap.asset_partUUID,ap.asset_part_diagnosticUUID,pt.part_diagnosticUUID,
 			(case when asset_part_isPurchasable = 1 is not null then 1 else 0 end)       BUTTON_viewOrderParts,
 			(case when ap.asset_part_diagnosticUUID is not null or pt.part_diagnosticUUID is not null then 1 else 0 end)       BUTTON_viewOrderParts,
-			(select count(apaj_asset_partUUID)
+			(case when(select count(apaj_asset_partUUID)
             from asset_part_attachment_join
             where apaj_asset_partUUID = ap.asset_partUUID
-            limit 1)                                                                 as BUTTON_viewManual,
-			(select count(pkj_part_partUUID)
+            limit 1)> 0 THEN 1 ELSE 0 END)                                                                 as BUTTON_viewManual,
+			(case when (select count(pkj_part_partUUID)
             from part_knowledge_join
             where pkj_part_partUUID = pt.part_sku
-            limit 1)                                                                 as BUTTON_qa,
-			(select count(wapj_asset_partUUID)
+            limit 1) > 0 THEN 1 ELSE 0 END)                                          as BUTTON_qa,
+			(case when(select count(wapj_asset_partUUID)
             from workorder_asset_part_join
             where wapj_asset_partUUID = ap.asset_partUUID
-            limit 1)                                                                 as BUTTON_serviceHistory,
+            limit 1)> 0 THEN 1 ELSE 0 END)                                                                 as BUTTON_serviceHistory,
 			(case when locate('CONTACT', _otherOptions) > 0 THEN 1 ELSE 0 END)        as BUTTON_contactCheckMaster,
 			(case when locate('CHAT', _otherOptions) > 0 THEN 1 ELSE 0 END)           as BUTTON_liveChat,
 			(case when locate('STARTCHECKLIST', _otherOptions) > 0 THEN 1 ELSE 0 END) as BUTTON_startAChecklist,
@@ -602,6 +602,16 @@ UUID(),null,null,null,null,
 null,null,null,null,
 '24-09-2020',null,5,'DAILY',null,
 null);
+
+call WORKORDER_workOrder('CREATE','a30af0ce5e07474487c39adab6269d5f','2',
+'1606299064282','1600957239770','2',null,'edfe4b13ffcf47e0afa5fc6d3cfe19b7',
+'8090644719c64be4abd2ba78f915bf5d',null,null,null,
+'ABC-01',null,'ABC-01',
+null,'HIGH','31-01-2021',null,
+'25-11-2020','25-11-2020','4','DAILY',null,
+null,'Sunday,Monday,Tuesday'
+);                
+                
 
 call WORKORDER_workOrder('START', 'a30af0ce5e07474487c39adab6269d5f',1,
 '666e2c60-feb7-11ea-a1a5-4e53d94465b4',null,null,null,null,
@@ -752,10 +762,11 @@ ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
 
     if(_daysToMaintain is null) then 
         IF (_workorder_frequencyScope = 'DAILY') then 
-         _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday';
+         SET _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday';
         ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then 
-         _daysToMaintain = 'Monday';
-    END IF
+         SET _daysToMaintain = 'Monday';
+		END IF;
+    END IF;
 
 
 	if (_workorder_checklistUUID is not null AND _workorder_frequency>1) THEN
