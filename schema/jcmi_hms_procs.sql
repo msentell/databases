@@ -1385,18 +1385,27 @@ CREATE PROCEDURE `KB_knowledge_base`(IN _action VARCHAR(100),
 KB_knowledge_base:
 BEGIN
     DECLARE _DEBUG INT DEFAULT 1;
+    DECLARE _SEARCH_TEXT VARCHAR(100) DEFAULT '';
+
     IF (_action IS NULL or _action = '') THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call KB_knowledge_base: _action can not be empty';
         LEAVE KB_knowledge_base;
     END IF;
 
-    IF (_action != 'GET-PART-KNOWLEDGE' AND (_userUUID IS NULL OR _userUUID = '')) THEN
+    IF ((_action not IN ('GET-LIST','GET-PART-KNOWLEDGE')) AND (_userUUID IS NULL OR _userUUID = '')) THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _userUUID missing';
         LEAVE KB_knowledge_base;
     END IF;
 
+    IF (_knowledge_title IS NOT NULL)THEN 
+    SET _SEARCH_TEXT = _knowledge_title;
+    END IF;
+
     IF (_action = 'GET-LIST') THEN
-        SELECT * FROM knowledge_base;
+        SET @l_sql = CONCAT('SELECT * FROM knowledge_base where _knowledge_title like \'','%',_SEARCH_TEXT,'%','\'');
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
     ELSEIF (_action = 'GET') THEN
         IF (_knowledgebaseUUID IS NULL or _knowledgebaseUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _knowledgebaseUUID missing';
@@ -2442,7 +2451,8 @@ BEGIN
             LEAVE getPicklist;
         END IF;
 
-        select 'checklist' as tableName, checklistUUID as id, checklist_name as value, checklist_name as name
+        select 'checklist' as tableName, checklistUUID as id, checklist_name as value, checklist_name as name,
+        checklist_partRequired as isPartRequire
         from checklist
         where checklist_customerUUID = _customerId
         order by checklist_name;
