@@ -546,6 +546,7 @@ BEGIN
 		-- 'CONTACT,CHAT,STARTCHECKLIST,ADDLOG'
 		select ap.asset_partUUID,ap.asset_part_diagnosticUUID,pt.part_diagnosticUUID,
 			(case when asset_part_isPurchasable = 1 is not null then 1 else 0 end)       BUTTON_viewOrderParts,
+            (case when asset_part_diagnosticUUID is not null then 1 else 0 end)       as BUTTON_diagnoseAProblem,
 			(case when ap.asset_part_diagnosticUUID is not null or pt.part_diagnosticUUID is not null then 1 else 0 end)       BUTTON_viewOrderParts,
 			(case when(select count(apaj_asset_partUUID)
             from asset_part_attachment_join
@@ -555,10 +556,10 @@ BEGIN
             from part_knowledge_join
             where pkj_part_partUUID = pt.part_sku
             limit 1) > 0 THEN 1 ELSE 0 END)                                          as BUTTON_qa,
-			(case when(select count(wapj_asset_partUUID)
-            from workorder_asset_part_join
-            where wapj_asset_partUUID = ap.asset_partUUID
-            limit 1)> 0 THEN 1 ELSE 0 END)                                                                 as BUTTON_serviceHistory,
+			-- (case when(select count(wapj_asset_partUUID)
+            -- from workorder_asset_part_join
+            -- where wapj_asset_partUUID = ap.asset_partUUID
+            -- limit 1)> 0 THEN 1 ELSE 0 END)                                                                 as BUTTON_serviceHistory,
 			(case when locate('CONTACT', _otherOptions) > 0 THEN 1 ELSE 0 END)        as BUTTON_contactCheckMaster,
 			(case when locate('CHAT', _otherOptions) > 0 THEN 1 ELSE 0 END)           as BUTTON_liveChat,
 			(case when locate('STARTCHECKLIST', _otherOptions) > 0 THEN 1 ELSE 0 END) as BUTTON_startAChecklist,
@@ -1164,6 +1165,10 @@ ELSEIF(_action ='UPDATE') THEN
 
 			LEAVE WORKORDER_workOrder;
         END IF;
+
+        -- remove the exesting work order with workorder_tag
+        delete from workorder where workorder_tag = _workorder_tag;
+        -- create new work order for given data
 
 		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
 
