@@ -570,6 +570,259 @@ BEGIN
 
 END$$
 
+-- ==================================================================
+
+/*
+call WORKORDER_create(_action, _customerId,_userUUID
+_workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,_workorder_assetUUID,
+_workorder_checklistUUID,_workorder_checklistHistoryUUID,_workorder_status,_workorder_type,_workorder_name,_workorder_number,_workorder_details,
+_workorder_actions,_workorder_priority,_workorder_dueDate,_workorder_completeDate,
+_workorder_scheduleDate,_workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
+_wapj_quantity
+);
+
+call WORKORDER_create('CREATE', 'a30af0ce5e07474487c39adab6269d5f',1,
+UUID(),null,null,null,null,
+'2b61b61eb4d141799a9560cccb109f59',null,null,null,null,null,null,
+null,null,null,null,
+'24-09-2020',null,5,'DAILY',null,
+null);
+
+call WORKORDER_create('CREATE','a30af0ce5e07474487c39adab6269d5f','2',
+'1606299064282','1600957239770','2',null,'edfe4b13ffcf47e0afa5fc6d3cfe19b7',
+'8090644719c64be4abd2ba78f915bf5d',null,null,null,
+'ABC-01',null,'ABC-01',
+null,'HIGH','31-01-2021',null,
+'25-11-2020','25-11-2020','4','DAILY',null,
+null,'Sunday,Monday,Tuesday'
+);                
+
+*/
+DROP procedure IF EXISTS `WORKORDER_create`;
+
+
+DELIMITER $$
+CREATE PROCEDURE `WORKORDER_create` (
+IN _action VARCHAR(100),
+IN _customerId VARCHAR(100),
+IN _userUUID VARCHAR(100),
+IN _workorderUUID VARCHAR(100),
+IN _workorder_locationUUID VARCHAR(100),
+IN _workorder_userUUID VARCHAR(100),
+IN _workorder_groupUUID VARCHAR(100),
+IN _workorder_assetUUID VARCHAR(100),
+IN _workorder_checklistUUID VARCHAR(100),
+IN _workorder_checklistHistoryUUID VARCHAR(100),
+IN _workorder_status varchar(100),
+IN _workorder_type VARCHAR(100),
+IN _workorder_name VARCHAR(100),
+IN _workorder_number VARCHAR(100),
+IN _workorder_details VARCHAR(100),
+IN _workorder_actions TEXT,
+IN _workorder_priority VARCHAR(100),
+IN _workorder_dueDate VARCHAR(100),
+IN _workorder_completeDate VARCHAR(100),
+IN _workorder_scheduleDate VARCHAR(100),
+IN _workorder_rescheduleDate VARCHAR(100),
+IN _workorder_frequency INT,
+IN _workorder_frequencyScope VARCHAR(100),
+IN _wapj_asset_partUUID VARCHAR(100),
+IN _wapj_quantity INT,
+IN _daysToMaintain VARCHAR(100)
+)
+WORKORDER_create: BEGIN
+
+DECLARE _DEBUG INT DEFAULT 0;
+
+DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
+DECLARE _maxWO INT;
+DECLARE _commaNeeded INT;
+DECLARE _workorder_definition varchar(100);
+DECLARE _checklist_historyUUID char(36);
+DECLARE _workorder_tag varchar(100);
+DECLARE strLen    INT DEFAULT 0;
+DECLARE SubStrLen INT DEFAULT 0;
+DECLARE _woDates varchar(5000);
+DECLARE _date varchar(100);
+
+IF(_action ='CREATE' and _workorderUUID is not null) THEN
+
+	IF(_customerId IS NULL or _customerId = '') THEN
+		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _customerId can not be empty';
+		LEAVE WORKORDER_create;
+	END IF;
+
+	-- RULES and CONVERSIONS
+	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
+	if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
+
+    if (_workorder_scheduleDate IS NOT NULL) THEN
+		set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
+	ELSE
+		set _workorder_scheduleDate=DATE(now());
+    END IF;
+
+	if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
+
+    if(_workorder_name is null) then
+        select checklist_name
+        into _workorder_name
+        from checklist where checklistUUID = _workorder_checklistUUID;
+    END IF;
+
+    if(_workorder_details is null) then 
+        select checklist_name
+        into _workorder_details
+        from checklist where checklistUUID = _workorder_checklistUUID;
+    END IF;
+
+    if(_daysToMaintain is null) then 
+        IF (_workorder_frequencyScope = 'DAILY') then 
+         SET _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday';
+        ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then 
+         SET _daysToMaintain = 'Monday';
+		END IF;
+    END IF;
+
+
+	if (_workorder_checklistUUID is not null AND _workorder_frequency>1) THEN
+
+		select checklist_name,'CHECKLIST'
+        into _workorder_actions,_workorder_type
+        from checklist where checklistUUID = _workorder_checklistUUID;
+
+        if (_workorder_frequencyScope = 'DAILY') THEN
+
+select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
+(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
+ (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+ (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+ (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+ (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+ (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency DAY)
+and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
+order by v.selected_date;
+
+        ELSEIF (_workorder_frequencyScope = 'WEEKLY') THEN
+
+select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
+(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
+ (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+ (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+ (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+ (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+ (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency WEEK)
+and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
+order by v.selected_date;
+
+        ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
+
+select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
+(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
+ (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+ (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+ (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+ (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+ (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency MONTH)
+and FIND_IN_SET (dayname(selected_date),_daysToMaintain) and (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) = 1
+order by v.selected_date;
+
+		END IF;
+
+        set _workorderUUID = null; -- force creating of new WO's
+
+    ELSE -- just create one.  maybe turn the WO creation into a loop, and the above calculates the loop
+
+		set _woDates =  DATE_FORMAT(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d'), _dateFormat);
+
+	END IF;
+
+IF (_DEBUG=1) THEN select _action,_woDates; END IF;
+
+
+    set _workorder_definition = 'CM-';
+    set _workorder_tag = concat(_workorder_checklistUUID,':',_workorder_frequencyScope,':',_workorder_frequency);
+	set _workorder_status = 'Open';
+
+
+            IF (CHAR_LENGTH(_woDates) > 0) THEN
+			do_this:
+			   LOOP
+				 SET strLen = CHAR_LENGTH(_woDates);
+
+				 SET _date=SUBSTRING_INDEX(_woDates, ',', 1);
+
+
+	-- TODO get configuration for workorder naming
+    select count(*) into _maxWO from workorder;
+	set _workorder_number = CONCAT(_workorder_definition,_maxWO);
+	set _workorder_scheduleDate = STR_TO_DATE(_date, _dateFormat);
+	if (_workorderUUID is null) THEN set _workorderUUID=UUID(); END IF;
+	if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = STR_TO_DATE(_date, _dateFormat); END IF;
+	if (_workorder_priority is null) THEN set _workorder_priority='MEDIUM'; END IF;
+
+    -- based on frequencyScope and frequency, create 1-M WO's
+    -- TODO
+	insert into workorder (workorderUUID,
+    workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID,
+    workorder_assetUUID, workorder_checklistUUID, workorder_status, workorder_type,
+    workorder_number, workorder_name, workorder_details, workorder_actions, workorder_priority,
+    workorder_dueDate, workorder_scheduleDate,workorder_rescheduleDate, workorder_completeDate, workorder_frequency,
+    workorder_frequencyScope,workorder_tag,
+	workorder_createdByUUID, workorder_updatedByUUID, workorder_updatedTS, workorder_createdTS
+    ) values (_workorderUUID,
+    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
+    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type,
+    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority,
+    _workorder_dueDate, _workorder_scheduleDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency,
+    _workorder_frequencyScope, _workorder_tag,
+    _userUUID, _userUUID, now(), now()
+    );
+
+
+
+IF (_DEBUG=1) THEN
+	select _action,_workorderUUID,
+    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
+    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type,
+    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority,
+    _workorder_dueDate,_workorder_scheduleDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency,
+    _workorder_frequencyScope, _workorder_tag
+    _userUUID;
+END IF;
+
+
+	set _workorderUUID=null;
+
+
+
+				 SET SubStrLen = CHAR_LENGTH(SUBSTRING_INDEX(_woDates, ',', 1))+2;
+				 SET _woDates = MID(_woDates, SubStrLen, strLen);
+
+				 IF _woDates = '' or _woDates is null THEN
+				   LEAVE do_this;
+				 END IF;
+
+			 END LOOP do_this;
+
+			END IF;
+ELSE
+	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _action is of type invalid';
+	LEAVE WORKORDER_create;
+END IF;
+
+
+IF (_DEBUG=1) THEN
+	select 'FINISHED',_action,_workorderUUID, _userUUID;
+END IF;
+
+
+END$$
+
+DELIMITER ;
 
 -- ==================================================================
 
@@ -659,7 +912,7 @@ IN _workorder_frequency INT,
 IN _workorder_frequencyScope VARCHAR(100),
 IN _wapj_asset_partUUID VARCHAR(100),
 IN _wapj_quantity INT,
-IN _daysToMaintain VARCHAR(100),
+IN _daysToMaintain VARCHAR(100)
 )
 WORKORDER_workOrder: BEGIN
 
@@ -675,7 +928,6 @@ DECLARE strLen    INT DEFAULT 0;
 DECLARE SubStrLen INT DEFAULT 0;
 DECLARE _woDates varchar(5000);
 DECLARE _date varchar(100);
-
 
 IF(_action ='GET') THEN
 
@@ -893,11 +1145,25 @@ END IF;
 			 END LOOP do_this;
 
 			END IF;
-
-
-
-
 ELSEIF(_action ='UPDATE') THEN
+		IF (_workorderUUID IS NULL) THEN
+			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
+			LEAVE WORKORDER_workOrder;
+		END IF;
+
+        select workorder_tag INTO _workorder_tag where workorderUUID = _workorderUUID;
+
+        IF (_workorder_tag IS NOT NULL) THEN
+			DELETE FROM workorder WHERE workorder_tag = _workorder_tag and workorder_scheduleDate > now() ;
+			call WORKORDER_create('create', _customerId, _userUUID, _workorderUUID, _workorder_locationUUID, _workorder_userUUID,
+								  _workorder_groupUUID, _workorder_assetUUID, _workorder_checklistUUID, _workorder_checklistHistoryUUID,
+								  _workorder_status, _workorder_type, _workorder_name, _workorder_number, _workorder_details, _workorder_actions,
+								  _workorder_priority, _workorder_dueDate, _workorder_completeDate, _workorder_scheduleDate, _workorder_rescheduleDate,
+								  _workorder_frequency, _workorder_frequencyScope, _wapj_asset_partUUID, _wapj_quantity, _daysToMaintain
+                                  );
+
+			LEAVE WORKORDER_workOrder;
+        END IF;
 
 		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
 
