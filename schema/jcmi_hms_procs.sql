@@ -546,6 +546,7 @@ BEGIN
 		-- 'CONTACT,CHAT,STARTCHECKLIST,ADDLOG'
 		select ap.asset_partUUID,ap.asset_part_diagnosticUUID,pt.part_diagnosticUUID,
 			(case when asset_part_isPurchasable = 1 is not null then 1 else 0 end)       BUTTON_viewOrderParts,
+            (case when asset_part_diagnosticUUID is not null then 1 else 0 end)       as BUTTON_diagnoseAProblem,
 			(case when ap.asset_part_diagnosticUUID is not null or pt.part_diagnosticUUID is not null then 1 else 0 end)       BUTTON_viewOrderParts,
 			(case when(select count(apaj_asset_partUUID)
             from asset_part_attachment_join
@@ -676,7 +677,9 @@ DECLARE SubStrLen INT DEFAULT 0;
 DECLARE _woDates varchar(5000);
 DECLARE _date varchar(100);
 
-
+IF(_action = 'HI') THEN
+    SELECT 'hi';
+END IF; 
 IF(_action ='GET') THEN
 
 	IF(_customerId IS NULL or _customerId = '') THEN
@@ -894,10 +897,11 @@ END IF;
 
 			END IF;
 
-
-
-
 ELSEIF(_action ='UPDATE') THEN
+
+        -- remove the exesting work order with workorder_tag
+        delete from workorder where workorder_tag = _workorder_tag;
+        -- create new work order for given data
 
 		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
 
