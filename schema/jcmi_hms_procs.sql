@@ -939,42 +939,44 @@ IF(_action ='GET') THEN
 
 	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-		set  @l_sql = CONCAT('SELECT * FROM workorder WHERE ');
+		set  @l_sql = CONCAT('SELECT w.*,u.user_userName,g.group_name FROM workorder w left join jcmi_core.user u on(u.userUUID = w.workorder_userUUID ) left join user_group g on(w.workorder_groupUUID =g.groupUUID) WHERE ');
 
         if (_workorderUUID IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,'workorderUUID = \'', _workorderUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'w.workorderUUID = \'', _workorderUUID,'\'');
             set _commaNeeded=1;
         END IF;
         if (_customerId IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'workorder_customerUUID = \'', _customerId,'\'');
+			set @l_sql = CONCAT(@l_sql,'w.workorder_customerUUID = \'', _customerId,'\'');
             set _commaNeeded=1;
         END IF;
         if (_workorder_userUUID IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'workorder_userUUID = \'', _workorder_userUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'w.workorder_userUUID = \'', _workorder_userUUID,'\'');
             set _commaNeeded=1;
         END IF;
         if (_workorder_groupUUID IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'workorder_groupUUID = \'', _workorder_groupUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'w.workorder_groupUUID = \'', _workorder_groupUUID,'\'');
             set _commaNeeded=1;
         END IF;
         if (_workorder_locationUUID IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'workorder_locationUUID = \'', _workorder_locationUUID,'\'');
+			set @l_sql = CONCAT(@l_sql,'w.workorder_locationUUID = \'', _workorder_locationUUID,'\'');
             set _commaNeeded=1;
         END IF;
-        if (_workorder_status IS NOT NULL) THEN
-			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'workorder_status = \'', _workorder_status,'\'');
-            set _commaNeeded=1;
-        END IF;
+        -- if (_workorder_status IS NOT NULL) THEN
+		-- 	if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+		-- 	set @l_sql = CONCAT(@l_sql,'w.workorder_status = \'', _workorder_status,'\'');
+        --     set _commaNeeded=1;
+        -- END IF;
         if (_workorder_dueDate IS NOT NULL) THEN
 			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
 			set @l_sql = CONCAT(@l_sql,'DATE(now()) <= \'', _workorder_dueDate,'\'');
             set _commaNeeded=1;
         END IF;
+
+            set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
@@ -1045,7 +1047,7 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
         END IF;
 
         IF (_action = 'BATCH-UPDATE') THEN
-            set @l_sql = CONCAT(@l_sql,' where workorderUUID IN \('', _workorderUUID,')\';');
+            set @l_sql = CONCAT(@l_sql,' where workorderUUID IN \('', _workorderUUID,'')\;');
         ELSE
 		    set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
         END IF;
