@@ -982,63 +982,13 @@ IF(_action ='GET') THEN
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
 
-ELSEIF (_action = 'PARTIALTIAL_UPDATE') THEN
-	
-		 set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
-
-        if (_workorder_status IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
-        END IF;
-        if (_workorder_name IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_name = \'', _workorder_name,'\'');
-        END IF;
-        if (_workorder_details IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_details = \'', _workorder_details,'\'');
-        END IF;
-        if (_workorder_actions IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_actions = \'', _workorder_actions,'\'');
-        END IF;
-        if (_workorder_priority IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
-        END IF;
-        if (_workorder_dueDate IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', _workorder_dueDate,'\'');
-        END IF;
-        if (_workorder_assetUUID IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
-        END IF;
-        if (_workorder_rescheduleDate IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', _workorder_rescheduleDate,'\'');
-        END IF;
-        if (_workorder_userUUID IS NOT NULL and _workorder_groupUUID IS NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_userUUID = \'', _workorder_userUUID,'\'');
-            set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = NULL');
-        END IF;
-        if (_workorder_groupUUID  IS NOT NULL and _workorder_userUUID IS NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = \'', _workorder_groupUUID ,'\'');
-            set @l_sql = CONCAT(@l_sql,',workorder_userUUID = NULL');
-        END IF;
-        set _workorder_scheduledate= STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
-       IF (_DEBUG=1) THEN select _workorder_scheduleDate,_workorder_scheduledate; END IF;
-        if (_workorder_scheduleDate  IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_scheduleDate  = \'', _workorder_scheduledate ,'\'');
-        END IF;
-
-		set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
-
-        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
-
-		PREPARE stmt FROM @l_sql;
-		EXECUTE stmt;
-		DEALLOCATE PREPARE stmt;
-
-ELSEIF(_action ='UPDATE' OR _action = 'BATCH-UPDATE') THEN
+ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE') THEN
 		IF (_workorderUUID IS NULL) THEN
 			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
 			LEAVE WORKORDER_workOrder;
 		END IF;
 
-        IF (_action = 'UPDATE') THEN
+        IF (_action ='UPDATE') THEN
             select workorder_tag INTO _workorder_tag where workorderUUID = _workorderUUID;
 
             IF (_workorder_tag IS NOT NULL) THEN
