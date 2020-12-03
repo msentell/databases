@@ -38,7 +38,7 @@ BEGIN
 
     If (_action = 'LOCATION') THEN
 		If (_id ='-1') THEN
-			SELECT user_profile_locationUUID INTO _startLocationUUID FROM user_profile WHERE user_profile_userUUID = _userId;
+						SELECT user_profile_locationUUID INTO _startLocationUUID FROM user_profile WHERE user_profile_userUUID = _userId;
             IF (_startLocationUUID is null) THEN
 				SELECT locationUUID INTO _startLocationUUID
                 FROM location
@@ -982,170 +982,56 @@ IF(_action ='GET') THEN
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
 
-ELSEIF(_action ='CREATE' and _workorderUUID is not null) THEN
+ELSEIF (_action = 'PARTIALTIAL_UPDATE') THEN
+	
+		 set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
 
-	IF(_customerId IS NULL or _customerId = '') THEN
-		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
-		LEAVE WORKORDER_workOrder;
-	END IF;
+        if (_workorder_status IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
+        END IF;
+        if (_workorder_name IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_name = \'', _workorder_name,'\'');
+        END IF;
+        if (_workorder_details IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_details = \'', _workorder_details,'\'');
+        END IF;
+        if (_workorder_actions IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_actions = \'', _workorder_actions,'\'');
+        END IF;
+        if (_workorder_priority IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
+        END IF;
+        if (_workorder_dueDate IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', _workorder_dueDate,'\'');
+        END IF;
+        if (_workorder_assetUUID IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
+        END IF;
+        if (_workorder_rescheduleDate IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', _workorder_rescheduleDate,'\'');
+        END IF;
+        if (_workorder_userUUID IS NOT NULL and _workorder_groupUUID IS NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_userUUID = \'', _workorder_userUUID,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = NULL');
+        END IF;
+        if (_workorder_groupUUID  IS NOT NULL and _workorder_userUUID IS NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = \'', _workorder_groupUUID ,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_userUUID = NULL');
+        END IF;
+        set _workorder_scheduledate= STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
+       IF (_DEBUG=1) THEN select _workorder_scheduleDate,_workorder_scheduledate; END IF;
+        if (_workorder_scheduleDate  IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,',workorder_scheduleDate  = \'', _workorder_scheduledate ,'\'');
+        END IF;
 
-	-- RULES and CONVERSIONS
-	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
-	if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
+		set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
 
-    if (_workorder_scheduleDate IS NOT NULL) THEN
-		set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
-	ELSE
-		set _workorder_scheduleDate=DATE(now());
-    END IF;
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
-	if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
 
-    if(_workorder_name is null) then
-        select checklist_name
-        into _workorder_name
-        from checklist where checklistUUID = _workorder_checklistUUID;
-    END IF;
-
-    if(_workorder_details is null) then 
-        select checklist_name
-        into _workorder_details
-        from checklist where checklistUUID = _workorder_checklistUUID;
-    END IF;
-
-    if(_daysToMaintain is null) then 
-        IF (_workorder_frequencyScope = 'DAILY') then 
-         SET _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday';
-        ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then 
-         SET _daysToMaintain = 'Monday';
-		END IF;
-    END IF;
-
-
-	if (_workorder_checklistUUID is not null AND _workorder_frequency>1) THEN
-
-		select checklist_name,'CHECKLIST'
-        into _workorder_actions,_workorder_type
-        from checklist where checklistUUID = _workorder_checklistUUID;
-
-        if (_workorder_frequencyScope = 'DAILY') THEN
-
-select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
-(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
- (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
- (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
- (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
- (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
- (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency DAY)
-and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
-order by v.selected_date;
-
-        ELSEIF (_workorder_frequencyScope = 'WEEKLY') THEN
-
-select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
-(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
- (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
- (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
- (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
- (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
- (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency WEEK)
-and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
-order by v.selected_date;
-
-        ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
-
-select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
-(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
- (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
- (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
- (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
- (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
- (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency MONTH)
-and FIND_IN_SET (dayname(selected_date),_daysToMaintain) and (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) = 1
-order by v.selected_date;
-
-		END IF;
-
-        set _workorderUUID = null; -- force creating of new WO's
-
-    ELSE -- just create one.  maybe turn the WO creation into a loop, and the above calculates the loop
-
-		set _woDates =  DATE_FORMAT(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d'), _dateFormat);
-
-	END IF;
-
-IF (_DEBUG=1) THEN select _action,_woDates; END IF;
-
-
-    set _workorder_definition = 'CM-';
-    set _workorder_tag = concat(_workorder_checklistUUID,':',_workorder_frequencyScope,':',_workorder_frequency);
-	set _workorder_status = 'Open';
-
-
-            IF (CHAR_LENGTH(_woDates) > 0) THEN
-			do_this:
-			   LOOP
-				 SET strLen = CHAR_LENGTH(_woDates);
-
-				 SET _date=SUBSTRING_INDEX(_woDates, ',', 1);
-
-
-	-- TODO get configuration for workorder naming
-    select count(*) into _maxWO from workorder;
-	set _workorder_number = CONCAT(_workorder_definition,_maxWO);
-	set _workorder_scheduleDate = STR_TO_DATE(_date, _dateFormat);
-	if (_workorderUUID is null) THEN set _workorderUUID=UUID(); END IF;
-	if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = STR_TO_DATE(_date, _dateFormat); END IF;
-	if (_workorder_priority is null) THEN set _workorder_priority='MEDIUM'; END IF;
-
-    -- based on frequencyScope and frequency, create 1-M WO's
-    -- TODO
-	insert into workorder (workorderUUID,
-    workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID,
-    workorder_assetUUID, workorder_checklistUUID, workorder_status, workorder_type,
-    workorder_number, workorder_name, workorder_details, workorder_actions, workorder_priority,
-    workorder_dueDate, workorder_scheduleDate,workorder_rescheduleDate, workorder_completeDate, workorder_frequency,
-    workorder_frequencyScope,workorder_tag,
-	workorder_createdByUUID, workorder_updatedByUUID, workorder_updatedTS, workorder_createdTS
-    ) values (_workorderUUID,
-    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
-    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type,
-    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority,
-    _workorder_dueDate, _workorder_scheduleDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency,
-    _workorder_frequencyScope, _workorder_tag,
-    _userUUID, _userUUID, now(), now()
-    );
-
-
-
-IF (_DEBUG=1) THEN
-	select _action,_workorderUUID,
-    _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
-    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type,
-    _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority,
-    _workorder_dueDate,_workorder_scheduleDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency,
-    _workorder_frequencyScope, _workorder_tag
-    _userUUID;
-END IF;
-
-
-	set _workorderUUID=null;
-
-
-
-				 SET SubStrLen = CHAR_LENGTH(SUBSTRING_INDEX(_woDates, ',', 1))+2;
-				 SET _woDates = MID(_woDates, SubStrLen, strLen);
-
-				 IF _woDates = '' or _woDates is null THEN
-				   LEAVE do_this;
-				 END IF;
-
-			 END LOOP do_this;
-
-			END IF;
 ELSEIF(_action ='UPDATE') THEN
 		IF (_workorderUUID IS NULL) THEN
 			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
@@ -1166,11 +1052,7 @@ ELSEIF(_action ='UPDATE') THEN
 			LEAVE WORKORDER_workOrder;
         END IF;
 
-        -- remove the exesting work order with workorder_tag
-        delete from workorder where workorder_tag = _workorder_tag;
-        -- create new work order for given data
-
-		set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
+		 set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
 
         if (_workorder_status IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
