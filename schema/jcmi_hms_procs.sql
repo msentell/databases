@@ -545,9 +545,8 @@ BEGIN
 		-- TODO, select security to turn on/off
 		-- 'CONTACT,CHAT,STARTCHECKLIST,ADDLOG'
 		select ap.asset_partUUID,ap.asset_part_diagnosticUUID,pt.part_diagnosticUUID,
-			(case when asset_part_isPurchasable = 1 is not null then 1 else 0 end)       BUTTON_viewOrderParts,
-            (case when asset_part_diagnosticUUID is not null then 1 else 0 end)       as BUTTON_diagnoseAProblem,
-			(case when ap.asset_part_diagnosticUUID is not null or pt.part_diagnosticUUID is not null then 1 else 0 end)       BUTTON_viewOrderParts,
+			(case when (asset_part_isPurchasable = 1 is not null and locate('ASSET-PART', _action) > 0) then 1 else 0 end)     BUTTON_viewOrderParts,
+			(case when ap.asset_part_diagnosticUUID is not null or pt.part_diagnosticUUID is not null then 1 else 0 end)       BUTTON_diagnoseAProblem,
 			(case when(select count(apaj_asset_partUUID)
             from asset_part_attachment_join
             where apaj_asset_partUUID = ap.asset_partUUID
@@ -2859,7 +2858,7 @@ BEGIN
                 and notification_expireOn > now()
                 and notification_readyOn < now()
                 and notification_statusId = 1
-                and notification_assetUUID is null
+                -- and notification_assetUUID is null
               union all
               select *
               from notification_queue
@@ -2869,7 +2868,8 @@ BEGIN
                 and notification_expireOn > now()
                 and notification_readyOn < now()
                 and notification_statusId = 1
-                and notification_assetUUID is null) no;
+                -- and notification_assetUUID is null
+                ) no;
                  -- left join user u on no.notification_fromUserUUID = u.userUUID;
 
     ELSEIF (_action = 'GETSMS') THEN
@@ -2957,7 +2957,8 @@ BEGIN
 
     ELSEIF (_action = 'ACKNOWLEDGE' and _notificationId is not null) THEN
 
-        update notification_queue set notification_statusId=3 where notificationId = _notificationId and notification_isClearable=1;
+        update notification_queue set notification_statusId=3 where notificationId = _notificationId;
+        -- and notification_isClearable=1;
 
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call NOTIFICATION_notification: _action is of type invalid';
