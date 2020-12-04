@@ -1554,7 +1554,7 @@ CREATE PROCEDURE `KB_knowledge_base`(IN _action VARCHAR(100),
                                      IN _part_sku VARCHAR(100))
 KB_knowledge_base:
 BEGIN
-    DECLARE _DEBUG INT DEFAULT 1;
+    DECLARE _DEBUG INT DEFAULT 0;
     DECLARE _SEARCH_TEXT VARCHAR(100) DEFAULT '';
 
     IF (_action IS NULL or _action = '') THEN
@@ -1572,7 +1572,13 @@ BEGIN
     END IF;
 
     IF (_action = 'GET-LIST') THEN
-        SET @l_sql = CONCAT('SELECT * FROM knowledge_base where _knowledge_title like \'','%',_SEARCH_TEXT,'%','\'');
+        SET @l_sql = CONCAT('SELECT * FROM knowledge_base where knowledge_title like \'','%',_SEARCH_TEXT,'%\'');
+        IF (_knowledge_categories is not null) THEN
+			SET @l_sql = CONCAT(@l_sql, 'AND knowledge_categories like \'%',_knowledge_categories, '%\'');
+		END IF;
+        IF(_DEBUG = 1) THEN
+			select @l_sql;
+        END IF;
         PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
@@ -1587,9 +1593,18 @@ BEGIN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _part_sku missing';
             LEAVE KB_knowledge_base;
         END IF;
-		SELECT * FROM knowledge_base kb
-        LEFT JOIN part_knowledge_join pkj on pkj.pkj_part_knowledgeUUID = kb.knowledgeUUID
-        WHERE pkj.pkj_part_partUUID = _part_sku;
+			SET @l_sql = CONCAT('SELECT * FROM knowledge_base kb
+				LEFT JOIN part_knowledge_join pkj on pkj.pkj_part_knowledgeUUID = kb.knowledgeUUID
+				WHERE pkj.pkj_part_partUUID = \'', _part_sku, '\'');
+			IF (_knowledge_categories is not null) THEN
+				SET @l_sql = CONCAT(@l_sql, 'AND knowledge_categories like \'%',_knowledge_categories, '%\'');
+            END IF;
+            IF(_DEBUG = 1) THEN
+				select @l_sql;
+			END IF;
+            PREPARE stmt FROM @l_sql;
+			EXECUTE stmt;
+			DEALLOCATE PREPARE stmt;
     ELSEIF (_action = 'CREATE') THEN
         IF (_knowledgebaseUUID IS NULL OR _knowledgebaseUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call KB_knowledge_base: _knowledgebaseUUID missing';
