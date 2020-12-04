@@ -890,7 +890,7 @@ CREATE PROCEDURE `WORKORDER_workOrder` (
 IN _action VARCHAR(100),
 IN _customerId VARCHAR(100),
 IN _userUUID VARCHAR(100),
-IN _workorderUUID VARCHAR(100),
+IN _workorderUUID VARCHAR(1024),
 IN _workorder_locationUUID VARCHAR(100),
 IN _workorder_userUUID VARCHAR(100),
 IN _workorder_groupUUID VARCHAR(100),
@@ -1046,9 +1046,9 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
         END IF;
 
         IF (_action = 'BATCH-UPDATE') THEN
-            set @l_sql = CONCAT(@l_sql,' where workorderUUID IN \('', _workorderUUID,'')\;');
+            set @l_sql = CONCAT(@l_sql,' where workorderUUID IN (',_workorderUUID,')');
         ELSE
-		    set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
+		   set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
         END IF;
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
@@ -1058,15 +1058,30 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
 		DEALLOCATE PREPARE stmt;
 
 
-ELSEIF(_action ='REMOVE' and _workorderUUID is not null) THEN
+ELSEIF((_action ='REMOVE' OR _action = 'BATCH-REMOVE') and _workorderUUID is not null) THEN
 
-	if (_wapj_asset_partUUID IS NOT NULL) THEN
-		delete from workorder_asset_part_join where wapj_asset_partUUID=_wapj_asset_partUUID
-        and wapj_workorderUUID = _workorderUUID;
+    if (_wapj_asset_partUUID IS NOT NULL) THEN
+	set  @l_sql = 'delete from workorder_asset_part_join where';
+     set @l_sql = CONCAT(@l_sql,' wapj_asset_partUUID = \'', _wapj_asset_partUUID,'\' and');
     ELSE
-		update workorder set workorder_deleteTS = now(),workorder_updatedTS = now(),
-        workorder_updatedByUUID=_userUUID where workorderUUID=_workorderUUID;
+	set  @l_sql = 'update workorder set' ;
+    set @l_sql = CONCAT(@l_sql,' workorder_deleteTS = \'',now(),'\',');
+    set @l_sql = CONCAT(@l_sql,' workorder_updatedTS = \'',now(),'\',');
+	 set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID = \'', _userUUID,'\'');
     END IF;
+
+    IF(_action = 'BATCH-REMOVE') THEN
+         set @l_sql = CONCAT(@l_sql,' where workorderUUID IN (',_workorderUUID,')');
+    ELSE
+       set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
+    END IF;
+
+ IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
 
 ELSEIF(_action ='ASSIGN') THEN
 
@@ -1109,15 +1124,26 @@ IF (_DEBUG=1) THEN
 END IF;
 
 
-ELSEIF(_action ='COMPLETE') THEN
+ELSEIF(_action ='COMPLETE' or _action ='BATCH-COMPLETE') THEN
 
-        select workorder_userUUID,workorder_checklistHistoryUUID
-        into _workorder_userUUID,_workorder_checklistHistoryUUID
+        set  @l_sql = 'update workorder set';
+        set @l_sql = CONCAT(@l_sql,' workorder_status =','Complete',',');
+        set @l_sql = CONCAT(@l_sql,' workorder_completeDate =', DATE(now()),',');
+        set @l_sql = CONCAT(@l_sql,' workorder_updatedTS =',now(),',');
+        set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID =',_userUUID,',');
+        if(_action ='BATCH-COMPLETE') THEN
+         set @l_sql = CONCAT(@l_sql,' where workorderUUID IN (',_workorderUUID,');');
+        ELSE
+         set @l_sql = CONCAT(@l_sql,' where workorderUUID=/'',_workorderUUID,'\';');
+         END IF;
+
+        select workorder_checklistHistoryUUID
+        into _workorder_checklistHistoryUUID
         from workorder where workorderUUID=_workorderUUID;
 
-		update workorder set workorder_status='Complete', workorder_completeDate = DATE(now()),
-        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID ,workorder_userUUID=_workorder_userUUID
-        where workorderUUID=_workorderUUID;
+        PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
 
         if (_workorder_checklistHistoryUUID is not null) THEN
 			call CHECKLIST_checklist(
