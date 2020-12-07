@@ -1045,13 +1045,13 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
 			set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
         END IF;
         if (_workorder_dueDate IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', _workorder_dueDate,'\'');
+			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', STR_TO_DATE(_workorder_dueDate, '%d-%m-%Y'),'\'');
         END IF;
         if (_workorder_assetUUID IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
         END IF;
         if (_workorder_rescheduleDate IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', _workorder_rescheduleDate,'\'');
+			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', STR_TO_DATE(_workorder_rescheduleDate, '%d-%m-%Y'),'\'');
         END IF;
         if (_workorder_userUUID IS NOT NULL and _workorder_groupUUID IS NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_userUUID = \'', _workorder_userUUID,'\'');
@@ -1061,10 +1061,9 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
 			set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = \'', _workorder_groupUUID ,'\'');
             set @l_sql = CONCAT(@l_sql,',workorder_userUUID = NULL');
         END IF;
-        set _workorder_scheduledate= STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
        IF (_DEBUG=1) THEN select _workorder_scheduleDate,_workorder_scheduledate; END IF;
         if (_workorder_scheduleDate  IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_scheduleDate  = \'', _workorder_scheduledate ,'\'');
+			set @l_sql = CONCAT(@l_sql,',workorder_scheduleDate  =\'', STR_TO_DATE(_workorder_scheduleDate, '%d-%m-%Y'), '\'');
         END IF;
 
         IF (_action = 'BATCH-UPDATE') THEN
@@ -2608,8 +2607,10 @@ DROP procedure IF EXISTS `ATT_getPicklist`;
 
 DELIMITER //
 CREATE PROCEDURE `ATT_getPicklist`(IN _tables varchar(1000),
-                                   _customerId CHAR(36),
-                                   _userId CHAR(36))
+                                   IN _customerId CHAR(36),
+                                   IN _userId CHAR(36),
+                                   IN _assetUUID CHAR(60)
+                                   )
 getPicklist:
 BEGIN
 
@@ -2687,10 +2688,20 @@ BEGIN
             LEAVE getPicklist;
         END IF;
 
-        select 'location' as tableName, locationUUID as id, location_name as value, location_name as name
-        from location
-        where location_customerUUID = _customerId
-        order by location_name;
+        set @l_sql = 'select l.locationUUID as id, l.location_name as value, l.location_name as name
+        from location l left join asset a on(l.locationUUID = a.asset_locationUUID)';
+        set @l_sql = CONCAT(@l_sql,' where l.location_customerUUID =\'',_customerId,'\'');
+           
+        IF(_assetUUID is not null)THEN 
+             set @l_sql = CONCAT(@l_sql,' and a.assetUUID =\'',_assetUUID,'\'');
+        END IF;
+
+        set @l_sql = CONCAT(@l_sql,' order by l.location_name;');
+
+        PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+
     END IF;
      IF (LOCATE('isPrimary', _tables) > 0) THEN
 
