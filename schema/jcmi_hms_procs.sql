@@ -990,7 +990,7 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
 		END IF;
 
         IF (_action ='UPDATE') THEN
-            select workorder_tag INTO _workorder_tag where workorderUUID = _workorderUUID;
+            select workorder_tag INTO _workorder_tag from workorder where workorderUUID = _workorderUUID;
 
             IF (_workorder_tag IS NOT NULL) THEN
                 DELETE FROM workorder WHERE workorder_tag = _workorder_tag and workorder_scheduleDate > now() ;
@@ -1164,8 +1164,8 @@ ELSEIF(_action ='ADDPART' and _wapj_asset_partUUID is not null) THEN
         
 ELSEIF(_action ='GET-PART') THEN
  
-	    SELECT w.*,wapj.wapj_quantity FROM workorder w LEFT JOIN workorder_asset_part_join wapj on (wapj.wapj_workorderUUID = w.workorderUUID) 
-        WHERE w.workorderUUID = _workorderUUID ;   
+	    SELECT ap.*,wapj.wapj_quantity FROM asset_part ap LEFT JOIN workorder_asset_part_join wapj on (wapj.wapj_asset_partUUID = ap.asset_partUUID) 
+        WHERE wapj.wapj_workorderUUID = _workorderUUID ;   
 
 ELSE
 	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action is of type invalid';
