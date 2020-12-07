@@ -1127,10 +1127,10 @@ END IF;
 ELSEIF(_action ='COMPLETE' or _action ='BATCH-COMPLETE') THEN
 
         set  @l_sql = 'update workorder set';
-        set @l_sql = CONCAT(@l_sql,' workorder_status =','Complete',',');
-        set @l_sql = CONCAT(@l_sql,' workorder_completeDate =', DATE(now()),',');
-        set @l_sql = CONCAT(@l_sql,' workorder_updatedTS =',now(),',');
-        set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID =',_userUUID,',');
+        set @l_sql = CONCAT(@l_sql,' workorder_status =\'','Complete','\',');
+        set @l_sql = CONCAT(@l_sql,' workorder_completeDate =\'', DATE(now()),'\',');
+        set @l_sql = CONCAT(@l_sql,' workorder_updatedTS =\'',now(),'\',');
+        set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID =',_userUUID);
         if(_action ='BATCH-COMPLETE') THEN
          set @l_sql = CONCAT(@l_sql,' where workorderUUID IN (',_workorderUUID,');');
         ELSE
