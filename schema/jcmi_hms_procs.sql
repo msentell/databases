@@ -1134,7 +1134,7 @@ ELSEIF(_action ='COMPLETE' or _action ='BATCH-COMPLETE') THEN
         if(_action ='BATCH-COMPLETE') THEN
          set @l_sql = CONCAT(@l_sql,' where workorderUUID IN (',_workorderUUID,');');
         ELSE
-         set @l_sql = CONCAT(@l_sql,' where workorderUUID=/'',_workorderUUID,'\';');
+         set @l_sql = CONCAT(@l_sql,' where workorderUUID= \'',_workorderUUID,'\';');
          END IF;
 
         select workorder_checklistHistoryUUID
@@ -1161,6 +1161,11 @@ ELSEIF(_action ='ADDPART' and _wapj_asset_partUUID is not null) THEN
 		values (
 		_workorderUUID,_wapj_asset_partUUID,_wapj_quantity,now()
 		);
+        
+ELSEIF(_action ='GET-PART') THEN
+ 
+	    SELECT w.*,wapj.wapj_quantity FROM workorder w LEFT JOIN workorder_asset_part_join wapj on (wapj.wapj_workorderUUID = w.workorderUUID) 
+        WHERE w.workorderUUID = _workorderUUID ;   
 
 ELSE
 	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action is of type invalid';
