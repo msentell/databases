@@ -644,6 +644,10 @@ DECLARE strLen    INT DEFAULT 0;
 DECLARE SubStrLen INT DEFAULT 0;
 DECLARE _woDates varchar(5000);
 DECLARE _date varchar(100);
+DECLARE _update_workorderUUID VARCHAR(100);
+
+set _update_workorderUUID = _workorderUUID;
+set _workorderUUID = null;
 
 IF(_action ='CREATE' and _workorderUUID is not null) THEN
 
@@ -782,7 +786,10 @@ IF (_DEBUG=1) THEN select _action,_woDates; END IF;
     _userUUID, _userUUID, now(), now()
     );
 
-
+	IF (_update_workorderUUID IS NOT NULL) THEN
+		UPDATE workorder_asset_part_join SET wapj_workorderUUID = _workorderUUID 
+        WHERE `wapj_workorderUUID` = _update_workorderUUID;
+    END IF;
 
 IF (_DEBUG=1) THEN
 	select _action,_workorderUUID,
@@ -1022,7 +1029,6 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
                                     _workorder_priority, _workorder_dueDate, _workorder_completeDate, _workorder_scheduleDate, _workorder_rescheduleDate,
                                     _workorder_frequency, _workorder_frequencyScope, _wapj_asset_partUUID, _wapj_quantity, _daysToMaintain
                                     );
-
                 LEAVE WORKORDER_workOrder;
             END IF;
         END IF;
@@ -1077,10 +1083,6 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
-        
-        IF(_action = 'UPDATE') THEN
-			call WORKORDER_assetPart('REMOVE', _workorderUUID, null, null);
-		END IF;
 
 ELSEIF((_action ='REMOVE' OR _action = 'BATCH-REMOVE') and _workorderUUID is not null) THEN
 
