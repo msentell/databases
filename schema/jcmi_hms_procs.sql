@@ -997,7 +997,7 @@ IF(_action ='GET') THEN
         END IF;
 
 		set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'', ' AND w.workorder_deleteTS is null ');
-		set @l_sql = CONCAT(@l_sql,'order by workorder_updatedTS desc');
+		set @l_sql = CONCAT(@l_sql,'order by workorder_scheduleDate');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
