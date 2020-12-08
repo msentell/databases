@@ -1077,38 +1077,46 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
-
+        
+        IF(_action = 'UPDATE') THEN
+			call WORKORDER_assetPart('REMOVE', _workorderUUID, null, null);
+		END IF;
 
 ELSEIF((_action ='REMOVE' OR _action = 'BATCH-REMOVE') and _workorderUUID is not null) THEN
 
     if (_wapj_asset_partUUID IS NOT NULL) THEN
-	set  @l_sql = 'delete from workorder_asset_part_join where';
-     set @l_sql = CONCAT(@l_sql,' wapj_asset_partUUID = \'', _wapj_asset_partUUID,'\' and');
+		set @l_sql = 'delete from workorder_asset_part_join where';
+		set @l_sql = CONCAT(@l_sql,' wapj_asset_partUUID = \'', _wapj_asset_partUUID,'\' and');
     ELSE
-	set  @l_sql = 'update workorder set' ;
-    set @l_sql = CONCAT(@l_sql,' workorder_deleteTS = \'',now(),'\',');
-    set @l_sql = CONCAT(@l_sql,' workorder_updatedTS = \'',now(),'\',');
-	 set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID = \'', _userUUID,'\' where');
+		set @l_sql = 'update workorder set' ;
+		set @l_sql = CONCAT(@l_sql,' workorder_deleteTS = \'',now(),'\',');
+		set @l_sql = CONCAT(@l_sql,' workorder_updatedTS = \'',now(),'\',');
+		set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID = \'', _userUUID,'\' where');
     END IF;
     
     if (_wapj_asset_partUUID IS NOT NULL) THEN
-    set @workOrderColumnName = ' wapj_workorderUUID';
+		set @workOrderColumnName = ' wapj_workorderUUID';
     else 
-    set @workOrderColumnName = ' workorderUUID';
+		set @workOrderColumnName = ' workorderUUID';
     END IF;
 
     IF(_action = 'BATCH-REMOVE') THEN
-         set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' IN (',_workorderUUID,')');
+		set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' IN (',_workorderUUID,')');
     ELSE
-       set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' = \'', _workorderUUID,'\';');
+		set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' = \'', _workorderUUID,'\';');
     END IF;
 
- IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+	IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
-        PREPARE stmt FROM @l_sql;
-		EXECUTE stmt;
-		DEALLOCATE PREPARE stmt;
+	PREPARE stmt FROM @l_sql;
+	EXECUTE stmt;
+	DEALLOCATE PREPARE stmt;
 
+    IF(_action = 'BATCH-REMOVE') THEN
+		call WORKORDER_assetPart('BATCH-REMOVE', _workorderUUID, null, null);
+	ELSE
+		call WORKORDER_assetPart('REMOVE', _workorderUUID, null, null);
+    END IF;
 
 ELSEIF(_action ='ASSIGN') THEN
 
@@ -1205,6 +1213,47 @@ IF (_DEBUG=1) THEN
 END IF;
 
 
+END$$
+
+DELIMITER ;
+
+-- call WORKORDER_assetPart(_action, _workorderUUID, _wapj_asset_partUUID, _wapj_quantity);
+-- call WORKORDER_assetPart('REMOVE', "", null, null);
+
+DROP procedure IF EXISTS `WORKORDER_assetPart`;
+
+DELIMITER $$
+CREATE PROCEDURE `WORKORDER_assetPart` (
+IN _action VARCHAR(100),
+IN _workorderUUID VARCHAR(1024),
+IN _wapj_asset_partUUID VARCHAR(100),
+IN _wapj_quantity INT
+)
+WORKORDER_assetPart: BEGIN
+	IF (_action = 'REMOVE' OR _action = 'BATCH-REMOVE') THEN
+		IF (_workorderUUID IS NULL OR _workorderUUID = '') THEN
+			SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call WORKORDER_assetPart: invalid value passed for _workorderUUID';
+			LEAVE WORKORDER_assetPart;
+        END IF;
+
+        set @l_sql = 'delete from workorder_asset_part_join where';
+
+        IF (_wapj_asset_partUUID IS NOT NULL) THEN
+			set @l_sql = CONCAT(@l_sql,' wapj_asset_partUUID = \'', _wapj_asset_partUUID,'\' and');
+        END IF;
+
+        IF (_action = 'BATCH-REMOVE') THEN
+			set @l_sql = CONCAT(@l_sql,' wapj_workorderUUID = (', _workorderUUID,')');
+		ELSE
+			set @l_sql = CONCAT(@l_sql,' wapj_workorderUUID = \'', _workorderUUID,'\'');
+		END IF;
+
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+		PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
+    END IF;
 END$$
 
 DELIMITER ;
