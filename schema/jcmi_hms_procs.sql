@@ -1088,13 +1088,19 @@ ELSEIF((_action ='REMOVE' OR _action = 'BATCH-REMOVE') and _workorderUUID is not
 	set  @l_sql = 'update workorder set' ;
     set @l_sql = CONCAT(@l_sql,' workorder_deleteTS = \'',now(),'\',');
     set @l_sql = CONCAT(@l_sql,' workorder_updatedTS = \'',now(),'\',');
-	 set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID = \'', _userUUID,'\'');
+	 set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID = \'', _userUUID,'\' where');
+    END IF;
+    
+    if (_wapj_asset_partUUID IS NOT NULL) THEN
+    set @workOrderColumnName = ' wapj_workorderUUID';
+    else 
+    set @workOrderColumnName = ' workorderUUID';
     END IF;
 
     IF(_action = 'BATCH-REMOVE') THEN
-         set @l_sql = CONCAT(@l_sql,' where workorderUUID IN (',_workorderUUID,')');
+         set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' IN (',_workorderUUID,')');
     ELSE
-       set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
+       set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' = \'', _workorderUUID,'\';');
     END IF;
 
  IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
