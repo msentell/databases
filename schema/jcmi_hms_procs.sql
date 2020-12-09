@@ -3688,9 +3688,12 @@ if (_checklistUUID is null) THEN
 SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _checklistUUID required';
 LEAVE CHECKLIST_checklist;
 END IF;
-if (_historyUUID is null) THEN
-SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _historyUUID required';
-LEAVE CHECKLIST_checklist;
+
+if (_historyUUID is null and _action = 'UPDATE_HISTORY') THEN
+    set _historyUUID = uuid();
+ELSEIF(_historyUUID is null)then
+    SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _historyUUID required';
+    LEAVE CHECKLIST_checklist;
 END IF;
 
 IF (_action ='FAIL_CHECKLIST_CREATEWO') THEN
@@ -3846,7 +3849,7 @@ null,null,null,null,
 
 			set @l_sql = CONCAT(@l_sql,' where checklist_historyUUID = \'', _historyUUID,'\';');
 
-			IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+			IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
 			PREPARE stmt FROM @l_sql;
 			EXECUTE stmt;
@@ -3870,7 +3873,7 @@ null,null,null,null,
 
 			set @l_sql = CONCAT(@l_sql,' where  checklist_history_itemUUID= \'', _checklist_itemUUID,'\';');
 
-			IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+			IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
 			PREPARE stmt FROM @l_sql;
 			EXECUTE stmt;
@@ -3944,7 +3947,7 @@ _userUUID, _userUUID, now(), now()
 
 		set @l_sql = CONCAT(@l_sql,' where checklistUUID = \'', _checklistUUID,'\';');
 
-        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
@@ -3997,7 +4000,7 @@ _userUUID, _userUUID, now(), now()
 
 		set @l_sql = CONCAT(@l_sql,' where checklist_itemUUID = \'', _checklist_itemUUID,'\';');
 
-        IF (DEBUG=1) THEN select _action,@l_SQL; END IF;
+        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
 		PREPARE stmt FROM @l_sql;
 		EXECUTE stmt;
