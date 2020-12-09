@@ -3834,7 +3834,7 @@ null,null,null,null,
 
 		if ( _checklist_statusId is not null or _checklist_name is not null) THEN
 
-			set  @l_sql = CONCAT('update checklist_history set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');
+			set  @l_sql = CONCAT('update checklist_history set checklist_history_updatedTS=now(), checklist_history_updatedByUUID=\'', _userUUID,'\'');
 
 			if (_checklist_name is not null) THEN
 				set @l_sql = CONCAT(@l_sql,', checklist_history_name= \'', _checklist_name,'\'');
