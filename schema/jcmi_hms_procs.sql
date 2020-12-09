@@ -3900,7 +3900,9 @@ null,null,null,null,
         -- update item record if noted
 
     -- 4. if all items on the checklist are completed, then close the WO
-
+    
+    select _historyUUID as 'historyUUID',_workorderUUID as 'workorderUUID';
+    
 ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
 	-- 1. update template
