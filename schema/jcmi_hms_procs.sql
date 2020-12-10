@@ -786,11 +786,6 @@ IF (_DEBUG=1) THEN select _action,_woDates; END IF;
     _userUUID, _userUUID, now(), now()
     );
 
-	IF (_update_workorderUUID IS NOT NULL) THEN
-		UPDATE workorder_asset_part_join SET wapj_workorderUUID = _workorderUUID 
-        WHERE `wapj_workorderUUID` = _update_workorderUUID;
-    END IF;
-
 IF (_DEBUG=1) THEN
 	select _action,_workorderUUID,
     _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
@@ -1003,7 +998,7 @@ IF(_action ='GET') THEN
             set _commaNeeded=1;
         END IF;
 
-		set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'', ' AND w.workorder_deleteTS is null ');
+		set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'', ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= CURDATE()');
 		set @l_sql = CONCAT(@l_sql,'order by workorder_scheduleDate');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
@@ -1023,6 +1018,7 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
 
             IF (_workorder_tag IS NOT NULL) THEN
                 DELETE FROM workorder WHERE workorder_tag = _workorder_tag and workorder_scheduleDate > now() ;
+
                 call WORKORDER_create('create', _customerId, _userUUID, _workorderUUID, _workorder_locationUUID, _workorder_userUUID,
                                     _workorder_groupUUID, _workorder_assetUUID, _workorder_checklistUUID, _workorder_checklistHistoryUUID,
                                     _workorder_status, _workorder_type, _workorder_name, _workorder_number, _workorder_details, _workorder_actions,
