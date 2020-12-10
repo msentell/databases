@@ -3612,7 +3612,8 @@ DECLARE _readyDate datetime;
 DECLARE _expireDate datetime;
 DECLARE _assetName varchar(255);
 DECLARE _workorder_locationUUID char(36);
-
+DECLARE _checklist_itemHistoryIds varchar(1024) DEFAULT '';
+DECLARE _checklist_itemIds varchar(1024) DEFAULT '';
 
 IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null)) THEN
 
@@ -3721,7 +3722,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
 	select checklist_name,checklist_rulesJSON into _checklist_name,_checklist_rulesJSON from checklist where checklistUUID =_checklistUUID;
 
--- need to create a new checklist and workorder
+	-- need to create a new checklist and workorder
     if (_foundId is null) THEN
 
         if (_workorderUUID is null) then select UUID() into _workorderUUID; end if;
@@ -3745,7 +3746,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
         order by checklist_item_sortOrder;
 
 		if (_DEBUG=1) THEN select 'CREATE HISTORY ',_workorderUUID,' ',_assetUUID,' ',_workorder_locationUUID,' ',_checklist_name, ' ', _ids;  END IF;
-
+		set _checklist_itemIds = _ids;
         -- reOrder of the stages for old tasktype
         if(_ids is not null) then
             looper: loop
@@ -3775,6 +3776,8 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
                     0,
                     _userUUID,_userUUID,now(),now()
                 );
+                
+                set _checklist_itemHistoryIds = concat(_checklist_itemHistoryIds, _checklist_itemUUID, ',');
 
                 -- select
                 -- _checklist_itemUUID, _historyUUID, checklist_item_statusId, checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON, checklist_item_successPrompt, checklist_item_successRange, _userUUID, _userUUID, now(), now(), null
@@ -3885,8 +3888,8 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
     -- 4. if all items on the checklist are completed, then close the WO
     
-    select _historyUUID as 'historyUUID',_workorderUUID as 'workorderUUID';
-    
+    select _historyUUID as 'historyUUID',_workorderUUID as 'workorderUUID', _checklist_itemIds as 'checklistItemUUIDs', _checklist_itemHistoryIds as 'historyItemUUIDs';
+
 ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
 	-- 1. update template
