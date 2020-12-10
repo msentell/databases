@@ -1840,12 +1840,12 @@ BEGIN
         LEAVE LOCATION_action;
     END IF;
     
-    IF (_userUUID IS NULL) THEN
+    IF (_userUUID IS NULL and _action != 'SEARCH') THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _userUUID missing';
         LEAVE LOCATION_action;
     END IF;
 
-    IF (_customerUUID IS NULL) THEN
+    IF (_customerUUID IS NULL and _action != 'SEARCH') THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _customerUUID missing';
         LEAVE LOCATION_action;
     END IF;
@@ -1862,22 +1862,28 @@ BEGIN
             SET @l_SQL =
                 CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',
                            _type, '\' as `Type`
-			FROM asset where asset_statusId = 1 and asset_name like \'', _name, '\'  and  asset_customerUUID= \'',
-                           _customerUUID, '\'');
+			FROM asset where asset_statusId = 1 and asset_name like \'', _name, '\'');
+                           
+			IF(_customerUUID is not null) THEN 
+				SET @l_SQL = CONCAT(@l_SQL ,'and  asset_customerUUID= \'',_customerUUID, '\'');
+			END IF;
 
         ELSEif (_type = 'ASSET-PART') THEN
             -- SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type`
             -- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
 
-            SET @l_SQL = CONCAT(
-                    'SELECT * FROM (
-                        SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
-                        FROM asset_part WHERE asset_part_statusId = 1 AND asset_part_name LIKE \'', _name, '\'  AND  asset_part_customerUUID= \'', _customerUUID, '\'
-                        UNION
-                        SELECT part_sku as objUUID,part_imageURL as ImageURL,part_imageThumbURL as ThumbURL, part_name  as `name`, \'ASSET_PART\' as `Type`, \'FACTORY-PART\' as source
+			SET @l_SQL = CONCAT('SELECT * FROM (SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
+                                FROM asset_part WHERE asset_part_statusId = 1 AND asset_part_name LIKE \'', _name, '\'');
+			IF(_customerUUID is not null) THEN 
+                SET @l_SQL = CONCAT(@l_SQL ,' AND  asset_part_customerUUID= \'', _customerUUID, '\'');
+            END IF;
+                        
+            SET @l_SQL = CONCAT(@l_SQL ,' UNION');
+	
+            SET @l_SQL = CONCAT(@l_SQL ,' SELECT part_sku as objUUID,part_imageURL as ImageURL,part_imageThumbURL as ThumbURL, part_name  as `name`, \'ASSET_PART\' as `Type`, \'FACTORY-PART\' as source
                         FROM part_template pt WHERE part_statusId = 1 AND part_name LIKE \'', _name,'\') ap
                         LEFT JOIN part_template pt ON (ap.source = \'FACTORY-PART\' AND ap.objUUID = pt.part_sku)
-                        ORDER BY name');
+                        ORDER BY name');                     
 
         ELSEif (_type = 'LOCATION') THEN
             -- SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type`
