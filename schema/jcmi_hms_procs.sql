@@ -2722,7 +2722,7 @@ BEGIN
             LEAVE getPicklist;
         END IF;
 
-        select 'group' as tableName, assetUUID as id, asset_name as value, asset_name as name
+        select 'group' as tableName, assetUUID as id, asset_name as value, asset_name as name, asset_locationUUID as locationId
         from asset
         where asset_customerUUID = _customerId
         order by asset_name;
