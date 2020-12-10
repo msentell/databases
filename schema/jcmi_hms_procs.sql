@@ -3523,48 +3523,52 @@ _checklist_statusId,_checklist_name, _checklist_recommendedFrequency,_checklist_
 _checklist_itemUUID,_checklist_item_statusId,_checklist_item_sortOrder,
 _checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON,
 _checklist_item_successPrompt, _checklist_item_successRange,
-checklist_history_item_resultFlag,checklist_history_item_resultText
+checklist_history_item_resultFlag,checklist_history_item_resultText, _checklist_history_item_historyUUID
 );
 
 call CHECKLIST_checklist(
 'GET_HISTORY','1',null,
-'2b61b61eb4d141799a9560cccb109f59', null, null, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+'2b61b61eb4d141799a9560cccb109f59', null, null, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
 );
 
 -- creates a cl and wo
 call CHECKLIST_checklist(
 'UPDATE_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
 '2b61b61eb4d141799a9560cccb109f59', '00c93791035c44fd98d4f40ff2cdfe0a',uuid(),
-null, null,null, null,null,null,null,null, null, null, null, null, null, null, null
+null, null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
 );
 
 -- updates a cl item
 call CHECKLIST_checklist(
 'UPDATE_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
 '2b61b61eb4d141799a9560cccb109f59', '00c93791035c44fd98d4f40ff2cdfe0a','100',
-null, null,null, null,null,null,null,null, null, null, null, null, null, null, null
+null, null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
 );
 
 
 call CHECKLIST_checklist(
 'GET_TEMPLATE','1','a30af0ce5e07474487c39adab6269d5f',
-'2b61b61eb4d141799a9560cccb109f59', null, null, null,null, null, null,null,null,null,null, null, null, null, null, null, null, null
+'2b61b61eb4d141799a9560cccb109f59', null, null, null,null, null, null,null,null,null,null, null, null, null, null, null, null, null, null
 );
 
 call CHECKLIST_checklist(
 'GET_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
-null, null, '9910d4bb-fd03-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+null, null, '9910d4bb-fd03-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
 );
-
+-- gets history by workorderUUID
+call CHECKLIST_checklist(
+'GET_HISTORY','1',null,
+null, null, null, '88602c15-3b1c-11eb-a1a5-4e53d94465b4',null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
+);
 
 call CHECKLIST_checklist(
 'PASS_CHECKLIST','1',null,
-null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
 );
 
 call CHECKLIST_checklist(
 'FAIL_CHECKLIST_CREATEWO','1','a30af0ce5e07474487c39adab6269d5f',
-null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
 );
 
 */
@@ -3619,7 +3623,7 @@ DECLARE _workorder_locationUUID char(36);
 DECLARE _checklist_itemHistoryIds varchar(1024) DEFAULT '';
 DECLARE _checklist_itemIds varchar(1024) DEFAULT '';
 
-IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null)) THEN
+IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null  or _workorderUUID is not null)) THEN
 
     set  @l_sql = CONCAT('select c.*,i.* from checklist_history c ');
     set  @l_sql = CONCAT(@l_sql,'left join checklist_item_history i on (i.checklist_history_item_historyUUID = c.checklist_historyUUID) ');
@@ -3640,7 +3644,7 @@ IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not
     END IF;
     if ( _workorderUUID is not null) THEN
         if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-        set @l_sql = CONCAT(@l_sql,'i.checklist_history_workorderUUID = \'', _workorderUUID,'\'');
+        set @l_sql = CONCAT(@l_sql,'c.checklist_history_workorderUUID = \'', _workorderUUID,'\'');
         set _commaNeeded=1;
     END IF;
 
@@ -3758,30 +3762,28 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
                 set _id = SUBSTRING_INDEX(_ids, ',', 1);
 
-                select UUID() into _checklist_itemUUID;
-
-                select UUID(),checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON, checklist_item_successPrompt,
+                select UUID(), checklist_itemUUID, checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON, checklist_item_successPrompt,
                         checklist_item_successRange
-                into  _checklist_itemUUID, _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type,
+                into  _checklist_history_item_historyUUID, _checklist_itemUUID, _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type,
                         _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange
                 from checklist_item where  checklist_itemUUID= _id;
 
                 insert into checklist_item_history (
-                    checklist_history_itemUUID, checklist_history_item_historyUUID, checklist_history_item_statusId,
+                    checklist_history_itemUUID, checklist_history_item_historyUUID, checklist_history_item_itemUUID, checklist_history_item_statusId,
                     checklist_history_item_sortOrder, checklist_history_item_prompt, checklist_history_item_type,
                     checklist_history_item_optionSetJSON, checklist_history_item_successPrompt, checklist_history_item_successRange,
                     checklist_history_item_resultFlag,
                     checklist_history_item_createdByUUID, checklist_history_item_updatedByUUID, checklist_history_item_updatedTS, checklist_history_item_createdTS
                 )
                 values (
-                    _checklist_itemUUID, _historyUUID, 1,
+                    _checklist_history_item_historyUUID, _historyUUID, _checklist_itemUUID, 1,
                     _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type,
                     _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange,
                     0,
                     _userUUID,_userUUID,now(),now()
                 );
                 
-                set _checklist_itemHistoryIds = concat(_checklist_itemHistoryIds, _checklist_itemUUID, ',');
+                set _checklist_itemHistoryIds = concat(_checklist_itemHistoryIds, _checklist_history_item_historyUUID, ',');
 
                 -- select
                 -- _checklist_itemUUID, _historyUUID, checklist_item_statusId, checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON, checklist_item_successPrompt, checklist_item_successRange, _userUUID, _userUUID, now(), now(), null
@@ -3953,7 +3955,7 @@ ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
     if (_foundId is null and _checklist_itemUUID is not null) THEN
 
-		insert into checklist_itemUUID (
+		insert into checklist_item (
             checklist_itemUUID, checklist_item_checklistUUID, checklist_item_customerUUID, checklist_item_statusId,
             checklist_item_sortOrder, checklist_item_prompt, checklist_item_type, checklist_item_optionSetJSON,
             checklist_item_successPrompt, checklist_item_successRange,

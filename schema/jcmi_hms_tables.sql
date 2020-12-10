@@ -838,6 +838,7 @@ DROP TABLE IF EXISTS checklist_item_history;
 CREATE TABLE `checklist_item_history` (
     checklist_history_itemUUID CHAR(36)  NOT NULL,
     checklist_history_item_historyUUID CHAR(36)  NOT NULL,
+    checklist_history_item_itemUUID CHAR(36) NOT NULL,
     checklist_history_item_statusId INT   NULL DEFAULT 1,
     checklist_history_item_resultFlag INT   NULL DEFAULT 0, -- 0=open, 1=success, 2=fail
     checklist_history_item_resultText varchar(255),
