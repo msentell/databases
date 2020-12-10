@@ -1067,6 +1067,9 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
         if (_workorder_scheduleDate  IS NOT NULL) THEN
 			set @l_sql = CONCAT(@l_sql,',workorder_scheduleDate  =\'', STR_TO_DATE(_workorder_scheduleDate, '%d-%m-%Y'), '\'');
         END IF;
+        IF (_workorder_checklistUUID IS NOT NULL ) THEN
+            set @l_sql = CONCAT(@l_sql,',workorder_checklistUUID = \'', _workorder_checklistUUID,'\'');
+        END IF;
 
         IF (_action = 'BATCH-UPDATE') THEN
             set @l_sql = CONCAT(@l_sql,' where workorderUUID IN (',_workorderUUID,')');
