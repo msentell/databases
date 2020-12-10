@@ -1839,7 +1839,7 @@ BEGIN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_action: _action can not be empty';
         LEAVE LOCATION_action;
     END IF;
-
+    
     IF (_userUUID IS NULL) THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _userUUID missing';
         LEAVE LOCATION_action;
@@ -1860,7 +1860,7 @@ BEGIN
             -- 	FROM asset where asset_name like _name and  asset_customerUUID=_customerUUID;
 
             SET @l_SQL =
-                    CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',
+                CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',
                            _type, '\' as `Type`
 			FROM asset where asset_statusId = 1 and asset_name like \'', _name, '\'  and  asset_customerUUID= \'',
                            _customerUUID, '\'');
@@ -3595,7 +3595,8 @@ IN _checklist_item_successPrompt varchar(255),
 IN _checklist_item_successRange varchar(255),
 
 IN _checklist_history_item_resultFlag INT,
-IN _checklist_history_item_resultText varchar(255)
+IN _checklist_history_item_resultText varchar(255),
+IN _checklist_history_item_historyUUID char(36)
 
 )
 CHECKLIST_checklist: BEGIN
@@ -3852,7 +3853,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
         END IF;
 
-		if ( _checklist_item_statusId is not null or _checklist_name is not null) THEN
+		if ( _checklist_item_statusId is not null or _checklist_name is not null and _checklist_history_item_historyUUID is not null) THEN
 
 			set  @l_sql = CONCAT('update checklist_item_history set checklist_history_item_updatedTS=now(), checklist_history_item_updatedByUUID=\'', _userUUID,'\'');
 
@@ -3866,7 +3867,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 				set @l_sql = CONCAT(@l_sql,', checklist_history_item_statusId= ', _checklist_item_statusId);
 			END IF;
 
-			set @l_sql = CONCAT(@l_sql,' where  checklist_history_itemUUID= \'', _checklist_itemUUID,'\';');
+			set @l_sql = CONCAT(@l_sql,' where  checklist_history_itemUUID= \'', _checklist_history_item_historyUUID,'\';');
 
 			IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
