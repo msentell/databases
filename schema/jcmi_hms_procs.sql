@@ -1000,7 +1000,7 @@ IF(_action ='GET') THEN
         END IF;
 
 		set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'', ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= CURDATE()');
-		set @l_sql = CONCAT(@l_sql,'order by workorder_scheduleDate');
+		set @l_sql = CONCAT(@l_sql,'order by workorder_scheduleDate desc');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
@@ -3530,52 +3530,52 @@ _checklist_statusId,_checklist_name, _checklist_recommendedFrequency,_checklist_
 _checklist_itemUUID,_checklist_item_statusId,_checklist_item_sortOrder,
 _checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON,
 _checklist_item_successPrompt, _checklist_item_successRange,
-checklist_history_item_resultFlag,checklist_history_item_resultText, _checklist_history_item_historyUUID
+checklist_history_item_resultFlag,checklist_history_item_resultText, _checklist_history_item_historyUUID,_checklist_history_item_historyUUID
 );
 
 call CHECKLIST_checklist(
 'GET_HISTORY','1',null,
-'2b61b61eb4d141799a9560cccb109f59', null, null, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
+'2b61b61eb4d141799a9560cccb109f59', null, null, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
 
 -- creates a cl and wo
 call CHECKLIST_checklist(
 'UPDATE_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
 '2b61b61eb4d141799a9560cccb109f59', '00c93791035c44fd98d4f40ff2cdfe0a',uuid(),
-null, null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
+null, null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
 
 -- updates a cl item
 call CHECKLIST_checklist(
 'UPDATE_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
 '2b61b61eb4d141799a9560cccb109f59', '00c93791035c44fd98d4f40ff2cdfe0a','100',
-null, null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
+null, null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
 
 
 call CHECKLIST_checklist(
 'GET_TEMPLATE','1','a30af0ce5e07474487c39adab6269d5f',
-'2b61b61eb4d141799a9560cccb109f59', null, null, null,null, null, null,null,null,null,null, null, null, null, null, null, null, null, null
+'2b61b61eb4d141799a9560cccb109f59', null, null, null,null, null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
 
 call CHECKLIST_checklist(
 'GET_HISTORY','1','a30af0ce5e07474487c39adab6269d5f',
-null, null, '9910d4bb-fd03-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
+null, null, '9910d4bb-fd03-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
 -- gets history by workorderUUID
 call CHECKLIST_checklist(
 'GET_HISTORY','1',null,
-null, null, null, '88602c15-3b1c-11eb-a1a5-4e53d94465b4',null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
+null, null, null, '88602c15-3b1c-11eb-a1a5-4e53d94465b4',null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
 
 call CHECKLIST_checklist(
 'PASS_CHECKLIST','1',null,
-null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
+null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
 
 call CHECKLIST_checklist(
 'FAIL_CHECKLIST_CREATEWO','1','a30af0ce5e07474487c39adab6269d5f',
-null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null
+null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
 
 */
@@ -3631,7 +3631,7 @@ DECLARE _checklist_itemHistoryIds varchar(1024) DEFAULT '';
 DECLARE _checklist_itemIds varchar(1024) DEFAULT '';
 DECLARE _checklist_history_resultFlag INT DEFAULT 0;
 
-IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null  or _workorderUUID is not null)) THEN
+IF(_action ='WORKORDER_workOrder' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null  or _workorderUUID is not null)) THEN
 
     set  @l_sql = CONCAT('select c.*,i.* from checklist_history c ');
     set  @l_sql = CONCAT(@l_sql,'left join checklist_item_history i on (i.checklist_history_item_historyUUID = c.checklist_historyUUID) ');
@@ -3815,6 +3815,14 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
         if (_foundId is null) THEN
             if (_DEBUG=1) THEN select '_workorderUUID',_workorderUUID; END IF;
             if (_DEBUG=1) THEN select 'CREATE WO ',_workorderUUID,' ',_assetUUID,' ',_workorder_locationUUID,' ',_checklist_name; END IF;
+
+-- call WORKORDER_create(_action, _customerId,_userUUID
+-- _workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,_workorder_assetUUID,
+-- _workorder_checklistUUID,_workorder_checklistHistoryUUID,_workorder_status,_workorder_type,_workorder_name,_workorder_number,_workorder_details,
+-- _workorder_actions,_workorder_priority,_workorder_dueDate,_workorder_completeDate,
+-- _workorder_scheduleDate,_workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
+-- _wapj_quantity
+-- );
 
             call WORKORDER_create('CREATE', _customerUUID,_userUUID,
                 _workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID, _checklistUUID,
