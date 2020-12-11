@@ -3629,6 +3629,7 @@ DECLARE _assetName varchar(255);
 DECLARE _workorder_locationUUID char(36);
 DECLARE _checklist_itemHistoryIds varchar(1024) DEFAULT '';
 DECLARE _checklist_itemIds varchar(1024) DEFAULT '';
+DECLARE _checklist_history_resultFlag INT DEFAULT 0;
 
 IF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null  or _workorderUUID is not null)) THEN
 
@@ -4010,7 +4011,44 @@ ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
     END IF;
 
+ELSEIF(_action = 'COMPLETE' or _action = 'RESET') THEN
+	select checklist_history_workorderUUID into _workorderUUID from checklist_history
+			where checklist_historyUUID = _historyUUID;
 
+    select group_concat(checklist_history_item_resultFlag),
+            group_concat(COALESCE(checklist_history_item_resultText, 'NULL')) 
+    into _checklist_history_item_resultFlag, _checklist_history_item_resultText
+    from checklist_item_history
+        where checklist_history_item_historyUUID = '50279b80-3ba9-11eb-a1a5-4e53d94465b4' and checklist_history_item_statusId =1
+        order by checklist_history_item_sortOrder;
+
+    IF (LOCATE('0', _checklist_history_item_resultFlag) > 0 OR LOCATE('NULL', _checklist_history_item_resultText) > 0) THEN
+        SET _checklist_history_resultFlag = 2;
+    ELSE
+        SET _checklist_history_resultFlag = 1;
+    END IF;
+	
+	update  checklist_history set checklist_history_resultFlag = _checklist_history_resultFlag,checklist_history_updatedTS=now(),
+	checklist_history_updatedByUUID=_userUUID
+	where checklist_historyUUID = _historyUUID;
+
+	update  workorder set workorder_completeDate=Date(now()), workorder_updatedTS = now(),
+		workorder_updatedByUUID = _userUUID, workorder_status = 'Complete'
+		where workorderUUID = _workorderUUID;
+
+    select _checklist_history_resultFlag as checklistStatus; -- 0 is not started 1 is success and 2 is failed
+
+ELSEIF(_action = 'RESET') THEN
+	select checklist_history_workorderUUID into _workorderUUID from checklist_history
+			where checklist_historyUUID = _historyUUID;
+
+	update  checklist_history set checklist_history_resultFlag = 0,checklist_history_updatedTS=now(),
+	checklist_history_updatedByUUID=_userUUID
+	where checklist_historyUUID = _historyUUID;
+
+	update  workorder set workorder_completeDate=Date(now()), workorder_updatedTS = now(),
+		workorder_updatedByUUID = _userUUID, workorder_status = 'IN_PROGRESS'
+		where workorderUUID = _workorderUUID;
 ELSEIF(_action ='PASS_CHECKLIST') THEN
 
 
