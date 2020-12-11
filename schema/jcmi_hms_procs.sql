@@ -773,14 +773,14 @@ IF (_DEBUG=1) THEN select _action,_woDates; END IF;
     -- TODO
 	insert into workorder (workorderUUID,
     workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID,
-    workorder_assetUUID, workorder_checklistUUID, workorder_status, workorder_type,
+    workorder_assetUUID, workorder_checklistUUID, workorder_checklistHistoryUUID, workorder_status, workorder_type,
     workorder_number, workorder_name, workorder_details, workorder_actions, workorder_priority,
     workorder_dueDate, workorder_scheduleDate,workorder_rescheduleDate, workorder_completeDate, workorder_frequency,
     workorder_frequencyScope,workorder_tag,
 	workorder_createdByUUID, workorder_updatedByUUID, workorder_updatedTS, workorder_createdTS
     ) values (_workorderUUID,
     _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
-    _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type,
+    _workorder_assetUUID, _workorder_checklistUUID, _workorder_checklistHistoryUUID, _workorder_status, _workorder_type,
     _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority,
     _workorder_dueDate, _workorder_scheduleDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency,
     _workorder_frequencyScope, _workorder_tag,
