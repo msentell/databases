@@ -646,9 +646,6 @@ DECLARE _woDates varchar(5000);
 DECLARE _date varchar(100);
 DECLARE _update_workorderUUID VARCHAR(100);
 
-set _update_workorderUUID = _workorderUUID;
-set _workorderUUID = null;
-
 IF(_action ='CREATE' and _workorderUUID is not null) THEN
 
 	IF(_customerId IS NULL or _customerId = '') THEN
@@ -749,7 +746,11 @@ IF (_DEBUG=1) THEN select _action,_woDates; END IF;
 
     set _workorder_definition = 'CM-';
     set _workorder_tag = concat(_workorder_checklistUUID,':',_workorder_frequencyScope,':',_workorder_frequency);
-	set _workorder_status = 'Open';
+    IF (_workorder_type = 'CHECKLIST') THEN
+		set _workorder_status = 'IN_PROGRESS';
+    ELSE
+		set _workorder_status = 'Open';
+    END IF;
 
 
             IF (CHAR_LENGTH(_woDates) > 0) THEN
@@ -3815,11 +3816,11 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
             if (_DEBUG=1) THEN select 'CREATE WO ',_workorderUUID,' ',_assetUUID,' ',_workorder_locationUUID,' ',_checklist_name; END IF;
 
             call WORKORDER_create('CREATE', _customerUUID,_userUUID,
-                _workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID,
-                _historyUUID,null,'CHECKLIST',_checklist_name,null,_assetName,
+                _workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID, _checklistUUID,
+                _historyUUID,null,'CHECKLIST',CONCAT('Checklist - ',_checklist_name),null,_assetName,
                 _assetName,null,null,null,null,
                 null,null,null,null,
-                'DAILY',null,null
+                null,null
             );
 
             -- 	 		ELSE
