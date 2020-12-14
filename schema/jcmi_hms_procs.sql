@@ -1072,6 +1072,19 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
             set @l_sql = CONCAT(@l_sql,',workorder_checklistUUID = \'', _workorder_checklistUUID,'\'');
         END IF;
 
+        IF(_workorder_frequency IS NOT NULL) THEN 
+                set @1_sql = CONCAT(@1_sql,',workorder_frequency =\'', _workorder_frequency,'\'' );
+        END IF;
+        IF(_workorder_frequencyScope IS NOT NULL) THEN
+                set @1_sql = CONCAT(@1_sql,',workorder_frequencyScope =\'', _workorder_frequencyScope, '\'');
+         END IF;
+        IF(_workorder_locationUUID IS NOT NULL ) THEN
+                set @1_sql = CONCAT(@1_sql,',_workorder_locationUUID =\'', _workorder_locationUUID, '\'' );
+         END If;
+        IF(_workorder_number IS NOT NULL) THEN
+                set @1_sql = CONCAT(@1_sql,',_workorder_number =\'', _workorder_number, '\'');
+        END IF;
+
         IF (_action = 'BATCH-UPDATE') THEN
             set @l_sql = CONCAT(@l_sql,' where workorderUUID IN (',_workorderUUID,')');
         ELSE
