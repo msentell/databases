@@ -646,21 +646,29 @@ DECLARE _woDates varchar(5000);
 DECLARE _date varchar(100);
 DECLARE _update_workorderUUID VARCHAR(100);
 
-IF(_action ='CREATE' and _workorderUUID is not null) THEN
+IF(_action ='CREATE') THEN
 
 	IF(_customerId IS NULL or _customerId = '') THEN
 		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _customerId can not be empty';
 		LEAVE WORKORDER_create;
 	END IF;
 
+    IF(_workorderUUID is NULL) THEN set _workorderUUID = UUID();END IF;
+
 	-- RULES and CONVERSIONS
-	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
+	if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_TO_DATE(_workorder_completeDate, _dateFormat); END IF;
 	if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
 
     if (_workorder_scheduleDate IS NOT NULL) THEN
 		set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
 	ELSE
 		set _workorder_scheduleDate=DATE(now());
+    END IF;
+
+    if (_workorder_dueDate IS NOT NULL) THEN
+		set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat);
+	ELSE
+		set _workorder_dueDate=DATE(now());
     END IF;
 
 	if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
