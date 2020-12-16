@@ -645,6 +645,8 @@ DECLARE SubStrLen INT DEFAULT 0;
 DECLARE _woDates varchar(5000);
 DECLARE _date varchar(100);
 DECLARE _update_workorderUUID VARCHAR(100);
+DECLARE _workorder_scheduleDate_withTime VARCHAR(100);
+DECLARE _workorder_dueDate_withTime VARCHAR(100);
 
 IF(_action ='CREATE') THEN
 
@@ -652,20 +654,20 @@ IF(_action ='CREATE') THEN
 		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _customerId can not be empty';
 		LEAVE WORKORDER_create;
 	END IF;
-
+    
     IF(_workorderUUID is NULL) THEN set _workorderUUID = UUID();END IF;
-
+    
 	-- RULES and CONVERSIONS
-	if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_TO_DATE(_workorder_completeDate, _dateFormat); END IF;
+if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_TO_DATE(_workorder_completeDate, _dateFormat); END IF;
 	if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
-
+    
     if (_workorder_scheduleDate IS NOT NULL) THEN
 		set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
 	ELSE
 		set _workorder_scheduleDate=DATE(now());
     END IF;
 
-    if (_workorder_dueDate IS NOT NULL) THEN
+     if (_workorder_dueDate IS NOT NULL) THEN
 		set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat);
 	ELSE
 		set _workorder_dueDate=DATE(now());
@@ -777,6 +779,9 @@ IF (_DEBUG=1) THEN select _action,_woDates; END IF;
 	if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = STR_TO_DATE(_date, _dateFormat); END IF;
 	if (_workorder_priority is null) THEN set _workorder_priority='MEDIUM'; END IF;
 
+    set _workorder_scheduleDate_withTime = ADDTIME(STR_TO_DATE(_date, '%d-%m-%Y %H:%m'),'23:59');
+    set _workorder_dueDate_withTime = ADDTIME(STR_TO_DATE(_date, '%d-%m-%Y %H:%m'),'23:59');
+
     -- based on frequencyScope and frequency, create 1-M WO's
     -- TODO
 	insert into workorder (workorderUUID,
@@ -790,7 +795,7 @@ IF (_DEBUG=1) THEN select _action,_woDates; END IF;
     _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
     _workorder_assetUUID, _workorder_checklistUUID, _workorder_checklistHistoryUUID, _workorder_status, _workorder_type,
     _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority,
-    _workorder_dueDate, _workorder_scheduleDate, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency,
+    _workorder_dueDate_withTime, _workorder_scheduleDate_withTime, _workorder_rescheduleDate, _workorder_completeDate, _workorder_frequency,
     _workorder_frequencyScope, _workorder_tag,
     _userUUID, _userUUID, now(), now()
     );
