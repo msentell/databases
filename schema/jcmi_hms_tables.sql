@@ -292,7 +292,8 @@ CREATE TABLE `notification_queue` (
     notification_priority varchar(25) NULL DEFAULT 'LOW', -- LOW, MEDIUM, HIGH
    	notification_toUserUUID CHAR(36) NULL,
     notification_fromAppUUID CHAR(36) NULL,
-   	notification_fromUserUUID CHAR(36) NOT NULL,
+    notification_fromUserUUID CHAR(36) NOT NULL,
+    notification_workorderUUID CHAR(36) NULL,
    	notification_readyOn timestamp NOT NULL,
     notification_expireOn timestamp NOT NULL,
     notification_isClearable INT NULL DEFAULT 1,

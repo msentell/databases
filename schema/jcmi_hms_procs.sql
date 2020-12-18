@@ -650,30 +650,30 @@ DECLARE _workorder_dueDate_withTime VARCHAR(100);
 
 IF(_action ='CREATE') THEN
 
-	IF(_customerId IS NULL or _customerId = '') THEN
-		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _customerId can not be empty';
-		LEAVE WORKORDER_create;
-	END IF;
+    IF(_customerId IS NULL or _customerId = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _customerId can not be empty';
+        LEAVE WORKORDER_create;
+    END IF;
     
     IF(_workorderUUID is NULL) THEN set _workorderUUID = UUID();END IF;
     
-	-- RULES and CONVERSIONS
+    -- RULES and CONVERSIONS
 if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_TO_DATE(_workorder_completeDate, _dateFormat); END IF;
-	if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
+    if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
     
     if (_workorder_scheduleDate IS NOT NULL) THEN
-		set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
-	ELSE
-		set _workorder_scheduleDate=DATE(now());
+        set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
+    ELSE
+        set _workorder_scheduleDate=DATE(now());
     END IF;
 
      if (_workorder_dueDate IS NOT NULL) THEN
-		set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat);
-	ELSE
-		set _workorder_dueDate=DATE(now());
+        set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat);
+    ELSE
+        set _workorder_dueDate=DATE(now());
     END IF;
 
-	if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
+    if (_workorder_userUUID is null) THEN set  _workorder_userUUID =_userUUID; END IF;
 
     if(_workorder_name is null) then
         select checklist_name
@@ -692,13 +692,13 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
          SET _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday';
         ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then 
          SET _daysToMaintain = 'Monday';
-		END IF;
+        END IF;
     END IF;
 
 
-	if (_workorder_checklistUUID is not null AND _workorder_frequency>1) THEN
+    if (_workorder_checklistUUID is not null AND _workorder_frequency>1) THEN
 
-		select checklist_name,'CHECKLIST'
+        select checklist_name,'CHECKLIST'
         into _workorder_actions,_workorder_type
         from checklist where checklistUUID = _workorder_checklistUUID;
 
@@ -741,15 +741,15 @@ where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _wor
 and FIND_IN_SET (dayname(selected_date),_daysToMaintain) and (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) = 1
 order by v.selected_date;
 
-		END IF;
+        END IF;
 
         set _workorderUUID = null; -- force creating of new WO's
 
     ELSE -- just create one.  maybe turn the WO creation into a loop, and the above calculates the loop
 
-		set _woDates =  DATE_FORMAT(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d'), _dateFormat);
+        set _woDates =  DATE_FORMAT(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d'), _dateFormat);
 
-	END IF;
+    END IF;
 
 IF (_DEBUG=1) THEN select _action,_woDates; END IF;
 
@@ -757,40 +757,40 @@ IF (_DEBUG=1) THEN select _action,_woDates; END IF;
     set _workorder_definition = 'CM-';
     set _workorder_tag = concat(_workorder_checklistUUID,':',_workorder_frequencyScope,':',_workorder_frequency);
     IF (_workorder_type = 'CHECKLIST') THEN
-		set _workorder_status = 'IN_PROGRESS';
+        set _workorder_status = 'IN_PROGRESS';
     ELSE
-		set _workorder_status = 'Open';
+        set _workorder_status = 'Open';
     END IF;
 
 
             IF (CHAR_LENGTH(_woDates) > 0) THEN
-			do_this:
-			   LOOP
-				 SET strLen = CHAR_LENGTH(_woDates);
+            do_this:
+               LOOP
+                 SET strLen = CHAR_LENGTH(_woDates);
 
-				 SET _date=SUBSTRING_INDEX(_woDates, ',', 1);
+                 SET _date=SUBSTRING_INDEX(_woDates, ',', 1);
 
 
-	-- TODO get configuration for workorder naming
+    -- TODO get configuration for workorder naming
     select count(*) into _maxWO from workorder;
-	set _workorder_number = CONCAT(_workorder_definition,_maxWO);
-	set _workorder_scheduleDate = STR_TO_DATE(_date, _dateFormat);
-	if (_workorderUUID is null) THEN set _workorderUUID=UUID(); END IF;
-	if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = STR_TO_DATE(_date, _dateFormat); END IF;
-	if (_workorder_priority is null) THEN set _workorder_priority='MEDIUM'; END IF;
+    set _workorder_number = CONCAT(_workorder_definition,_maxWO);
+    set _workorder_scheduleDate = STR_TO_DATE(_date, _dateFormat);
+    if (_workorderUUID is null) THEN set _workorderUUID=UUID(); END IF;
+    if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = STR_TO_DATE(_date, _dateFormat); END IF;
+    if (_workorder_priority is null) THEN set _workorder_priority='MEDIUM'; END IF;
 
     set _workorder_scheduleDate_withTime = ADDTIME(STR_TO_DATE(_date, '%d-%m-%Y %H:%m'),'23:59');
     set _workorder_dueDate_withTime = ADDTIME(STR_TO_DATE(_date, '%d-%m-%Y %H:%m'),'23:59');
 
     -- based on frequencyScope and frequency, create 1-M WO's
     -- TODO
-	insert into workorder (workorderUUID,
+    insert into workorder (workorderUUID,
     workorder_customerUUID, workorder_locationUUID, workorder_userUUID, workorder_groupUUID,
     workorder_assetUUID, workorder_checklistUUID, workorder_checklistHistoryUUID, workorder_status, workorder_type,
     workorder_number, workorder_name, workorder_details, workorder_actions, workorder_priority,
     workorder_dueDate, workorder_scheduleDate,workorder_rescheduleDate, workorder_completeDate, workorder_frequency,
     workorder_frequencyScope,workorder_tag,
-	workorder_createdByUUID, workorder_updatedByUUID, workorder_updatedTS, workorder_createdTS
+    workorder_createdByUUID, workorder_updatedByUUID, workorder_updatedTS, workorder_createdTS
     ) values (_workorderUUID,
     _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
     _workorder_assetUUID, _workorder_checklistUUID, _workorder_checklistHistoryUUID, _workorder_status, _workorder_type,
@@ -801,7 +801,7 @@ IF (_DEBUG=1) THEN select _action,_woDates; END IF;
     );
 
 IF (_DEBUG=1) THEN
-	select _action,_workorderUUID,
+    select _action,_workorderUUID,
     _customerId, _workorder_locationUUID, _workorder_userUUID, _workorder_groupUUID,
     _workorder_assetUUID, _workorder_checklistUUID, _workorder_status, _workorder_type,
     _workorder_number, _workorder_name, _workorder_details, _workorder_actions, _workorder_priority,
@@ -811,34 +811,55 @@ IF (_DEBUG=1) THEN
 END IF;
 
 
-	set _workorderUUID=null;
+    set _workorderUUID=null;
 
 
 
-				 SET SubStrLen = CHAR_LENGTH(SUBSTRING_INDEX(_woDates, ',', 1))+2;
-				 SET _woDates = MID(_woDates, SubStrLen, strLen);
+                 SET SubStrLen = CHAR_LENGTH(SUBSTRING_INDEX(_woDates, ',', 1))+2;
+                 SET _woDates = MID(_woDates, SubStrLen, strLen);
 
-				 IF _woDates = '' or _woDates is null THEN
-				   LEAVE do_this;
-				 END IF;
+                 IF _woDates = '' or _woDates is null THEN
+                   LEAVE do_this;
+                 END IF;
 
-			 END LOOP do_this;
+             END LOOP do_this;
 
-			END IF;
+            END IF;
+
+
+    -- create notification
+    if (_workorder_userUUID <> _userUUID) THEN
+
+        call NOTIFICATION_notification(
+        'CREATE',_userUUID,
+        null,null,'APP',
+        null,null,_workorder_userUUID,null,null,
+        null,_userUUID,
+        null,null,
+        CONCAT('Workorder ',_workorder_number ,' has been assigned to you'),CONCAT('New Workorder ',_workorder_number),'_notification_hook',
+        _workorder_assetUUID,'MEDIUM',
+        _workorderUUID
+        );
+
+    END IF;
+
+
+
 ELSE
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _action is of type invalid';
-	LEAVE WORKORDER_create;
+    SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _action is of type invalid';
+    LEAVE WORKORDER_create;
 END IF;
 
 
 IF (_DEBUG=1) THEN
-	select 'FINISHED',_action,_workorderUUID, _userUUID;
+    select 'FINISHED',_action,_workorderUUID, _userUUID;
 END IF;
 
 
 END$$
 
 DELIMITER ;
+
 
 -- ==================================================================
 
@@ -968,64 +989,64 @@ DECLARE _date varchar(100);
 
 IF(_action ='GET') THEN
 
-	IF(_customerId IS NULL or _customerId = '') THEN
-		SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
-		LEAVE WORKORDER_workOrder;
-	END IF;
+    IF(_customerId IS NULL or _customerId = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
+        LEAVE WORKORDER_workOrder;
+    END IF;
 
-	if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
+    if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-		set  @l_sql = CONCAT('SELECT w.*,u.user_userName,g.group_name FROM workorder w left join jcmi_core.user u on(u.userUUID = w.workorder_userUUID ) left join user_group g on(w.workorder_groupUUID =g.groupUUID) WHERE ');
+        set  @l_sql = CONCAT('SELECT w.*,u.user_userName,g.group_name FROM workorder w left join jcmi_core.user u on(u.userUUID = w.workorder_userUUID ) left join user_group g on(w.workorder_groupUUID =g.groupUUID) WHERE ');
 
         if (_workorderUUID IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,'w.workorderUUID = \'', _workorderUUID,'\'');
+            set @l_sql = CONCAT(@l_sql,'w.workorderUUID = \'', _workorderUUID,'\'');
             set _commaNeeded=1;
         END IF;
         if (_customerId IS NOT NULL) THEN
-			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'w.workorder_customerUUID = \'', _customerId,'\'');
+            if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+            set @l_sql = CONCAT(@l_sql,'w.workorder_customerUUID = \'', _customerId,'\'');
             set _commaNeeded=1;
         END IF;
         if (_workorder_userUUID IS NOT NULL) THEN
-			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'w.workorder_userUUID = \'', _workorder_userUUID,'\'');
+            if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+            set @l_sql = CONCAT(@l_sql,'w.workorder_userUUID = \'', _workorder_userUUID,'\'');
             set _commaNeeded=1;
         END IF;
         if (_workorder_groupUUID IS NOT NULL) THEN
-			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'w.workorder_groupUUID = \'', _workorder_groupUUID,'\'');
+            if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+            set @l_sql = CONCAT(@l_sql,'w.workorder_groupUUID = \'', _workorder_groupUUID,'\'');
             set _commaNeeded=1;
         END IF;
         if (_workorder_locationUUID IS NOT NULL) THEN
-			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'w.workorder_locationUUID = \'', _workorder_locationUUID,'\'');
+            if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+            set @l_sql = CONCAT(@l_sql,'w.workorder_locationUUID = \'', _workorder_locationUUID,'\'');
             set _commaNeeded=1;
         END IF;
         -- if (_workorder_status IS NOT NULL) THEN
-		-- 	if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-		-- 	set @l_sql = CONCAT(@l_sql,'w.workorder_status = \'', _workorder_status,'\'');
+        --  if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+        --  set @l_sql = CONCAT(@l_sql,'w.workorder_status = \'', _workorder_status,'\'');
         --     set _commaNeeded=1;
         -- END IF;
         if (_workorder_dueDate IS NOT NULL) THEN
-			if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
-			set @l_sql = CONCAT(@l_sql,'DATE(now()) <= \'', _workorder_dueDate,'\'');
+            if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+            set @l_sql = CONCAT(@l_sql,'DATE(now()) <= \'', _workorder_dueDate,'\'');
             set _commaNeeded=1;
         END IF;
 
-		set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'', ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= CURDATE()');
-		set @l_sql = CONCAT(@l_sql,'order by workorder_scheduleDate desc');
+        set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'', ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= CURDATE()');
+        set @l_sql = CONCAT(@l_sql,'order by workorder_scheduleDate desc');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
-		PREPARE stmt FROM @l_sql;
-		EXECUTE stmt;
-		DEALLOCATE PREPARE stmt;
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
 
 ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE') THEN
-		IF (_workorderUUID IS NULL) THEN
-			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
-			LEAVE WORKORDER_workOrder;
-		END IF;
+        IF (_workorderUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
+            LEAVE WORKORDER_workOrder;
+        END IF;
 
         IF (_action ='UPDATE') THEN
             select workorder_tag INTO _workorder_tag from workorder where workorderUUID = _workorderUUID;
@@ -1043,43 +1064,43 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
             END IF;
         END IF;
 
-		 set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
+         set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
 
         if (_workorder_status IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
         END IF;
         if (_workorder_name IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_name = \'', _workorder_name,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_name = \'', _workorder_name,'\'');
         END IF;
         if (_workorder_details IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_details = \'', _workorder_details,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_details = \'', _workorder_details,'\'');
         END IF;
         if (_workorder_actions IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_actions = \'', _workorder_actions,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_actions = \'', _workorder_actions,'\'');
         END IF;
         if (_workorder_priority IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
         END IF;
         if (_workorder_dueDate IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', STR_TO_DATE(_workorder_dueDate, '%d-%m-%Y'),'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', STR_TO_DATE(_workorder_dueDate, '%d-%m-%Y'),'\'');
         END IF;
         if (_workorder_assetUUID IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
         END IF;
         if (_workorder_rescheduleDate IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', STR_TO_DATE(_workorder_rescheduleDate, '%d-%m-%Y'),'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_rescheduleDate = \'', STR_TO_DATE(_workorder_rescheduleDate, '%d-%m-%Y'),'\'');
         END IF;
         if (_workorder_userUUID IS NOT NULL and _workorder_groupUUID IS NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_userUUID = \'', _workorder_userUUID,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_userUUID = \'', _workorder_userUUID,'\'');
             set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = NULL');
         END IF;
         if (_workorder_groupUUID  IS NOT NULL and _workorder_userUUID IS NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = \'', _workorder_groupUUID ,'\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_groupUUID  = \'', _workorder_groupUUID ,'\'');
             set @l_sql = CONCAT(@l_sql,',workorder_userUUID = NULL');
         END IF;
        IF (_DEBUG=1) THEN select _workorder_scheduleDate,_workorder_scheduledate; END IF;
         if (_workorder_scheduleDate  IS NOT NULL) THEN
-			set @l_sql = CONCAT(@l_sql,',workorder_scheduleDate  =\'', STR_TO_DATE(_workorder_scheduleDate, '%d-%m-%Y'), '\'');
+            set @l_sql = CONCAT(@l_sql,',workorder_scheduleDate  =\'', STR_TO_DATE(_workorder_scheduleDate, '%d-%m-%Y'), '\'');
         END IF;
         IF (_workorder_checklistUUID IS NOT NULL ) THEN
             set @l_sql = CONCAT(@l_sql,',workorder_checklistUUID = \'', _workorder_checklistUUID,'\'');
@@ -1101,56 +1122,56 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
         IF (_action = 'BATCH-UPDATE') THEN
             set @l_sql = CONCAT(@l_sql,' where workorderUUID IN (',_workorderUUID,')');
         ELSE
-		   set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
+           set @l_sql = CONCAT(@l_sql,' where workorderUUID = \'', _workorderUUID,'\';');
         END IF;
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
-		PREPARE stmt FROM @l_sql;
-		EXECUTE stmt;
-		DEALLOCATE PREPARE stmt;
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
 
 ELSEIF((_action ='REMOVE' OR _action = 'BATCH-REMOVE') and _workorderUUID is not null) THEN
 
     if (_wapj_asset_partUUID IS NOT NULL) THEN
-		set @l_sql = 'delete from workorder_asset_part_join where';
-		set @l_sql = CONCAT(@l_sql,' wapj_asset_partUUID = \'', _wapj_asset_partUUID,'\' and');
+        set @l_sql = 'delete from workorder_asset_part_join where';
+        set @l_sql = CONCAT(@l_sql,' wapj_asset_partUUID = \'', _wapj_asset_partUUID,'\' and');
     ELSE
-		set @l_sql = 'update workorder set' ;
-		set @l_sql = CONCAT(@l_sql,' workorder_deleteTS = \'',now(),'\',');
-		set @l_sql = CONCAT(@l_sql,' workorder_updatedTS = \'',now(),'\',');
-		set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID = \'', _userUUID,'\' where');
+        set @l_sql = 'update workorder set' ;
+        set @l_sql = CONCAT(@l_sql,' workorder_deleteTS = \'',now(),'\',');
+        set @l_sql = CONCAT(@l_sql,' workorder_updatedTS = \'',now(),'\',');
+        set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID = \'', _userUUID,'\' where');
     END IF;
     
     if (_wapj_asset_partUUID IS NOT NULL) THEN
-		set @workOrderColumnName = ' wapj_workorderUUID';
+        set @workOrderColumnName = ' wapj_workorderUUID';
     else 
-		set @workOrderColumnName = ' workorderUUID';
+        set @workOrderColumnName = ' workorderUUID';
     END IF;
 
     IF(_action = 'BATCH-REMOVE') THEN
-		set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' IN (',_workorderUUID,')');
+        set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' IN (',_workorderUUID,')');
     ELSE
-		set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' = \'', _workorderUUID,'\';');
+        set @l_sql = CONCAT(@l_sql,@workOrderColumnName,' = \'', _workorderUUID,'\';');
     END IF;
 
-	IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+    IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
-	PREPARE stmt FROM @l_sql;
-	EXECUTE stmt;
-	DEALLOCATE PREPARE stmt;
+    PREPARE stmt FROM @l_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
 
     IF(_action = 'BATCH-REMOVE') THEN
-		call WORKORDER_assetPart('BATCH-REMOVE', _workorderUUID, null, null);
-	ELSE
-		call WORKORDER_assetPart('REMOVE', _workorderUUID, null, null);
+        call WORKORDER_assetPart('BATCH-REMOVE', _workorderUUID, null, null);
+    ELSE
+        call WORKORDER_assetPart('REMOVE', _workorderUUID, null, null);
     END IF;
 
 ELSEIF(_action ='ASSIGN') THEN
 
-		update workorder set workorder_status='OPEN', workorder_completeDate =null,
-		workorder_userUUID = _workorder_userUUID,
-		workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID
+        update workorder set workorder_status='OPEN', workorder_completeDate =null,
+        workorder_userUUID = _workorder_userUUID,
+        workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID
         where workorderUUID=_workorderUUID;
 
 ELSEIF(_action ='START') THEN
@@ -1165,25 +1186,28 @@ ELSEIF(_action ='START') THEN
 
         if (_workorder_checklistUUID is not null) THEN
 
-        	-- create new historical
-        	set _checklist_historyUUID = UUID();
+            -- create new historical
+            set _checklist_historyUUID = UUID();
 
-        	-- create a new history version of the checklist
-			call CHECKLIST_checklist(
-			'UPDATE_HISTORY',_userUUID,_customerId,
-			_workorder_checklistUUID, _workorder_assetUUID,_checklist_historyUUID,
-	 		_workorderUUID, null,null, null,null,null,null,null, null, null, null, null, null, null, null
-			);
+            -- create a new history version of the checklist
+            call CHECKLIST_checklist(
+            'UPDATE_HISTORY',_userUUID,_customerId,
+            _workorder_checklistUUID, _workorder_assetUUID,_checklist_historyUUID,
+            _workorderUUID, null,null, null,null,null,null,null, null, null, null, null, null, null, null
+            );
 
         END IF;
 
-		update workorder set workorder_status='IN_PROGRESS', workorder_completeDate =null,
+        update workorder set workorder_status='IN_PROGRESS', workorder_completeDate =null,
         workorder_updatedTS = now(), workorder_updatedByUUID=_userUUID ,
         workorder_checklistHistoryUUID=_checklist_historyUUID,workorder_userUUID=_workorder_userUUID
         where workorderUUID=_workorderUUID;
 
+        call NOTIFICATION_notification('ACKNOWLEDGE',_userUUID,null,null,null,null,null,null,null,
+        null,null,null,_workorderUUID,null,null,null,null,null,null,null,null);
+
 IF (_DEBUG=1) THEN
-	select _action,_workorderUUID, _userUUID,_workorder_checklistUUID, _workorder_assetUUID,_checklist_historyUUID;
+    select _action,_workorderUUID, _userUUID,_workorder_checklistUUID, _workorder_assetUUID,_checklist_historyUUID;
 END IF;
 
 
@@ -1205,45 +1229,51 @@ ELSEIF(_action ='COMPLETE' or _action ='BATCH-COMPLETE') THEN
         from workorder where workorderUUID=_workorderUUID;
 
         PREPARE stmt FROM @l_sql;
-		EXECUTE stmt;
-		DEALLOCATE PREPARE stmt;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
 
         if (_workorder_checklistHistoryUUID is not null) THEN
-			call CHECKLIST_checklist(
-			'PASS_CHECKLIST',_userUUID,null,
-			null, null, _workorder_checklistHistoryUUID, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
-				);
+            call CHECKLIST_checklist(
+            'PASS_CHECKLIST',_userUUID,null,
+            null, null, _workorder_checklistHistoryUUID, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+                );
 
-		END IF;
+        END IF;
 
 
 ELSEIF(_action ='ADDPART' and _wapj_asset_partUUID is not null) THEN
 
-		REPLACE INTO workorder_asset_part_join (wapj_workorderUUID, wapj_asset_partUUID,
-		wapj_quantity, wapj_createdTS)
-		values (
-		_workorderUUID,_wapj_asset_partUUID,_wapj_quantity,now()
-		);
+        REPLACE INTO workorder_asset_part_join (wapj_workorderUUID, wapj_asset_partUUID,
+        wapj_quantity, wapj_createdTS)
+        values (
+        _workorderUUID,_wapj_asset_partUUID,_wapj_quantity,now()
+        );
         
 ELSEIF(_action ='GET-PART') THEN
  
-	    SELECT ap.*,wapj.wapj_quantity FROM asset_part ap LEFT JOIN workorder_asset_part_join wapj on (wapj.wapj_asset_partUUID = ap.asset_partUUID) 
+        SELECT ap.*,wapj.wapj_quantity FROM asset_part ap LEFT JOIN workorder_asset_part_join wapj on (wapj.wapj_asset_partUUID = ap.asset_partUUID) 
         WHERE wapj.wapj_workorderUUID = _workorderUUID ;   
 
 ELSE
-	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action is of type invalid';
-	LEAVE WORKORDER_workOrder;
+    SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action is of type invalid';
+    LEAVE WORKORDER_workOrder;
 END IF;
 
 
 IF (_DEBUG=1) THEN
-	select 'FINISHED',_action,_workorderUUID, _userUUID;
+    select 'FINISHED',_action,_workorderUUID, _userUUID;
 END IF;
 
 
 END$$
 
 DELIMITER ;
+
+-- =========================== END WORKORDER =============================================
+
+
+-- =========================== END WORKORDER =============================================
+
 
 -- call WORKORDER_assetPart(_action, _workorderUUID, _wapj_asset_partUUID, _wapj_quantity);
 -- call WORKORDER_assetPart('REMOVE', "", null, null);
@@ -2946,7 +2976,6 @@ BEGIN
 
 END$$
 
-
 -- ==================================================================
 
 /*
@@ -2954,29 +2983,31 @@ call NOTIFICATION_notification(
 _action,_userUUID,
 _notification_templateId,_notificationId,_notificationType,
 _notification_toEmail,_notification_toSMS,_notification_toUserUUID,_notification_toGroupUUID,_notification_toAppUUID,
-_notification_fromAppUUID,_notification_fromUserUUID,
+_notification_fromAppUUID,_notification_fromUserUUID,_notification_workorderUUID,
 _notification_readyOn,_notification_expireOn,
-_notification_content,_notification_subject,_notification_hook
+_notification_content,_notification_subject,_notification_hook,
+_notification_assetUUID,_notification_priority,_notification_isClearable
 );
 
 call NOTIFICATION_notification(
 'CREATE',1,
 1,null,'APP',
 null,null,1,null,null,
-null,2,
+null,2,_notification_workorderUUID,
 '22-05-2020T01:25Z','22-05-2021T01:25Z',
 'Content','_notification_subject','_notification_hook',
-_notification_assetUUID,_notification_priority
+_notification_assetUUID,_notification_priority,_notification_isClearable
 );
 
 
-call NOTIFICATION_notification('GETAPP',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
-call NOTIFICATION_notification('GETSMS',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
-call NOTIFICATION_notification('GETEMAIL',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+call NOTIFICATION_notification('GETAPP',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+call NOTIFICATION_notification('GETSMS',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+call NOTIFICATION_notification('GETEMAIL',1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
 
-call NOTIFICATION_notification('ACKNOWLEDGE',null,null,1,null,null,null,null,null,null,null,null,null,null,null,null,null);
+call NOTIFICATION_notification('ACKNOWLEDGE',null,null,1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+call NOTIFICATION_notification('ACKNOWLEDGE',null,null,null,null,null,null,null,null,1,null,null,null,null,null,null,null,null,null,null,null);
 
-call NOTIFICATION_notification('CLEANUP',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+call NOTIFICATION_notification('CLEANUP',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null);
 
 */
 
@@ -2995,6 +3026,7 @@ CREATE PROCEDURE `NOTIFICATION_notification`(IN _action VARCHAR(100),
                                              IN _notification_toAppUUID CHAR(36),
                                              IN _notification_fromAppUUID CHAR(36),
                                              IN _notification_fromUserUUID CHAR(36),
+                                             IN _notification_workorderUUID CHAR(36),
                                              IN _notification_readyOn VARCHAR(36),
                                              IN _notification_expireOn VARCHAR(36),
                                              IN _notification_content TEXT,
@@ -3025,7 +3057,7 @@ BEGIN
                 and notification_toUserUUID = _userUUID
                 and notification_expireOn > now()
                 and notification_readyOn < now()
-                and notification_statusId = 1
+                and notification_statusId < 3
                 -- and notification_assetUUID is null
               union all
               select *
@@ -3035,7 +3067,7 @@ BEGIN
                     (select ugj_groupUUID from user_group_join where ugj_userUUID = _userUUID)
                 and notification_expireOn > now()
                 and notification_readyOn < now()
-                and notification_statusId = 1
+                and notification_statusId < 3
                 -- and notification_assetUUID is null
                 ) no;
                  -- left join user u on no.notification_fromUserUUID = u.userUUID;
@@ -3047,7 +3079,7 @@ BEGIN
         where notification_type = 'SMS'
           and notification_expireOn > now()
           and notification_readyOn < now()
-          and notification_statusId = 1;
+          and notification_statusId < 3;
 
     ELSEIF (_action = 'GETASSET') THEN
 
@@ -3056,7 +3088,7 @@ BEGIN
         where notification_type = 'APP'
           and notification_expireOn > now()
           and notification_readyOn < now()
-          and notification_statusId = 1
+          and notification_statusId < 3
           and notification_assetUUID = _notification_assetUUID;
 
     ELSEIF (_action = 'GETEMAIL') THEN
@@ -3066,7 +3098,7 @@ BEGIN
         where notification_type = 'EMAIL'
           and notification_expireOn > now()
           and notification_readyOn < now()
-          and notification_statusId = 1;
+          and notification_statusId < 3;
 
     ELSEIF (_action = 'CREATE') THEN
 
@@ -3123,10 +3155,19 @@ BEGIN
         DELETE from notification_queue where notification_expireOn < now();
         DELETE from notification_queue where notification_statusId = 3; -- deleted
 
+    ELSEIF (_action = 'READ' and _notificationId is not null) THEN
+
+        update notification_queue set notification_statusId=2 where notificationId = _notificationId;
+        -- and notification_isClearable=1;
+
     ELSEIF (_action = 'ACKNOWLEDGE' and _notificationId is not null) THEN
 
         update notification_queue set notification_statusId=3 where notificationId = _notificationId;
         -- and notification_isClearable=1;
+    
+    ELSEIF (_action = 'ACKNOWLEDGE' and _notification_workorderUUID is not null) THEN
+
+        update notification_queue set notification_statusId=3 where notification_workorderUUID = _notification_workorderUUID;
 
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call NOTIFICATION_notification: _action is of type invalid';
@@ -3157,8 +3198,6 @@ BEGIN
 END$$
 
 DELIMITER ;
-
-
 -- ==================================================================
 
 /*
@@ -3275,7 +3314,7 @@ BEGIN
                     'CREATE', null,
                     'MFA', null, 'SMS',
                     null, _entityId, null, null, null,
-                    null, 2,
+                    null, 2,null,
                     null, null,
                     concat('You have 4 minutes to enter this access code: ', _USER_loginEmailValidationCode),
                     concat('You have 4 minutes to enter this access code: ', _USER_loginEmailValidationCode), null
@@ -3284,7 +3323,7 @@ BEGIN
                     'CREATE', null,
                     'MFA', null, 'EMAIL',
                     _entityId, null, null, null, null,
-                    null, 2,
+                    null, 2,null,
                     null, null,
                     concat('You have 4 minutes to enter this access code: ', _USER_loginEmailValidationCode),
                     concat('You have 4 minutes to enter this access code: ', _USER_loginEmailValidationCode), null
@@ -3384,7 +3423,7 @@ BEGIN
                     'CREATE', null,
                     'PASSWORD_TEMPORARY', null, 'EMAIL',
                     _entityId, null, null, null, null,
-                    null, 2,
+                    null, 2,null,
                     null, null,
                     concat('Your password is: ', _USER_loginPW, ' Please change once you log back in.'),
                     'Password Reminder', null
@@ -3474,7 +3513,7 @@ BEGIN
                     'CREATE', null,
                     'INVITELOGIN', null, 'EMAIL',
                     _entityId, null, null, null, null,
-                    null, 2,
+                    null, 2,null,
                     null, null,
                     concat('Please verify your email: http://action=VERIFY'),
                     'Invitatin', null
@@ -3500,7 +3539,7 @@ BEGIN
                 'CREATE', null,
                 'MFA', null, 'SMS',
                 null, _entityId, null, null, null,
-                null, 2,
+                null, 2,null,
                 null, null,
                 concat('You have 4 minutes to enter this access code: ', _USER_loginEmailValidationCode),
                 concat('You have 4 minutes to enter this access code: ', _USER_loginEmailValidationCode), null
@@ -3509,7 +3548,7 @@ BEGIN
                 'CREATE', null,
                 'MFA', null, 'EMAIL',
                 _entityId, null, null, null, null,
-                null, 2,
+                null, 2,null,
                 null, null,
                 concat('You have 4 minutes to enter this access code: ', _USER_loginEmailValidationCode),
                 concat('You have 4 minutes to enter this access code: ', _USER_loginEmailValidationCode), null
