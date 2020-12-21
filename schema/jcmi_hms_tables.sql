@@ -400,6 +400,8 @@ CREATE TABLE `asset` (
 
     asset_installDate DATE  NULL,
 
+    asset_metaDataJSON TEXT NULL,
+
     asset_createdByUUID CHAR(36)  NULL,
     asset_updatedByUUID CHAR(36)  NULL,
    	asset_updatedTS datetime  NULL,

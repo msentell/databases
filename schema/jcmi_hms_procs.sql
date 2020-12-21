@@ -79,7 +79,7 @@ BEGIN
 
     ELSEIF (_action = 'ASSET-PART') THEN
 
-        select a.*,b.part_diagnosticUUID as part_dignosticUUID  from 
+        select a.*,b.part_diagnosticUUID as part_dignosticUUID  from
         asset_part a left join part_template b on (a.asset_part_template_part_sku = b.part_sku)
         where a.asset_partUUID = _id;
 
@@ -595,7 +595,7 @@ call WORKORDER_create('CREATE','a30af0ce5e07474487c39adab6269d5f','2',
 null,'HIGH','31-01-2021',null,
 '25-11-2020','25-11-2020','4','DAILY',null,
 null,'Sunday,Monday,Tuesday'
-);                
+);
 
 */
 DROP procedure IF EXISTS `WORKORDER_create`;
@@ -654,13 +654,13 @@ IF(_action ='CREATE') THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _customerId can not be empty';
         LEAVE WORKORDER_create;
     END IF;
-    
+
     IF(_workorderUUID is NULL) THEN set _workorderUUID = UUID();END IF;
-    
+
     -- RULES and CONVERSIONS
 if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_TO_DATE(_workorder_completeDate, _dateFormat); END IF;
     if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
-    
+
     if (_workorder_scheduleDate IS NOT NULL) THEN
         set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
     ELSE
@@ -681,16 +681,16 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
         from checklist where checklistUUID = _workorder_checklistUUID;
     END IF;
 
-    if(_workorder_details is null) then 
+    if(_workorder_details is null) then
         select checklist_name
         into _workorder_details
         from checklist where checklistUUID = _workorder_checklistUUID;
     END IF;
 
-    if(_daysToMaintain is null) then 
-        IF (_workorder_frequencyScope = 'DAILY') then 
+    if(_daysToMaintain is null) then
+        IF (_workorder_frequencyScope = 'DAILY') then
          SET _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday';
-        ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then 
+        ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then
          SET _daysToMaintain = 'Monday';
         END IF;
     END IF;
@@ -880,7 +880,7 @@ null,null,null,null,
 null);
 
 call WORKORDER_workOrder(
-'GET', 
+'GET',
 'a30af0ce5e07474487c39adab6269d5f',
 1,
 null,
@@ -921,8 +921,8 @@ call WORKORDER_workOrder('CREATE','a30af0ce5e07474487c39adab6269d5f','2',
 null,'HIGH','31-01-2021',null,
 '25-11-2020','25-11-2020','4','DAILY',null,
 null,'Sunday,Monday,Tuesday'
-);                
-                
+);
+
 
 call WORKORDER_workOrder('START', 'a30af0ce5e07474487c39adab6269d5f',1,
 '666e2c60-feb7-11ea-a1a5-4e53d94465b4',null,null,null,null,
@@ -1107,7 +1107,7 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
             set @l_sql = CONCAT(@l_sql,',workorder_checklistUUID = \'', _workorder_checklistUUID,'\'');
         END IF;
 
-        IF(_workorder_frequency IS NOT NULL) THEN 
+        IF(_workorder_frequency IS NOT NULL) THEN
                 set @1_sql = CONCAT(@1_sql,',workorder_frequency =\'', _workorder_frequency,'\'' );
         END IF;
         IF(_workorder_frequencyScope IS NOT NULL) THEN
@@ -1143,10 +1143,10 @@ ELSEIF((_action ='REMOVE' OR _action = 'BATCH-REMOVE') and _workorderUUID is not
         set @l_sql = CONCAT(@l_sql,' workorder_updatedTS = \'',now(),'\',');
         set @l_sql = CONCAT(@l_sql,' workorder_updatedByUUID = \'', _userUUID,'\' where');
     END IF;
-    
+
     if (_wapj_asset_partUUID IS NOT NULL) THEN
         set @workOrderColumnName = ' wapj_workorderUUID';
-    else 
+    else
         set @workOrderColumnName = ' workorderUUID';
     END IF;
 
@@ -1249,11 +1249,11 @@ ELSEIF(_action ='ADDPART' and _wapj_asset_partUUID is not null) THEN
         values (
         _workorderUUID,_wapj_asset_partUUID,_wapj_quantity,now()
         );
-        
+
 ELSEIF(_action ='GET-PART') THEN
- 
-        SELECT ap.*,wapj.wapj_quantity FROM asset_part ap LEFT JOIN workorder_asset_part_join wapj on (wapj.wapj_asset_partUUID = ap.asset_partUUID) 
-        WHERE wapj.wapj_workorderUUID = _workorderUUID ;   
+
+        SELECT ap.*,wapj.wapj_quantity FROM asset_part ap LEFT JOIN workorder_asset_part_join wapj on (wapj.wapj_asset_partUUID = ap.asset_partUUID)
+        WHERE wapj.wapj_workorderUUID = _workorderUUID ;
 
 ELSE
     SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _action is of type invalid';
@@ -1680,7 +1680,7 @@ BEGIN
         LEAVE KB_knowledge_base;
     END IF;
 
-    IF (_knowledge_title IS NOT NULL)THEN 
+    IF (_knowledge_title IS NOT NULL)THEN
     SET _SEARCH_TEXT = _knowledge_title;
     END IF;
 
@@ -1895,7 +1895,7 @@ BEGIN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call LOCATION_action: _action can not be empty';
         LEAVE LOCATION_action;
     END IF;
-    
+
     IF (_userUUID IS NULL and _action != 'SEARCH') THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _userUUID missing';
         LEAVE LOCATION_action;
@@ -1919,8 +1919,8 @@ BEGIN
                 CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',
                            _type, '\' as `Type`
 			FROM asset where asset_statusId = 1 and asset_name like \'', _name, '\'');
-                           
-			IF(_customerUUID is not null) THEN 
+
+			IF(_customerUUID is not null) THEN
 				SET @l_SQL = CONCAT(@l_SQL ,'and  asset_customerUUID= \'',_customerUUID, '\'');
 			END IF;
 
@@ -1930,20 +1930,20 @@ BEGIN
 
 			SET @l_SQL = CONCAT('SELECT * FROM (SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
                                 FROM asset_part WHERE asset_part_statusId = 1 AND asset_part_name LIKE \'', _name, '\'');
-			IF(_customerUUID is not null) THEN 
+			IF(_customerUUID is not null) THEN
                 SET @l_SQL = CONCAT(@l_SQL ,' AND  asset_part_customerUUID= \'', _customerUUID, '\'');
             END IF;
-                        
+
             SET @l_SQL = CONCAT(@l_SQL ,' UNION');
-	
+
             SET @l_SQL = CONCAT(@l_SQL ,' SELECT part_sku as objUUID,part_imageURL as ImageURL,part_imageThumbURL as ThumbURL, part_name  as `name`, \'ASSET_PART\' as `Type`, \'FACTORY-PART\' as source
                         FROM part_template pt WHERE part_statusId = 1 AND part_name LIKE \'', _name,'\') ap
                         LEFT JOIN part_template pt ON (ap.source = \'FACTORY-PART\' AND ap.objUUID = pt.part_sku)
-                        ORDER BY name ');      
+                        ORDER BY name ');
 
 			IF(_dataCount is not null)THEN
 				SET @l_SQL = CONCAT(@l_SQL , ' LIMIT ');
-				
+
                 IF(_startIndex is not null)THEN
 					SET @l_SQL = CONCAT(@l_SQL ,_startIndex,',');
 				END IF;
@@ -2330,7 +2330,7 @@ DELIMITER ;
 
 -- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate);
 -- call ASSET_asset('GET', '1', 'a30af'GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null, null);
--- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', null, null, '283821d8e6c647828eb01df0d82b0b74', null, null, null, null); 
+-- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', null, null, '283821d8e6c647828eb01df0d82b0b74', null, null, null, null);
 -- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now()));
 -- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now()));
 -- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null);
@@ -2347,7 +2347,8 @@ CREATE PROCEDURE `ASSET_asset`(IN _action VARCHAR(100),
                                IN _asset_statusId INT,
                                IN _asset_name VARCHAR(255),
                                IN _asset_shortName VARCHAR(255),
-                               IN _asset_installDate Date)
+                               IN _asset_installDate Date,
+                               IN _asset_metaDataJSON TEXT)
 ASSET_asset:
 BEGIN
 
@@ -2399,7 +2400,8 @@ BEGIN
                    _asset_statusId,
                    _asset_name,
                    _asset_shortName,
-                   _asset_installDate;
+                   _asset_installDate,
+                   _asset_metaDataJSON;
         END IF;
 
         IF (_assetUUID IS NULL or _asset_partUUID is null) THEN
@@ -2409,10 +2411,10 @@ BEGIN
 
         insert into asset
         (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName,
-         asset_installDate,
+         asset_installDate, asset_metaDataJSON,
          asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS)
         values (_assetUUID, _asset_locationUUID, _asset_partUUID, _customerUUID, _asset_statusId, _asset_name,
-                _asset_shortName, _asset_installDate,
+                _asset_shortName, _asset_installDate, _asset_metaDataJSON,
                 _userUUID, _userUUID, now(), now(), null);
 
     ELSEIF (_action = 'UPDATE') THEN
@@ -2443,6 +2445,9 @@ BEGIN
         if (_asset_name is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',asset_name = \'', _asset_name, '\'');
         END IF;
+        if (_asset_metaDataJSON is not null) THEN
+                    set @l_sql = CONCAT(@l_sql, ',asset_metaDataJSON = \'', _asset_metaDataJSON, '\'');
+                END IF;
 
 
         set @l_sql = CONCAT(@l_sql, ' where assetUUID = \'', _assetUUID, '\';');
@@ -2820,8 +2825,8 @@ BEGIN
         set @l_sql = 'select l.locationUUID as id, l.location_name as value, l.location_name as name
         from location l left join asset a on(l.locationUUID = a.asset_locationUUID)';
         set @l_sql = CONCAT(@l_sql,' where l.location_customerUUID =\'',_customerId,'\'');
-           
-        IF(_assetUUID is not null)THEN 
+
+        IF(_assetUUID is not null)THEN
              set @l_sql = CONCAT(@l_sql,' and a.assetUUID =\'',_assetUUID,'\'');
         END IF;
 
@@ -3174,7 +3179,7 @@ BEGIN
 
         update notification_queue set notification_statusId=3 where notificationId = _notificationId;
         -- and notification_isClearable=1;
-    
+
     ELSEIF (_action = 'ACKNOWLEDGE' and _notification_workorderUUID is not null) THEN
 
         update notification_queue set notification_statusId=3 where notification_workorderUUID = _notification_workorderUUID;
@@ -3865,7 +3870,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
                     0,
                     _userUUID,_userUUID,now(),now()
                 );
-                
+
                 set _checklist_itemHistoryIds = concat(_checklist_itemHistoryIds, _checklist_history_item_historyUUID, ',');
 
                 -- select
@@ -3984,7 +3989,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
         -- update item record if noted
 
     -- 4. if all items on the checklist are completed, then close the WO
-    
+
     select _historyUUID as 'historyUUID',_workorderUUID as 'workorderUUID', _checklist_itemIds as 'checklistItemUUIDs', _checklist_itemHistoryIds as 'historyItemUUIDs';
 ELSEIF (_action = 'CREATE_CHECKLIST') THEN
     if (_customerUUID is null) THEN
@@ -4015,9 +4020,9 @@ ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
 	-- 1. determine if history aready exists
     select checklistUUID into _foundId from checklist where checklistUUID=_checklistUUID;
-    
+
             if (_foundId is null) THEN
-               
+
                 if (_checklist_recommendedFrequency is null) THEN set _checklist_recommendedFrequency='WEEKLY'; END IF;
 
                 insert into checklist (
@@ -4058,7 +4063,7 @@ ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
 
             END IF;
-        
+
     select checklist_itemUUID into _foundId from checklist_item where checklist_itemUUID=_checklist_itemUUID;
 
     if (_foundId is null and _checklist_itemUUID is not null) THEN
@@ -4116,7 +4121,7 @@ ELSEIF(_action = 'COMPLETE' or _action = 'RESET') THEN
 			where checklist_historyUUID = _historyUUID;
 
     select group_concat(checklist_history_item_resultFlag),
-            group_concat(COALESCE(checklist_history_item_resultText, 'NULL')) 
+            group_concat(COALESCE(checklist_history_item_resultText, 'NULL'))
     into _checklist_history_item_resultFlag, _checklist_history_item_resultText
     from checklist_item_history
         where checklist_history_item_historyUUID = '50279b80-3ba9-11eb-a1a5-4e53d94465b4' and checklist_history_item_statusId =1
@@ -4127,7 +4132,7 @@ ELSEIF(_action = 'COMPLETE' or _action = 'RESET') THEN
     ELSE
         SET _checklist_history_resultFlag = 1;
     END IF;
-	
+
 	update  checklist_history set checklist_history_resultFlag = _checklist_history_resultFlag,checklist_history_updatedTS=now(),
 	checklist_history_updatedByUUID=_userUUID
 	where checklist_historyUUID = _historyUUID;
@@ -4379,29 +4384,29 @@ DELIMITER $$
 CREATE PROCEDURE `ATTACHMENT_attachment`(IN _partId char(32),IN _partType char(32))
 ATTACHMENT_attachment:
 BEGIN
-    
+
     DECLARE DEBUG INT DEFAULT 0;
     DECLARE asset_part_id char(60);
-    
+
     IF (_partId IS NULL) THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partId can not be empty';
         LEAVE ATTACHMENT_attachment;
     END IF;
-    
+
     IF (_partType IS NULL) THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partType can not be empty';
         LEAVE ATTACHMENT_attachment;
     END IF;
 
     IF(_partType = 'ASSET' or _partType = 'ASSET-PART') THEN
-    
+
         IF(_partType = 'ASSET') THEN
             SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
         ELSE
             asset_part_id = _partId;
-        END IF; 
+        END IF;
 
-        SELECT * FROM attachment a LEFT JOIN asset_part_attachment_join apj ON (a.attachmentUUID = apj.apaj_attachmentUUID) 
+        SELECT * FROM attachment a LEFT JOIN asset_part_attachment_join apj ON (a.attachmentUUID = apj.apaj_attachmentUUID)
         WHERE apj.apaj_asset_partUUID = asset_part_id;
 
     ELSE
