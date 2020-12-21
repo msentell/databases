@@ -1866,13 +1866,13 @@ END$$
 DELIMITER ;
 -- ==================================================================
 
--- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID, 0);
--- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null, 0);
--- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null, 0);
--- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'Avida Symphony',null, 0);
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55, 0);
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55, 0);
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22, 0);
+-- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID, 0,_startLimitIndex,_dataCount);
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null, 0,null,null);
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null, 0,null,null);
+-- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'Avida Symphony',null, 0,null,null);
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55, 0,null,null);
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55, 0,null,null);
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22, 0,null,null);
 
 DROP procedure IF EXISTS `LOCATION_action`;
 
@@ -1884,7 +1884,9 @@ CREATE PROCEDURE `LOCATION_action`(IN _action VARCHAR(100),
                                    IN _name VARCHAR(100),
                                    IN _objUUID VARCHAR(100),
                                    IN _isPrimary INT,
-                                   IN _locationId VARCHAR(100))
+                                   IN _locationId VARCHAR(100),
+                                   IN _startIndex INT,
+                                   IN _dataCount INT)
 LOCATION_action:
 BEGIN
 
@@ -1940,7 +1942,18 @@ BEGIN
             SET @l_SQL = CONCAT(@l_SQL ,' SELECT part_sku as objUUID,part_imageURL as ImageURL,part_imageThumbURL as ThumbURL, part_name  as `name`, \'ASSET_PART\' as `Type`, \'FACTORY-PART\' as source
                         FROM part_template pt WHERE part_statusId = 1 AND part_name LIKE \'', _name,'\') ap
                         LEFT JOIN part_template pt ON (ap.source = \'FACTORY-PART\' AND ap.objUUID = pt.part_sku)
-                        ORDER BY name');                     
+                        ORDER BY name ');      
+
+			IF(_dataCount is not null)THEN
+				SET @l_SQL = CONCAT(@l_SQL , ' LIMIT ');
+				
+                IF(_startIndex is not null)THEN
+					SET @l_SQL = CONCAT(@l_SQL ,_startIndex,',');
+				END IF;
+
+				SET @l_SQL = CONCAT(@l_SQL , _dataCount);
+            END IF;
+
 
         ELSEif (_type = 'LOCATION') THEN
             -- SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type`
