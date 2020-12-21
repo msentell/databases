@@ -1033,7 +1033,8 @@ IF(_action ='GET') THEN
             set _commaNeeded=1;
         END IF;
 
-        set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'', ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= CURDATE()');
+        set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'',
+                            ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= date_add(CURDATE(), interval 24*60*60 - 1 second)');
         set @l_sql = CONCAT(@l_sql,'order by workorder_scheduleDate desc');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
@@ -1270,10 +1271,6 @@ END$$
 DELIMITER ;
 
 -- =========================== END WORKORDER =============================================
-
-
--- =========================== END WORKORDER =============================================
-
 
 -- call WORKORDER_assetPart(_action, _workorderUUID, _wapj_asset_partUUID, _wapj_quantity);
 -- call WORKORDER_assetPart('REMOVE', "", null, null);
