@@ -3605,7 +3605,7 @@ _checklist_statusId,_checklist_name, _checklist_recommendedFrequency,_checklist_
 _checklist_itemUUID,_checklist_item_statusId,_checklist_item_sortOrder,
 _checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON,
 _checklist_item_successPrompt, _checklist_item_successRange,
-checklist_history_item_resultFlag,checklist_history_item_resultText, _checklist_history_item_historyUUID,_checklist_history_item_historyUUID
+checklist_history_item_resultFlag,checklist_history_item_resultText, _checklist_history_item_historyUUID, _checklist_partRequired
 );
 
 call CHECKLIST_checklist(
@@ -3682,8 +3682,8 @@ IN _checklist_item_successRange varchar(255),
 
 IN _checklist_history_item_resultFlag INT,
 IN _checklist_history_item_resultText varchar(255),
-IN _checklist_history_item_historyUUID char(36)
-
+IN _checklist_history_item_historyUUID char(36),
+IN _checklist_partRequired INT
 )
 CHECKLIST_checklist: BEGIN
 
@@ -3986,6 +3986,23 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
     -- 4. if all items on the checklist are completed, then close the WO
     
     select _historyUUID as 'historyUUID',_workorderUUID as 'workorderUUID', _checklist_itemIds as 'checklistItemUUIDs', _checklist_itemHistoryIds as 'historyItemUUIDs';
+ELSEIF (_action = 'CREATE_CHECKLIST') THEN
+    if (_customerUUID is null) THEN
+		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _customerUUID required';
+		LEAVE CHECKLIST_checklist;
+	END IF;
+    set _checklistUUID =  UUID();
+    if(_checklist_recommendedFrequency is null) THEN set _checklist_recommendedFrequency = 'WEEKLY'; END IF;
+    insert into checklist (
+                    checklistUUID, checklist_customerUUID, checklist_statusId, checklist_name, checklist_recommendedFrequency,
+                    checklist_rulesJSON,
+                    checklist_createdByUUID, checklist_updatedByUUID, checklist_updatedTS, checklist_createdTS,checklist_partRequired
+                ) values (
+                    _checklistUUID, _customerUUID, 1, _checklist_name, _checklist_recommendedFrequency,
+                    _checklist_rulesJSON,
+                    _userUUID, _userUUID, now(), now(), _checklist_partRequired
+                );
+        select _checklistUUID;
 
 ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
@@ -3998,50 +4015,50 @@ ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
 	-- 1. determine if history aready exists
     select checklistUUID into _foundId from checklist where checklistUUID=_checklistUUID;
+    
+            if (_foundId is null) THEN
+               
+                if (_checklist_recommendedFrequency is null) THEN set _checklist_recommendedFrequency='WEEKLY'; END IF;
 
-    if (_foundId is null) THEN
+                insert into checklist (
+                    checklistUUID, checklist_customerUUID, checklist_statusId, checklist_name, checklist_recommendedFrequency,
+                    checklist_rulesJSON,
+                    checklist_createdByUUID, checklist_updatedByUUID, checklist_updatedTS, checklist_createdTS
+                ) values (
+                    _checklistUUID, _customerUUID, 1, _checklist_name, _checklist_recommendedFrequency,
+                    _checklist_rulesJSON,
+                    _userUUID, _userUUID, now(), now()
+                );
 
-		if (_checklist_recommendedFrequency is null) THEN set _checklist_recommendedFrequency='WEEKLY'; END IF;
+            ELSE
 
-		insert into checklist (
-            checklistUUID, checklist_customerUUID, checklist_statusId, checklist_name, checklist_recommendedFrequency,
-            checklist_rulesJSON,
-            checklist_createdByUUID, checklist_updatedByUUID, checklist_updatedTS, checklist_createdTS
-        ) values (
-            _checklistUUID, _customerUUID, 1, _checklist_name, _checklist_recommendedFrequency,
-            _checklist_rulesJSON,
-            _userUUID, _userUUID, now(), now()
-         );
+                set  @l_sql = CONCAT('update checklist set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');
 
-    ELSE
-
-		set  @l_sql = CONCAT('update checklist set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');
-
-        if (_checklist_rulesJSON is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',checklist_rulesJSON = \'', _checklist_rulesJSON,'\'');
-        END IF;
-        if (_checklist_recommendedFrequency is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',checklist_recommendedFrequency = \'', _checklist_recommendedFrequency,'\'');
-        END IF;
-        if (_checklist_name is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',checklist_name = \'', _checklist_name,'\'');
-        END IF;
-        if (_checklist_statusId is not null) THEN
-			set @l_sql = CONCAT(@l_sql,',checklist_statusId = ', _checklist_statusId);
-        END IF;
-
-
-		set @l_sql = CONCAT(@l_sql,' where checklistUUID = \'', _checklistUUID,'\';');
-
-        IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
-
-		PREPARE stmt FROM @l_sql;
-		EXECUTE stmt;
-		DEALLOCATE PREPARE stmt;
+                if (_checklist_rulesJSON is not null) THEN
+                    set @l_sql = CONCAT(@l_sql,',checklist_rulesJSON = \'', _checklist_rulesJSON,'\'');
+                END IF;
+                if (_checklist_recommendedFrequency is not null) THEN
+                    set @l_sql = CONCAT(@l_sql,',checklist_recommendedFrequency = \'', _checklist_recommendedFrequency,'\'');
+                END IF;
+                if (_checklist_name is not null) THEN
+                    set @l_sql = CONCAT(@l_sql,',checklist_name = \'', _checklist_name,'\'');
+                END IF;
+                if (_checklist_statusId is not null) THEN
+                    set @l_sql = CONCAT(@l_sql,',checklist_statusId = ', _checklist_statusId);
+                END IF;
 
 
-    END IF;
+                set @l_sql = CONCAT(@l_sql,' where checklistUUID = \'', _checklistUUID,'\';');
 
+                IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+
+                PREPARE stmt FROM @l_sql;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+
+
+            END IF;
+        
     select checklist_itemUUID into _foundId from checklist_item where checklist_itemUUID=_checklist_itemUUID;
 
     if (_foundId is null and _checklist_itemUUID is not null) THEN
