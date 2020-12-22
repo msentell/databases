@@ -1923,8 +1923,16 @@ BEGIN
 			IF(_customerUUID is not null) THEN
 				SET @l_SQL = CONCAT(@l_SQL ,'and  asset_customerUUID= \'',_customerUUID, '\'');
 			END IF;
+        ELSEIF (_type = 'ASSET-PART' and _objUUID is not null) THEN
+         
+         SET @l_SQL = CONCAT(' SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
+                                FROM asset_part WHERE asset_part_statusId = 1 AND asset_partUUID LIKE \'',_objUUID ,'\'');
 
-        ELSEif (_type = 'ASSET-PART') THEN
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+        ELSEIF (_type = 'ASSET-PART') THEN
             -- SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type`
             -- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
 
