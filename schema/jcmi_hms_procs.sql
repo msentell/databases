@@ -3709,6 +3709,7 @@ DECLARE strLen INT;
 
 DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%YT%h:%iZ';
 DECLARE _foundId char(36);
+DECLARE _foundChecklistItemId char(36);
 DECLARE _commaNeeded INT;
 
 DECLARE _readyDate datetime;
@@ -4072,9 +4073,13 @@ ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 
             END IF;
 
-    select checklist_itemUUID into _foundId from checklist_item where checklist_itemUUID=_checklist_itemUUID;
+		if(_checklist_itemUUID is null) THEN
+			set _checklist_itemUUID = UUID();
+		END IF;
 
-    if (_foundId is null and _checklist_itemUUID is not null) THEN
+    select checklist_itemUUID into _foundChecklistItemId from checklist_item where checklist_itemUUID=_checklist_itemUUID;
+        
+    if (_foundChecklistItemId is null and _checklist_itemUUID is not null) THEN
 
 		insert into checklist_item (
             checklist_itemUUID, checklist_item_checklistUUID, checklist_item_customerUUID, checklist_item_statusId,
