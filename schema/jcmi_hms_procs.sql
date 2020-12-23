@@ -4096,7 +4096,7 @@ ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
             _checklist_item_successPrompt, _checklist_item_successRange,
             _userUUID, _userUUID, now(), now()
          );
-
+		select _checklist_itemUUID;
     ELSE
 
 		set  @l_sql = CONCAT('update checklist_item set checklist_item_updatedTS=now(), checklist_item_updatedByUUID=\'', _userUUID,'\'');
