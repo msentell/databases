@@ -811,7 +811,6 @@ IF (_DEBUG=1) THEN
 END IF;
 
 
-    set _workorderUUID=null;
 
 
 
@@ -820,6 +819,8 @@ END IF;
 
                  IF _woDates = '' or _woDates is null THEN
                    LEAVE do_this;
+				 ELSE
+				   set _workorderUUID=null;
                  END IF;
 
              END LOOP do_this;
@@ -834,11 +835,10 @@ END IF;
         'CREATE',_userUUID,
         null,null,'APP',
         null,null,_workorder_userUUID,null,null,
-        null,_userUUID,
-        null,null,null,
+        null,_userUUID,_workorderUUID,
+        null,null,
         CONCAT('Workorder ',_workorder_number ,' has been assigned to you'),CONCAT('New Workorder ',_workorder_number),'_notification_hook',
-        _workorder_assetUUID,'MEDIUM',
-        _workorderUUID
+        _workorder_assetUUID,'MEDIUM',null
         );
 
     END IF;
@@ -3157,7 +3157,7 @@ BEGIN
                                               notification_readyOn, notification_expireOn,
                                               notification_statusId, notification_content, notification_subject,
                                               notification_hook,notification_priority,notification_isClearable,
-                                              notification_assetUUID,notification_createdTS)
+                                              notification_assetUUID,notification_createdTS,notification_workorderUUID)
             values (_notification_type,
                     _notification_toEmail, _notification_toSMS, _notification_toGroupUUID, _notification_toAppUUID,
                     _notification_toUserUUID,
@@ -3165,7 +3165,7 @@ BEGIN
                     _readyDate, _expireDate,
                     1, _notification_content, _notification_subject,
                     _notification_hook,_notification_priority,_notification_isClearable,
-                    _notification_assetUUID,now());
+                    _notification_assetUUID,now(),_notification_workorderUUID);
 
         END IF;
 
