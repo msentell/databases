@@ -860,7 +860,6 @@ END$$
 
 DELIMITER ;
 
-
 -- ==================================================================
 
 /*
@@ -872,17 +871,17 @@ _workorder_scheduleDate,_workorder_rescheduleDate,_workorder_frequency,_workorde
 _wapj_quantity
 );
 
-call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f',1,
+call WORKORDER_workOrder('GET', 'a30af0ce5e07474487c39adab6269d5f',2,
 '0d59f068ed4c462aaaa23c5acd71e4d6',null,null,null,null,
-null,null,null,null,null,null,null
+null,null,null,null,null,null,null,
 null,null,null,null,null,
 null,null,null,null,
-null);
+null, null, null);
 
 call WORKORDER_workOrder(
 'GET',
 'a30af0ce5e07474487c39adab6269d5f',
-1,
+2,
 null,
 null,
 null,
@@ -1007,6 +1006,11 @@ IF(_action ='GET') THEN
             set @l_sql = CONCAT(@l_sql,'w.workorder_customerUUID = \'', _customerId,'\'');
             set _commaNeeded=1;
         END IF;
+        if (_userUUID IS NOT NULL) THEN
+            if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+            set @l_sql = CONCAT(@l_sql,'w.workorder_userUUID = \'', _userUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
         if (_workorder_userUUID IS NOT NULL) THEN
             if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
             set @l_sql = CONCAT(@l_sql,'w.workorder_userUUID = \'', _workorder_userUUID,'\'');
@@ -1035,7 +1039,7 @@ IF(_action ='GET') THEN
 
         set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'',
                             ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= date_add(CURDATE(), interval 24*60*60 - 1 second)');
-        set @l_sql = CONCAT(@l_sql,'order by workorder_scheduleDate desc');
+        set @l_sql = CONCAT(@l_sql,'order by w.workorder_status, workorder_scheduleDate desc');
 
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
