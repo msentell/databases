@@ -986,7 +986,7 @@ DECLARE SubStrLen INT DEFAULT 0;
 DECLARE _woDates varchar(5000);
 DECLARE _date varchar(100);
 
-IF(_action ='GET') THEN
+IF(_action ='GET' or _action = 'GETALL') THEN
 
     IF(_customerId IS NULL or _customerId = '') THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
@@ -1036,11 +1036,13 @@ IF(_action ='GET') THEN
             set @l_sql = CONCAT(@l_sql,'DATE(now()) <= \'', _workorder_dueDate,'\'');
             set _commaNeeded=1;
         END IF;
-
+	if(_action ='GET') THEN
         set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'',
                             ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= date_add(CURDATE(), interval 24*60*60 - 1 second)');
         set @l_sql = CONCAT(@l_sql,'order by w.workorder_status, workorder_scheduleDate desc');
-
+	else
+		set @l_sql = CONCAT(@l_sql,'order by w.workorder_number desc');
+        END IF;
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
         PREPARE stmt FROM @l_sql;
