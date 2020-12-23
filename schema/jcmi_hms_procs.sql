@@ -654,13 +654,13 @@ IF(_action ='CREATE') THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_create: _customerId can not be empty';
         LEAVE WORKORDER_create;
     END IF;
-
+    
     IF(_workorderUUID is NULL) THEN set _workorderUUID = UUID();END IF;
-
+    
     -- RULES and CONVERSIONS
 if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_TO_DATE(_workorder_completeDate, _dateFormat); END IF;
     if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, _dateFormat); END IF;
-
+    
     if (_workorder_scheduleDate IS NOT NULL) THEN
         set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, _dateFormat);
     ELSE
@@ -681,16 +681,16 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
         from checklist where checklistUUID = _workorder_checklistUUID;
     END IF;
 
-    if(_workorder_details is null) then
+    if(_workorder_details is null) then 
         select checklist_name
         into _workorder_details
         from checklist where checklistUUID = _workorder_checklistUUID;
     END IF;
 
-    if(_daysToMaintain is null) then
-        IF (_workorder_frequencyScope = 'DAILY') then
+    if(_daysToMaintain is null) then 
+        IF (_workorder_frequencyScope = 'DAILY') then 
          SET _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday';
-        ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then
+        ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then 
          SET _daysToMaintain = 'Monday';
         END IF;
     END IF;
@@ -827,7 +827,7 @@ END IF;
             END IF;
 
 
-    -- create notification
+    -- create notification    
     if (_workorder_userUUID <> _userUUID) THEN
 
         call NOTIFICATION_notification(
@@ -835,7 +835,7 @@ END IF;
         null,null,'APP',
         null,null,_workorder_userUUID,null,null,
         null,_userUUID,
-        null,null,
+        null,null,null,
         CONCAT('Workorder ',_workorder_number ,' has been assigned to you'),CONCAT('New Workorder ',_workorder_number),'_notification_hook',
         _workorder_assetUUID,'MEDIUM',
         _workorderUUID
