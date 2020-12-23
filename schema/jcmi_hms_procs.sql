@@ -4132,7 +4132,9 @@ ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
 		DEALLOCATE PREPARE stmt;
 
     END IF;
-
+ELSEIF(_action = 'DELETE_CHECKLISTITEM' and _checklist_itemUUID is not null) THEN
+		delete from checklist_item where checklist_itemUUID = _checklist_itemUUID;
+	
 ELSEIF(_action = 'COMPLETE' or _action = 'RESET') THEN
 	select checklist_history_workorderUUID into _workorderUUID from checklist_history
 			where checklist_historyUUID = _historyUUID;
