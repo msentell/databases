@@ -1876,7 +1876,7 @@ DELIMITER ;
 -- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55, 0,null,null);
 -- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55, 0,null,null);
 -- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22, 0,null,null);
-
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'PARTS-USED', null,null, null,null,null,null);
 DROP procedure IF EXISTS `LOCATION_action`;
 
 DELIMITER $$
@@ -1965,8 +1965,33 @@ BEGIN
 				SET @l_SQL = CONCAT(@l_SQL , _dataCount);
             END IF;
 
+         ELSEIF (_type = 'PARTS-USED') THEN
+        -- SELECT DISTINCT  a.asset_partUUID,ap.asset_part_name as `name`,ap.* from asset a left join asset_part ap on(a.asset_partUUID = ap.asset_partUUID) where a.asset_partUUID is 
+        -- not null and a.asset_customerUUID =_customerUUID ;
+            
+                IF (_customerUUID IS NULL ) THEN
+                    SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _customerUUID missing';
+                    LEAVE LOCATION_action;
+                END IF;
 
-        ELSEif (_type = 'LOCATION') THEN
+            SET @l_SQL = CONCAT('SELECT DISTINCT  a.asset_partUUID as objUUID,ap.asset_part_name as name , ap.* from asset a left join asset_part ap on(a.asset_partUUID = ap.asset_partUUID) 
+            where a.asset_partUUID is not null and a.asset_customerUUID =\'',_customerUUID,'\'');
+
+            IF(_name is not null)THEN
+                SET @l_SQL = CONCAT(@l_SQL , ' and ap.asset_part_name like \'',_name,'\'');
+            END IF;
+
+            IF(_dataCount is not null)THEN
+				SET @l_SQL = CONCAT(@l_SQL , ' LIMIT ');
+
+                IF(_startIndex is not null)THEN
+					SET @l_SQL = CONCAT(@l_SQL ,_startIndex,',');
+				END IF;
+
+				SET @l_SQL = CONCAT(@l_SQL , _dataCount);
+            END IF;
+
+        ELSEIF (_type = 'LOCATION') THEN
             -- SELECT locationUUID as objUUID, location_imageUrl as ImageURL, location_imageUrl as ThumbURL, location_name as `name`,_type as `Type`
             -- 	FROM location where location_name like _name and location_customerUUID =_customerUUID;
 
