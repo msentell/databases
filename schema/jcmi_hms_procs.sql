@@ -559,7 +559,7 @@ BEGIN
             -- from workorder_asset_part_join
             -- where wapj_asset_partUUID = ap.asset_partUUID
             -- limit 1)> 0 THEN 1 ELSE 0 END)                                                                 as BUTTON_serviceHistory,
-			(case when locate('CONTACT', _otherOptions) > 0 THEN 1 ELSE 0 END)        as BUTTON_contactCheckMaster,
+			(case when (locate('CONTACT', _otherOptions) > 0 and locate('ASSET-PART', _action) > 0) THEN 1 ELSE 0 END)        as BUTTON_contactCheckMaster,
 			(case when locate('CHAT', _otherOptions) > 0 THEN 1 ELSE 0 END)           as BUTTON_liveChat,
 			(case when locate('STARTCHECKLIST', _otherOptions) > 0 THEN 1 ELSE 0 END) as BUTTON_startAChecklist,
 			(case when locate('ADDLOG', _otherOptions) > 0 THEN 1 ELSE 0 END)         as BUTTON_addALogEntry,
