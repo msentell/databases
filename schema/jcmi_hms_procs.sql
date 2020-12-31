@@ -2523,6 +2523,75 @@ END$$
 DELIMITER ;
 
 
+
+-- ==================================================================
+
+/*
+call NOTES_notes(_action,_userUUID,_assetnotesId,_assetnotes_assetUUID,_assetnote);
+call NOTES_notes('UPDATE',1,null,'00c93791035c44fd98d4f40ff2cdfe0a','_assetnote');
+call NOTES_notes('UPDATE',1,null,'00c93791035c44fd98d4f40ff2cdfe0a','_assetnote2');
+call NOTES_notes('UPDATE',1,1,null,'_assetnote3');
+
+*/
+
+DROP procedure IF EXISTS `NOTES_notes`;
+
+DELIMITER $$
+CREATE PROCEDURE `NOTES_notes`(IN _action VARCHAR(100),
+                                             IN _userUUID CHAR(36),
+                                             IN _assetnotesId INT,
+                                             IN _assetnotes_assetUUID CHAR(36),
+                                             IN _assetnote TEXT)
+NOTES_notes:
+BEGIN
+
+    DECLARE _DEBUG INT DEFAULT 0;
+
+    DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%YT%h:%iZ';
+    DECLARE _assetnotesFoundId INT;
+
+
+    IF (_action = 'GET') THEN
+
+        select * from asset_notes where assetnotesId=_assetnotesId;
+
+    ELSEIF (_action = 'UPDATE' ) THEN
+
+        IF (_assetnotesId is null) THEN 
+            select assetnotesId into _assetnotesId from asset_notes where assetnotes_assetUUID=_assetnotes_assetUUID;
+        END IF;
+        
+        IF (_assetnotesId is null and _assetnotes_assetUUID is not null) THEN
+
+            insert ignore into asset_notes (assetnotes_assetUUID, assetnotes_note, assetnotes_createdByUUID, assetnotes_updatedByUUID, assetnotes_updatedTS, assetnotes_createdTS)
+            values
+            (_assetnotes_assetUUID, _assetnote, _userUUID, _userUUID, now(), now());
+
+        ELSE
+                
+            update asset_notes set assetnotes_note=_assetnote, assetnotes_updatedByUUID=_userUUID, assetnotes_updatedTS=now()
+            where assetnotesId=_assetnotesId;
+            
+        END IF;
+
+    ELSEIF (_action = 'DELETE') THEN
+
+        DELETE from asset_notes where assetnotesId=_assetnotesId;
+
+    END IF;
+
+    IF (_DEBUG = 1) THEN
+        select _action,_assetnotesId,
+               _assetnotes_assetUUID, _assetnote, _userUUID;
+
+    END IF;
+
+
+END$$
+
+DELIMITER ;
+
+
 -- ==================================================================
 
 -- call ASSETPART_assetpart(action, _userUUID, _customerUUID, asset_partUUID, asset_part_template_part_sku,asset_part_statusId, asset_part_sku,asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor);

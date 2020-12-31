@@ -413,6 +413,21 @@ CREATE TABLE `asset` (
 ENGINE = InnoDB ;
 
 
+DROP TABLE IF EXISTS asset_notes;
+
+CREATE TABLE `asset_notes` (
+    assetnotesId INT NOT NULL AUTO_INCREMENT,
+    assetnotes_assetUUID CHAR(36) NULL,
+    assetnotes_note text NULL,
+    assetnotes_createdByUUID CHAR(36)  NULL,
+    assetnotes_updatedByUUID CHAR(36)  NULL,
+    assetnotes_updatedTS datetime  NULL,
+    assetnotes_createdTS datetime  NULL default now(),
+    PRIMARY KEY (assetnotesId),
+    UNIQUE INDEX assetnotes_assetUUID_unique (assetnotes_assetUUID))
+ENGINE = InnoDB AUTO_INCREMENT=1000;
+
+
 DROP TABLE IF EXISTS asset_alert;
 
 CREATE TABLE `asset_alert` (
