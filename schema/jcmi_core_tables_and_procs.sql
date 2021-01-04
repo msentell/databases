@@ -10,13 +10,14 @@ use jcmi_core;
 DROP TABLE IF EXISTS customer_brand;
 
 CREATE TABLE `customer_brand` (
-    brandId INT  NOT NULL,
+    brandUUID CHAR(32)  NOT NULL,
     brand_name varchar(50)  NULL,
     brand_logo varchar(255)  NULL,
     brand_securityBitwise BIGINT  NULL,
     brand_preferenceJSON text  NULL, -- JSON PAYLOAD
     brand_createdByUUID CHAR(36)  NULL,
     brand_created datetime  NULL default now(),
+    brand_magentoURL varchar(100) NULL,
     PRIMARY KEY (brandId))
 ENGINE = InnoDB;
 
@@ -229,7 +230,7 @@ BEGIN
     DECLARE _startLocationUUID varchar(100);
     DECLARE _securityBitwise varchar(100);
     DECLARE _individualSecurityBitwise varchar(100);
-
+    DECLARE _brand_magentoURL varchar(100);
 
     DECLARE _DISABLE_MFA INT default 1; -- 0 is enable MFA
 
@@ -349,6 +350,10 @@ BEGIN
                 user_loginSessionExpire=DATE_ADD(now(), INTERVAL 8 HOUR)
             where userUUID = _entityId;
 
+
+        select brand_magentoURL into _brand_magentoURL  from customer_brand left join customer on (customer_brand.brandUUID = customer.customer_brandUUID)
+        where customer.customerUUID = _customerUUID;
+
             select user_profile_locationUUID
             into _startLocationUUID
             from user_profile
@@ -367,6 +372,7 @@ BEGIN
                    _userName                      as userName,
                    _securityBitwise               as securityBitwise,
                    _individualSecurityBitwise     as individualSecurityBitwise,
+                   _brand_magentoURL              as brandMagentoURL,
                    _customerUUID                  as customerUUID;
 
         END IF;
