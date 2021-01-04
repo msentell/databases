@@ -2555,10 +2555,21 @@ BEGIN
 
         select * from asset_notes where assetnotesId=_assetnotesId;
 
+    ELSEIF(_action = 'GET-ALL')THEN
+
+        IF (_assetnotes_assetUUID IS NULL) THEN
+              SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call NOTES_notes: _assetnotes_assetUUID missing';
+              LEAVE NOTES_notes;
+        END IF;
+
+
+        select * from asset_notes where assetnotes_assetUUID=_assetnotes_assetUUID;
+
+
     ELSEIF (_action = 'UPDATE' ) THEN
 
         IF (_assetnotesId is null) THEN 
-            select assetnotesId into _assetnotesId from asset_notes where assetnotes_assetUUID=_assetnotes_assetUUID;
+          select assetnotesId into _assetnotesId from asset_notes where assetnotes_assetUUID=_assetnotes_assetUUID;
         END IF;
         
         IF (_assetnotesId is null and _assetnotes_assetUUID is not null) THEN
