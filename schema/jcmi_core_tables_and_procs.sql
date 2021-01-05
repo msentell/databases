@@ -286,6 +286,9 @@ BEGIN
             SIGNAL SQLSTATE '41007' SET MESSAGE_TEXT = 'call USER_login: password not correct';
             LEAVE USER_login;
         END IF;
+        
+         select brand_preferenceJSON into _brand_preferenceJSON  from customer_brand left join customer on (customer_brand.brandUUID = customer.customer_brandUUID)
+        where customer.customerUUID = _customerUUID;
 
         if (_DISABLE_MFA = 0) THEN
             select SESSION_generateAccessCode(4) into _USER_loginEmailValidationCode;
@@ -336,6 +339,7 @@ BEGIN
                    _userName                      as userName,
                    _securityBitwise               as securityBitwise,
                    _individualSecurityBitwise     as individualSecurityBitwise,
+                   _brand_preferenceJSON         as brandpreferenceJSON,
                    _customerUUID                  as customerUUID;
 
         ELSE
@@ -351,8 +355,6 @@ BEGIN
             where userUUID = _entityId;
 
 
-        select brand_preferenceJSON into _brand_preferenceJSON  from customer_brand left join customer on (customer_brand.brandUUID = customer.customer_brandUUID)
-        where customer.customerUUID = _customerUUID;
 
             select user_profile_locationUUID
             into _startLocationUUID
