@@ -1036,6 +1036,11 @@ IF(_action ='GET' or _action = 'GETALL') THEN
             set @l_sql = CONCAT(@l_sql,'DATE(now()) <= \'', _workorder_dueDate,'\'');
             set _commaNeeded=1;
         END IF;
+        if (_workorder_assetUUID IS NOT NULL) THEN
+            if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+             set @l_sql = CONCAT(@l_sql,'w.workorder_assetUUID = \'', _workorder_assetUUID,'\'');
+            set _commaNeeded=1;
+        END IF;
 	if(_action ='GET') THEN
         set @l_sql = CONCAT(@l_sql,'AND w.workorder_status not like \'','Complete','\'',
                             ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= date_add(CURDATE(), interval 24*60*60 - 1 second)');
@@ -1048,7 +1053,7 @@ IF(_action ='GET' or _action = 'GETALL') THEN
         PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
-
+        
 ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE') THEN
         IF (_workorderUUID IS NULL) THEN
             SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
