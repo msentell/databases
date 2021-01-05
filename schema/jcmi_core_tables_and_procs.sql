@@ -230,7 +230,7 @@ BEGIN
     DECLARE _startLocationUUID varchar(100);
     DECLARE _securityBitwise varchar(100);
     DECLARE _individualSecurityBitwise varchar(100);
-    DECLARE _brand_magentoURL varchar(100);
+    DECLARE _brand_preferenceJSON text;
 
     DECLARE _DISABLE_MFA INT default 1; -- 0 is enable MFA
 
@@ -351,7 +351,7 @@ BEGIN
             where userUUID = _entityId;
 
 
-        select brand_magentoURL into _brand_magentoURL  from customer_brand left join customer on (customer_brand.brandUUID = customer.customer_brandUUID)
+        select brand_preferenceJSON into _brand_preferenceJSON  from customer_brand left join customer on (customer_brand.brandUUID = customer.customer_brandUUID)
         where customer.customerUUID = _customerUUID;
 
             select user_profile_locationUUID
@@ -372,7 +372,7 @@ BEGIN
                    _userName                      as userName,
                    _securityBitwise               as securityBitwise,
                    _individualSecurityBitwise     as individualSecurityBitwise,
-                   _brand_magentoURL              as brandMagentoURL,
+                   _brand_preferenceJSON          as brandpreferenceJSON,
                    _customerUUID                  as customerUUID;
 
         END IF;
