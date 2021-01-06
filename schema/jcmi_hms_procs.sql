@@ -2569,18 +2569,18 @@ BEGIN
         END IF;
 
 
-        select * from asset_notes where assetnotes_assetUUID=_assetnotes_assetUUID;
+        select * from asset_notes where assetnotes_assetUUID=_assetnotes_assetUUID order by assetnotes_updatedTS desc;
 
 
     ELSEIF (_action = 'UPDATE' ) THEN
 
-        IF (_assetnotesId is null) THEN 
-          select assetnotesId into _assetnotesId from asset_notes where assetnotes_assetUUID=_assetnotes_assetUUID;
-        END IF;
+        -- IF (_assetnotesId is null) THEN 
+--           select assetnotesId into _assetnotesId from asset_notes where assetnotes_assetUUID=_assetnotes_assetUUID;
+--         END IF;
         
         IF (_assetnotesId is null and _assetnotes_assetUUID is not null) THEN
 
-            insert ignore into asset_notes (assetnotes_assetUUID, assetnotes_note, assetnotes_createdByUUID, assetnotes_updatedByUUID, assetnotes_updatedTS, assetnotes_createdTS)
+            insert into asset_notes (assetnotes_assetUUID, assetnotes_note, assetnotes_createdByUUID, assetnotes_updatedByUUID, assetnotes_updatedTS, assetnotes_createdTS)
             values
             (_assetnotes_assetUUID, _assetnote, _userUUID, _userUUID, now(), now());
 

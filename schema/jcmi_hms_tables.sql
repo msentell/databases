@@ -424,7 +424,7 @@ CREATE TABLE `asset_notes` (
     assetnotes_updatedTS datetime  NULL,
     assetnotes_createdTS datetime  NULL default now(),
     PRIMARY KEY (assetnotesId),
-    UNIQUE INDEX assetnotes_assetUUID_unique (assetnotes_assetUUID))
+    -- UNIQUE INDEX assetnotes_assetUUID_unique (assetnotes_assetUUID))
 ENGINE = InnoDB AUTO_INCREMENT=1000;
 
 
