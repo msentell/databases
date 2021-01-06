@@ -562,6 +562,7 @@ BEGIN
 			(case when (locate('CONTACT', _otherOptions) > 0 and locate('ASSET-PART', _action) > 0) THEN 1 ELSE 0 END)        as BUTTON_contactCheckMaster,
 			(case when locate('CHAT', _otherOptions) > 0 THEN 1 ELSE 0 END)           as BUTTON_liveChat,
 			(case when locate('STARTCHECKLIST', _otherOptions) > 0 THEN 1 ELSE 0 END) as BUTTON_startAChecklist,
+            (case when  locate('WORK-ORDER', _otherOptions) > 0  THEN 1 ELSE 0 END) as 	 BUTTON_createWorkOrder,
 			(case when locate('ADDLOG', _otherOptions) > 0 THEN 1 ELSE 0 END)         as BUTTON_addALogEntry,
            ap.*
 		from asset_part ap left join part_template pt on (ap.asset_part_template_part_sku = pt.part_sku)
