@@ -17,7 +17,6 @@ CREATE TABLE `customer_brand` (
     brand_preferenceJSON text  NULL, -- JSON PAYLOAD
     brand_createdByUUID CHAR(36)  NULL,
     brand_created datetime  NULL default now(),
-    brand_magentoURL varchar(100) NULL,
     PRIMARY KEY (brandId))
 ENGINE = InnoDB;
 
