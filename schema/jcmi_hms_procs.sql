@@ -3782,6 +3782,10 @@ call CHECKLIST_checklist(
 'FAIL_CHECKLIST_CREATEWO','1','a30af0ce5e07474487c39adab6269d5f',
 null, null, 'af103ffe-fdde-11ea-a1a5-4e53d94465b4', null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
+call CHECKLIST_checklist(
+'GET',null,null,
+'2b61b61eb4d141799a9560cccb109f59', null, null, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
+);
 
 */
 
@@ -3837,7 +3841,19 @@ DECLARE _checklist_itemHistoryIds varchar(1024) DEFAULT '';
 DECLARE _checklist_itemIds varchar(1024) DEFAULT '';
 DECLARE _checklist_history_resultFlag INT DEFAULT 0;
 
-IF(_action ='WORKORDER_workOrder' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null  or _workorderUUID is not null)) THEN
+IF(_action='GET')Then
+
+    set  @l_sql = CONCAT('select checklistUUID ,checklist_name,checklist_partRequired from checklist');
+    
+    if ( _checklistUUID is not null) THEN
+        set @l_sql = CONCAT(@l_sql,' where checklistUUID = \'', _checklistUUID,'\'');
+    END IF;
+    
+     PREPARE stmt FROM @l_sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+    
+ELSEIF(_action ='WORKORDER_workOrder' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null  or _workorderUUID is not null)) THEN
 
     set  @l_sql = CONCAT('select c.*,i.* from checklist_history c ');
     set  @l_sql = CONCAT(@l_sql,'left join checklist_item_history i on (i.checklist_history_item_historyUUID = c.checklist_historyUUID) ');
