@@ -3848,7 +3848,8 @@ DECLARE _checklist_history_resultFlag INT DEFAULT 0;
 
 IF(_action='GET')Then
 
-    set  @l_sql = CONCAT('select checklistUUID ,checklist_name,checklist_partRequired from checklist');
+    set  @l_sql = CONCAT('select cl.*,clh.* from checklist cl left join checklist_history clh on
+    (cl.checklistUUID = clh.checklist_history_checklistUUID)');
     
     if ( _checklistUUID is not null) THEN
         set @l_sql = CONCAT(@l_sql,' where checklistUUID = \'', _checklistUUID,'\'');
