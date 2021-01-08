@@ -1985,6 +1985,7 @@ BEGIN
 
             IF(_name is not null)THEN
                 SET @l_SQL = CONCAT(@l_SQL , ' and ap.asset_part_name like \'',_name,'\'');
+                SET @l_SQL = CONCAT(@l_SQL , ' or ap.asset_part_template_part_sku like \'',_name,'\'');
             END IF;
 
             IF(_dataCount is not null)THEN
