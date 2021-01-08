@@ -3787,6 +3787,10 @@ call CHECKLIST_checklist(
 '2b61b61eb4d141799a9560cccb109f59', null, null, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
 );
 
+call CHECKLIST_checklist(
+'GET_HISTORY',null,null,
+null, null, 'f4dcf10d-51b7-11eb-a1a5-4e53d94465b4', 'f4dcfb91-51b7-11eb-a1a5-4e53d94465b4',null,null, null,null,null,null,null, null, null, null, null, null, null, null, null,null
+);
 */
 
 DROP procedure IF EXISTS `CHECKLIST_checklist`;
@@ -3853,7 +3857,7 @@ IF(_action='GET')Then
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
     
-ELSEIF(_action ='WORKORDER_workOrder' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null  or _workorderUUID is not null)) THEN
+ELSEIF(_action ='GET_HISTORY' and (_historyUUID is not null or _checklistUUID is not null or _checklist_itemUUID is not null  or _workorderUUID is not null)) THEN
 
     set  @l_sql = CONCAT('select c.*,i.* from checklist_history c ');
     set  @l_sql = CONCAT(@l_sql,'left join checklist_item_history i on (i.checklist_history_item_historyUUID = c.checklist_historyUUID) ');
