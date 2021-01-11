@@ -3848,14 +3848,28 @@ DECLARE _checklist_history_resultFlag INT DEFAULT 0;
 
 IF(_action='GET')Then
 
-    set  @l_sql = CONCAT('select cl.*,clh.* from checklist cl left join checklist_history clh on
+     set  @l_sql = CONCAT('select cl.*,clh.* from checklist cl left join checklist_history clh on
     (cl.checklistUUID = clh.checklist_history_checklistUUID)');
     
+	if(_checklistUUID is not null or _historyUUID is not null ) THEN
+			set @l_sql = CONCAT(@l_sql,' where');
+		END IF;
+
     if ( _checklistUUID is not null) THEN
-        set @l_sql = CONCAT(@l_sql,' where checklistUUID = \'', _checklistUUID,'\'');
+        set @l_sql = CONCAT(@l_sql,' cl.checklistUUID = \'', _checklistUUID,'\'');
     END IF;
+
+	if(_checklistUUID is not null and _historyUUID is not null ) THEN
+			set @l_sql = CONCAT(@l_sql,' and');
+		END IF;
+
+    if ( _historyUUID is not null) THEN
+       set @l_sql = CONCAT(@l_sql,' clh.checklist_historyUUID = \'', _historyUUID,'\'');
+     END IF;
     
-     PREPARE stmt FROM @l_sql;
+     IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
+    
+	PREPARE stmt FROM @l_sql;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
     
