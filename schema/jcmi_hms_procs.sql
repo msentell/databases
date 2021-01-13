@@ -1255,11 +1255,14 @@ ELSEIF(_action ='COMPLETE' or _action ='BATCH-COMPLETE') THEN
 
 
 ELSEIF(_action ='ADDPART' and _wapj_asset_partUUID is not null) THEN
+        set @quantity = 0;
+        
+        select wapj_quantity into @quantity  from workorder_asset_part_join where wapj_workorderUUID=_workorderUUID and wapj_asset_partUUID =_wapj_asset_partUUID;
 
         REPLACE INTO workorder_asset_part_join (wapj_workorderUUID, wapj_asset_partUUID,
         wapj_quantity, wapj_createdTS)
         values (
-        _workorderUUID,_wapj_asset_partUUID,_wapj_quantity,now()
+        _workorderUUID,_wapj_asset_partUUID,@quantity+1,now()
         );
 
 ELSEIF(_action ='GET-PART') THEN
