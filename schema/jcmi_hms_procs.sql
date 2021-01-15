@@ -1933,8 +1933,13 @@ BEGIN
             SET @l_SQL =
                 CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',
                            _type, '\' as `Type`
-			FROM asset where asset_statusId = 1 and asset_name like \'', _name, '\'');
-
+			FROM asset where asset_statusId = 1 ');
+            IF(_name is not null) THEN
+            SET @l_SQL = CONCAT(@l_SQL ,'and asset_name like \'', _name, '\'');
+			END IF;
+			IF(_objUUID is not null) THEN
+            SET @l_SQL = CONCAT(@l_SQL ,'and  assetUUID= \'',_objUUID, '\'');
+			END IF;
 			IF(_customerUUID is not null) THEN
 				SET @l_SQL = CONCAT(@l_SQL ,'and  asset_customerUUID= \'',_customerUUID, '\'');
 			END IF;
