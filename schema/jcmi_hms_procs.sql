@@ -1943,6 +1943,7 @@ BEGIN
 			IF(_customerUUID is not null) THEN
 				SET @l_SQL = CONCAT(@l_SQL ,'and  asset_customerUUID= \'',_customerUUID, '\'');
 			END IF;
+			SET @l_SQL = CONCAT(@l_SQL ,'order by name');
         ELSEIF (_type = 'ASSET-PART' and _objUUID is not null) THEN
          
          SET @l_SQL = CONCAT(' SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
