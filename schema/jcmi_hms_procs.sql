@@ -4040,7 +4040,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
                     _checklist_history_item_historyUUID, _historyUUID, _checklist_itemUUID, 1,
                     _checklist_item_sortOrder, _checklist_item_prompt, _checklist_item_type,
                     _checklist_item_optionSetJSON, _checklist_item_successPrompt, _checklist_item_successRange,
-                    0,
+                    null,
                     _userUUID,_userUUID,now(),now()
                 );
 
