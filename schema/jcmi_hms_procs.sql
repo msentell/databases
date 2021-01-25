@@ -996,7 +996,7 @@ IF(_action ='GET' or _action = 'GETALL') THEN
 
     if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-        set  @l_sql = CONCAT('SELECT w.*,u.user_userName,cl.checklist_name, a.asset_name, g.group_name FROM workorder w 
+        set  @l_sql = CONCAT('SELECT w.*,u.user_userName,cl.checklist_name, cl.checklist_statusId, a.asset_name, g.group_name FROM workorder w 
         left join jcmi_core.user u on(u.userUUID = w.workorder_userUUID ) 
         left join checklist cl on(w.workorder_checklistUUID = cl.checklistUUID)
         left join asset a on(w.workorder_assetUUID = a.assetUUID)
