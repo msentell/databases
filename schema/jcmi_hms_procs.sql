@@ -3743,6 +3743,48 @@ DELIMITER ;
 
 -- ==================================================================
 
+-- SELECT GETCHECKLISTSTATUS('6', 'value', '5,9')
+-- SELECT GETCHECKLISTSTATUS('1','boolean', null)
+-- SELECT GETCHECKLISTSTATUS('GOD', 'text', null)
+-- SELECT GETCHECKLISTSTATUS('88', 'value', '5,6')
+
+use jcmi_hms;
+DROP FUNCTION IF EXISTS getChecklistStatus;
+
+DELIMITER //
+CREATE FUNCTION `getChecklistStatus`(_value VARCHAR(100), _type CHAR(36), _succRange CHAR(36))
+RETURNS varchar(2)
+BEGIN
+DECLARE _checklistStatus INT default 1;
+IF(_type = 'boolean') then -- for the checklist type boolean
+IF(_value = '1' or _value = '0') then
+set _checklistStatus = 2;
+ELSE
+set _checklistStatus = 3;
+END IF;
+END IF;
+IF(_type = 'value') THEN -- for the checklist type
+select SUBSTRING_INDEX(_succRange, ',',-1) into @maxVal;
+select SUBSTRING_INDEX(_succRange, ',',1) into @minVal;
+IF(_value <= @maxVal and _value >= @minVal) THEN
+set _checklistStatus = 2 ;-- passed
+ELSE
+set _checklistStatus =3; -- failed
+END IF;
+END IF;
+IF(_type = 'text') THEN
+if(_value is not null and _value != '') THEN
+set _checklistStatus = 2;
+ELSE
+set _checklistStatus = 3;
+END IF;
+
+END IF;
+return _checklistStatus;
+END;
+
+DELIMITER ;
+-- ==================================================================
 /*
 call CHECKLIST_checklist(
 _action,_userUUID,_customerUUID,
