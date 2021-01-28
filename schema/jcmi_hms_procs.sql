@@ -3747,7 +3747,11 @@ DELIMITER ;
 -- SELECT GETCHECKLISTSTATUS('1','boolean', null)
 -- SELECT GETCHECKLISTSTATUS('GOD', 'text', null)
 -- SELECT GETCHECKLISTSTATUS('88', 'value', '5,6')
-
+-- for checklist_history_item_status
+-- 	1 -> Pending 
+-- 	2 -> Failed
+-- 	3 -> Passed
+-- 	4 -> NA
 use jcmi_hms;
 DROP FUNCTION IF EXISTS getChecklistStatus;
 
@@ -3758,25 +3762,25 @@ BEGIN
 DECLARE _checklistStatus INT default 1;
 IF(_type = 'boolean') then -- for the checklist type boolean
 IF(_value = '1' or _value = '0') then
-set _checklistStatus = 2;
-ELSE
 set _checklistStatus = 3;
+ELSE
+set _checklistStatus = 2;
 END IF;
 END IF;
 IF(_type = 'value') THEN -- for the checklist type
 select SUBSTRING_INDEX(_succRange, ',',-1) into @maxVal;
-select SUBSTRING_INDEX(_succRange, ',',1) into @minVal;
+SELECT SUBSTRING_INDEX(_succRange, ',', 1) INTO @minVal;
 IF(_value <= @maxVal and _value >= @minVal) THEN
-set _checklistStatus = 2 ;-- passed
+set _checklistStatus = 3 ;-- passed
 ELSE
-set _checklistStatus =3; -- failed
+set _checklistStatus = 2; -- failed
 END IF;
 END IF;
 IF(_type = 'text') THEN
 if(_value is not null and _value != '') THEN
-set _checklistStatus = 2;
-ELSE
 set _checklistStatus = 3;
+ELSE
+set _checklistStatus = 2;
 END IF;
 
 END IF;
@@ -3883,7 +3887,7 @@ IN _checklist_partRequired INT
 )
 CHECKLIST_checklist: BEGIN
 
-DECLARE _DEBUG INT DEFAULT 0;
+DECLARE _DEBUG INT DEFAULT 1;
 
 DECLARE _ids varchar(1000);
 DECLARE _id varchar(100);
@@ -3902,8 +3906,8 @@ DECLARE _workorder_locationUUID char(36);
 DECLARE _checklist_itemHistoryIds varchar(1024) DEFAULT '';
 DECLARE _checklist_itemIds varchar(1024) DEFAULT '';
 DECLARE _checklist_history_resultFlag INT DEFAULT 0;
-DECLARE checklistStatus INT default 1;
-DECLARE SuccessRange varchar(100);
+DECLARE _checklistStatus INT default 1;
+DECLARE _SuccessRange varchar(100);
 
 IF(_action='GET')Then
 
@@ -3988,7 +3992,18 @@ ELSEIF(_action ='GET_TEMPLATE' and (_checklistUUID is not null or _checklist_ite
     PREPARE stmt FROM @l_sql;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
-
+ELSEIF( _action = 'UPDATE_CHECKLIST_HISTORY') THEN
+ -- 	1 -> Incomplete 
+ -- 	2 -> Complete_Failed
+ -- 	3 -> Complete_Passed
+ set  @passdChecklistHistItemCount = 0;
+   select count(*)  into @passdChecklistHistItemCount from checklist_item_history where checklist_history_item_historyUUID= _historyUUID and checklist_history_item_statusId not in ('3'); -- count of not passed checklistHistoryItem
+	IF(@passdChecklistHistItemCount >= 1) THEN
+			update checklist_history set  checklist_history_statusId = 2 where checklist_historyUUID = _historyUUID ; -- COMPLETE_FAILED
+	ELSE
+			update checklist_history set  checklist_history_statusId = 3 where checklist_historyUUID = _historyUUID ; -- COMPLETE_PASSED
+	END IF;
+    select * from checklist_history where checklist_historyUUID = _historyUUID;
 ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
     if (_customerUUID is null) THEN
@@ -4174,14 +4189,14 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
 		if ( _checklist_item_statusId is not null or _checklist_name is not null and _checklist_history_item_historyUUID is not null) THEN
 
-            select checklist_item_successRange into SuccessRange from checklist_item where checklist_itemUUID = _checklist_itemUUID ;
+            select checklist_item_successRange into _SuccessRange from checklist_item where checklist_itemUUID = _checklist_itemUUID ;
 		IF(_checklist_item_statusId > 3) THEN 
-			set checklistStatus = 4;
+			set _checklistStatus = 4;
 		ELSE
 			if(_checklist_item_type  = 'boolean') THEN
-					select getChecklistStatus(_checklist_history_item_resultFlag,_checklist_item_type, SuccessRange) into checklistStatus;
+					select getChecklistStatus(_checklist_history_item_resultFlag,_checklist_item_type, _SuccessRange) into _checklistStatus;
             ELSE
-					  select getChecklistStatus(_checklist_history_item_resultText, _checklist_item_type, SuccessRange) into checklistStatus;
+					  select getChecklistStatus(_checklist_history_item_resultText, _checklist_item_type, _SuccessRange) into _checklistStatus;
 			END IF;
 		END IF;
 			set  @l_sql = CONCAT('update checklist_item_history set checklist_history_item_updatedTS=now(), checklist_history_item_updatedByUUID=\'', _userUUID,'\'');
@@ -4192,8 +4207,8 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 			if (_checklist_history_item_resultFlag is not null) THEN
 				set @l_sql = CONCAT(@l_sql,', checklist_history_item_resultFlag= ', _checklist_history_item_resultFlag);
 			END IF;
-			if (checklistStatus is not null) THEN
-				set @l_sql = CONCAT(@l_sql,', checklist_history_item_statusId= ', checklistStatus);
+			if (_checklistStatus is not null) THEN
+				set @l_sql = CONCAT(@l_sql,', checklist_history_item_statusId= ', _checklistStatus);
 			END IF;
 
 			set @l_sql = CONCAT(@l_sql,' where  checklist_history_itemUUID= \'', _checklist_history_item_historyUUID,'\';');
