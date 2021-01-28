@@ -3887,7 +3887,7 @@ IN _checklist_partRequired INT
 )
 CHECKLIST_checklist: BEGIN
 
-DECLARE _DEBUG INT DEFAULT 1;
+DECLARE _DEBUG INT DEFAULT 0;
 
 DECLARE _ids varchar(1000);
 DECLARE _id varchar(100);
