@@ -996,9 +996,10 @@ IF(_action ='GET' or _action = 'GETALL') THEN
 
     if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-        set  @l_sql = CONCAT('SELECT w.*,u.user_userName,cl.checklist_name, cl.checklist_statusId, a.asset_name, g.group_name FROM workorder w 
+        set  @l_sql = CONCAT('SELECT w.*,u.user_userName,cl.checklist_name, cl.checklist_statusId, a.asset_name, g.group_name, clh.checklist_history_statusId FROM workorder w 
         left join jcmi_core.user u on(u.userUUID = w.workorder_userUUID ) 
         left join checklist cl on(w.workorder_checklistUUID = cl.checklistUUID)
+		left join checklist_history clh on (clh.checklist_history_checklistUUID = cl.checklistUUID and clh.checklist_history_workorderUUID = w.workorderUUID)
         left join asset a on(w.workorder_assetUUID = a.assetUUID)
         left join user_group g on(w.workorder_groupUUID =g.groupUUID) WHERE ');
 
@@ -3757,7 +3758,7 @@ DROP FUNCTION IF EXISTS vaidateChecklistItem;
 
 DELIMITER //
 CREATE FUNCTION `vaidateChecklistItem`(_value VARCHAR(100), _type CHAR(36), _succRange CHAR(36))
-RETURNS varchar(2)
+RETURNS varchar(10)
 BEGIN
 DECLARE _checklistStatus INT default 1;
 IF(_type = 'boolean') then -- for the checklist type boolean
@@ -3768,8 +3769,8 @@ set _checklistStatus = 2;
 END IF;
 END IF;
 IF(_type = 'value') THEN -- for the checklist type
-select SUBSTRING_INDEX(_succRange, ',',-1) into @maxVal;
-SELECT SUBSTRING_INDEX(_succRange, ',', 1) INTO @minVal;
+select CAST(SUBSTRING_INDEX(_succRange, ',',-1) AS UNSIGNED INTEGER) into  @maxVal;
+select CAST(SUBSTRING_INDEX(_succRange, ',', 1) AS UNSIGNED INTEGER) into  @minVal;
 IF(_value <= @maxVal and _value >= @minVal) THEN
 set _checklistStatus = 3 ;-- passed
 ELSE
