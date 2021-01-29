@@ -3743,20 +3743,20 @@ DELIMITER ;
 
 -- ==================================================================
 
--- SELECT GETCHECKLISTSTATUS('6', 'value', '5,9')
--- SELECT GETCHECKLISTSTATUS('1','boolean', null)
--- SELECT GETCHECKLISTSTATUS('GOD', 'text', null)
--- SELECT GETCHECKLISTSTATUS('88', 'value', '5,6')
+-- SELECT VAIDATECHECKLISTITEM('6', 'value', '5,9')
+-- SELECT VAIDATECHECKLISTITEM('1','boolean', null)
+-- SELECT VAIDATECHECKLISTITEM('GOD', 'text', null)
+-- SELECT VAIDATECHECKLISTITEM('88', 'value', '5,6')
 -- for checklist_history_item_status
 -- 	1 -> Pending 
 -- 	2 -> Failed
 -- 	3 -> Passed
 -- 	4 -> NA
 use jcmi_hms;
-DROP FUNCTION IF EXISTS getChecklistStatus;
+DROP FUNCTION IF EXISTS vaidateChecklistItem;
 
 DELIMITER //
-CREATE FUNCTION `getChecklistStatus`(_value VARCHAR(100), _type CHAR(36), _succRange CHAR(36))
+CREATE FUNCTION `vaidateChecklistItem`(_value VARCHAR(100), _type CHAR(36), _succRange CHAR(36))
 RETURNS varchar(2)
 BEGIN
 DECLARE _checklistStatus INT default 1;
@@ -3991,18 +3991,18 @@ ELSEIF(_action ='GET_TEMPLATE' and (_checklistUUID is not null or _checklist_ite
     PREPARE stmt FROM @l_sql;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
-ELSEIF( _action = 'UPDATE_CHECKLIST_HISTORY') THEN
+ELSEIF( _action = 'VALIDATE' or _action= 'COMPLETE') THEN
  -- 	1 -> Incomplete 
  -- 	2 -> Complete_Failed
  -- 	3 -> Complete_Passed
- set  @passdChecklistHistItemCount = 0;
-   select count(*)  into @passdChecklistHistItemCount from checklist_item_history where checklist_history_item_historyUUID= _historyUUID and checklist_history_item_statusId not in ('3', '4'); -- count of not passed checklistHistoryItem
-	IF(@passdChecklistHistItemCount >= 1) THEN
-			update checklist_history set  checklist_history_statusId = 2 where checklist_historyUUID = _historyUUID ; -- COMPLETE_FAILED
-	ELSE
+	IF(_action = 'VALIDATE') THEN
+		 set  @passdChecklistHistItemCount = 0;
+		   select count(*)  into @passdChecklistHistItemCount from checklist_item_history where checklist_history_item_historyUUID= _historyUUID and checklist_history_item_statusId not in ('3', '4'); -- count of not passed checklistHistoryItem
+			select @passdChecklistHistItemCount;
+	END IF;
+    IF(_action= 'COMPLETE') THEN 
 			update checklist_history set  checklist_history_statusId = 3 where checklist_historyUUID = _historyUUID ; -- COMPLETE_PASSED
 	END IF;
-    select * from checklist_history where checklist_historyUUID = _historyUUID;
 ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
     if (_customerUUID is null) THEN
@@ -4192,9 +4192,9 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 			set _checklistStatus = 4;
 		ELSE
 			if(_checklist_item_type  = 'boolean') THEN
-					select getChecklistStatus(_checklist_history_item_resultFlag,_checklist_item_type, _checklist_item_successRange) into _checklistStatus;
+					select vaidateChecklistItem(_checklist_history_item_resultFlag,_checklist_item_type, _checklist_item_successRange) into _checklistStatus;
             ELSE
-					  select getChecklistStatus(_checklist_history_item_resultText, _checklist_item_type, _checklist_item_successRange) into _checklistStatus;
+					  select vaidateChecklistItem(_checklist_history_item_resultText, _checklist_item_type, _checklist_item_successRange) into _checklistStatus;
 			END IF;
 		END IF;
 			set  @l_sql = CONCAT('update checklist_item_history set checklist_history_item_updatedTS=now(), checklist_history_item_updatedByUUID=\'', _userUUID,'\'');
