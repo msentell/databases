@@ -3908,7 +3908,7 @@ DECLARE _checklist_itemHistoryIds varchar(1024) DEFAULT '';
 DECLARE _checklist_itemIds varchar(1024) DEFAULT '';
 DECLARE _checklist_history_resultFlag INT DEFAULT 0;
 DECLARE _checklistStatus INT default 1;
-
+DECLARE failedChecklistCount INT default 0;
 IF(_action='GET')Then
 
      set  @l_sql = CONCAT('select cl.*,clh.* from checklist cl left join checklist_history clh on
@@ -3997,9 +3997,9 @@ ELSEIF( _action = 'VALIDATE' or _action= 'COMPLETE') THEN
  -- 	2 -> Complete_Failed
  -- 	3 -> Complete_Passed
 	IF(_action = 'VALIDATE') THEN
-		 set  @passdChecklistHistItemCount = 0;
-		   select count(*)  into @passdChecklistHistItemCount from checklist_item_history where checklist_history_item_historyUUID= _historyUUID and checklist_history_item_statusId not in ('3', '4'); -- count of not passed checklistHistoryItem
-			select @passdChecklistHistItemCount;
+		 set failedChecklistCount = 0;
+		   select count(*)  into failedChecklistCount from checklist_item_history where checklist_history_item_historyUUID= _historyUUID and checklist_history_item_statusId not in ('3', '4'); -- count of not passed checklistHistoryItem
+			select failedChecklistCount;
 	END IF;
     IF(_action= 'COMPLETE') THEN 
 			update checklist_history set  checklist_history_statusId = 3 where checklist_historyUUID = _historyUUID ; -- COMPLETE_PASSED
