@@ -4132,36 +4132,38 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
             if (_DEBUG=1) THEN select '_workorderUUID',_workorderUUID; END IF;
             if (_DEBUG=1) THEN select 'CREATE WO ',_workorderUUID,' ',_assetUUID,' ',_workorder_locationUUID,' ',_checklist_name; END IF;
 
--- call WORKORDER_create(_action, _customerId,_userUUID
--- _workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,_workorder_assetUUID,
--- _workorder_checklistUUID,_workorder_checklistHistoryUUID,_workorder_status,_workorder_type,_workorder_name,_workorder_number,_workorder_details,
--- _workorder_actions,_workorder_priority,_workorder_dueDate,_workorder_completeDate,
--- _workorder_scheduleDate,_workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
--- _wapj_quantity
--- );
+                -- call WORKORDER_create(_action, _customerId,_userUUID
+                -- _workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,_workorder_assetUUID,
+                -- _workorder_checklistUUID,_workorder_checklistHistoryUUID,_workorder_status,_workorder_type,_workorder_name,_workorder_number,_workorder_details,
+                -- _workorder_actions,_workorder_priority,_workorder_dueDate,_workorder_completeDate,
+                -- _workorder_scheduleDate,_workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
+                -- _wapj_quantity
+                -- );
 
-            call WORKORDER_create('CREATE', _customerUUID,_userUUID,
-                _workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID, _checklistUUID,
-                _historyUUID,null,'CHECKLIST',CONCAT('Checklist - ',_checklist_name),null,_assetName,
-                _assetName,null,null,null,null,
-                null,null,null,null,
-                null,null
-            );
+                    call WORKORDER_create('CREATE', _customerUUID,_userUUID,
+                        _workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID, _checklistUUID,
+                        _historyUUID,null,'CHECKLIST',CONCAT('Checklist - ',_checklist_name),null,_assetName,
+                        _assetName,null,null,null,null,
+                        null,null,null,null,
+                        null,null
+                    );
 
-            -- 	 		ELSE
+                    -- 	 		ELSE
 
-                            -- this will replace the checklistUUID for the historyUUID version of it.
-                            -- update workorder set workorder_checklistUUID = _historyUUID where workorderUUID=_workorderUUID;
-            /*
-                            call WORKORDER_workOrder('UPDATE', _customerUUID,_userUUID,
-                            _workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID,
-                            _historyUUID,1,'CHECKLIST',null,null,_workorder_details,
-                            _workorder_actions,null,null,null,
-                            null,1,'DAILY',null,
-                            null
-                            );
-            */
-        END IF;
+                                    -- this will replace the checklistUUID for the historyUUID version of it.
+                                    -- update workorder set workorder_checklistUUID = _historyUUID where workorderUUID=_workorderUUID;
+                    /*
+                                    call WORKORDER_workOrder('UPDATE', _customerUUID,_userUUID,
+                                    _workorderUUID,_workorder_locationUUID,_userUUID,null,_assetUUID,
+                                    _historyUUID,1,'CHECKLIST',null,null,_workorder_details,
+                                    _workorder_actions,null,null,null,
+                                    null,1,'DAILY',null,
+                                    null
+                                    );
+                    */
+       ELSE
+				update workorder set workorder_checklistHistoryUUID = _historyUUID where workorderUUID = _workorderUUID;
+       END IF;
 
     ELSE -- history found, so update records
 
