@@ -4002,7 +4002,9 @@ ELSEIF( _action = 'VALIDATE' or _action= 'COMPLETE') THEN
 			select failedChecklistCount;
 	END IF;
     IF(_action= 'COMPLETE') THEN 
-			update checklist_history set  checklist_history_statusId = 3 where checklist_historyUUID = _historyUUID ; -- COMPLETE_PASSED
+          IF(_checklist_statusId is not null) THEN
+			update checklist_history set  checklist_history_statusId = _checklist_statusId where checklist_historyUUID = _historyUUID ; -- COMPLETE_PASSED
+          END IF;
 	END IF;
 ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
