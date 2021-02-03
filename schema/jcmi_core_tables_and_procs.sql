@@ -910,6 +910,9 @@ BEGIN
         where user_customerUUID = _customerId
           and user_statusId = 1
         order by user_userName;
+        
+        select 'group' as tableName, groupUUID as id, group_name as value, group_name as name from jcmi_hms.user_group 
+		where group_customerUUID = _customerId order by group_name;
 
     ELSEIF (_action = 'GET_LIST_OF_USER') THEN
 		set @l_sql = CONCAT('SELECT userUUID, user_userName FROM `user` where userUUID IN (\'',_user_userUUID,'\')');
