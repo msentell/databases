@@ -2920,7 +2920,7 @@ BEGIN
         select 'checklist' as tableName, checklistUUID as id, checklist_name as value, checklist_name as name,
         checklist_partRequired as isPartRequire
         from checklist
-        where checklist_customerUUID = _customerId
+        where checklist_customerUUID = _customerId AND checklist_deleteTS is NULL
         order by checklist_name;
     END IF;
 
@@ -4443,6 +4443,10 @@ ELSEIF(_action ='DELETE') THEN
 	-- 1. if delete of a checklist history, then make sure wo is deleted.
 
     select _action;
+ELSEIF(_action ='DELETE_CLI') THEN
+IF(_checklistUUID is not null) THEN 
+    update checklist set checklist_deleteTS = date(now()) where checklistUUID = _checklistUUID;
+    END IF;
 
 ELSE
 	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _action is of type invalid';
