@@ -4444,10 +4444,16 @@ ELSEIF(_action ='DELETE') THEN
 
     select _action;
 ELSEIF(_action ='DELETE_CLI') THEN
-IF(_checklistUUID is not null) THEN 
+IF(_checklistUUID is not null) THEN
     update checklist set checklist_deleteTS = date(now()) where checklistUUID = _checklistUUID;
     END IF;
 
+ELSEIF(_action ='COUNT_CLWO') THEN
+    IF(_checklistUUID is not null) THEN
+    select count(*) into @WOCount from workorder where workorder_checklistUUID=_checklistUUID
+        and workorder_status not like '%complete%' ;
+	END IF;
+    select @WOCount as activeWorkorders;
 ELSE
 	SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _action is of type invalid';
 	LEAVE CHECKLIST_checklist;
