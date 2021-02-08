@@ -614,10 +614,12 @@ CREATE TABLE `knowledge_base` (
     knowledge_dislikes int NULL DEFAULT 0,
 	  knowledge_relatedArticles TEXT NULL, -- json
     knowledge_createdByUUID CHAR(32)  NULL,
+    knowledge_acknowledgedByUUID CHAR(32)  NULL,
     knowledge_updatedByUUID CHAR(32)  NULL,
    	knowledge_updatedTS datetime  NULL,
   	knowledge_createdTS datetime  NULL default now(),
    	knowledge_deleteTS datetime  NULL,
+    knowledge_attachment varchar(100) NULL.
 
   	PRIMARY KEY (knowledgeUUID))
 ENGINE = InnoDB ;
