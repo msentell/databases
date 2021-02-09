@@ -4683,3 +4683,46 @@ END$$
 
 DELIMITER ;
 
+
+-- ==================================================================
+--call Fabric_fabric('add','a','b')
+
+DROP procedure IF EXISTS `Fabric_fabric`;
+
+DELIMITER $$
+CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _img_url varchar(225),_img_json TEXT)
+Fabric_fabric:
+BEGIN
+
+    DECLARE DEBUG INT DEFAULT 0;
+
+    IF (_action IS NULL) THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _action can not be empty';
+        LEAVE Fabric_fabric;
+    END IF;
+
+    IF(_action = 'ADD') THEN
+        IF (_img_url IS NULL) THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _img_url can not be empty';
+            LEAVE Fabric_fabric;
+        END IF;
+        IF (_img_json IS NULL) THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _img_json can not be empty';
+            LEAVE Fabric_fabric;
+        END IF;
+
+        SET @_uniqueId = uuid();
+        INSERT INTO fabric_img (id,img_url,img_json) VALUES (@_uniqueId,_img_url,_img_json);
+        
+        SELECT @_uniqueId as 'id' ;
+    ELSEIF (_action = 'GET') THEN
+     SELECT 'get';
+    ELSE
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _action not found';
+            LEAVE Fabric_fabric;    
+    END IF;
+
+END$$
+
+DELIMITER ;
+
