@@ -2203,7 +2203,8 @@ CREATE PROCEDURE `LOCATION_Location`(IN _action VARCHAR(100),
                                      IN _location_country VARCHAR(25),
                                      IN _location_contact_name VARCHAR(100),
                                      IN _location_contact_email VARCHAR(100),
-                                     IN _location_contact_phone VARCHAR(50))
+                                     IN _location_contact_phone VARCHAR(50),
+                                     IN _location_fabricId CHAR(36))
 LOCATION_Location:
 BEGIN
     DECLARE commaNeeded INT DEFAULT 0;
@@ -2351,6 +2352,9 @@ BEGIN
         END IF;
         if (_location_contact_phone is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',location_contact_phone = \'', _location_contact_phone, '\'');
+        END IF;
+         if (_location_fabricId is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',location_fabricId = \'', _location_fabricId, '\'');
         END IF;
 
         set @l_sql = CONCAT(@l_sql, ' where locationUUID = \'', _locationUUID, '\';');
