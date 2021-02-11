@@ -1065,10 +1065,9 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
             SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
             LEAVE WORKORDER_workOrder;
         END IF;
-
-        IF (_action ='UPDATE') THEN
-            select workorder_tag INTO _workorder_tag from workorder where workorderUUID = _workorderUUID;
-
+			select workorder_tag, workorder_checklistUUID, workorder_checklistHistoryUUID into _workorder_tag, @checklistUid,  @checklisthistoryuuid from workorder where workorderUUID = _workorderUUID;
+				IF (_action ='UPDATE') THEN
+                
             IF (_workorder_tag IS NOT NULL) THEN
                 DELETE FROM workorder WHERE workorder_tag = _workorder_tag and workorder_scheduleDate > now() ;
 
@@ -1081,6 +1080,16 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
                 LEAVE WORKORDER_workOrder;
             END IF;
         END IF;
+
+        IF(@checklistUid != _workorder_checklistUUID) THEN
+            update checklist_history
+            set checklist_history_statusId = 3
+            where checklist_historyUUID =  @checklisthistoryuuid; -- complete previous checklist bcz change in checklistId
+
+            update workorder
+            set workorder_checklistHistoryUUID = null
+            where  workorderUUID = _workorderUUID; -- removed prevous checklistHistoryId
+		END IF;
 
          set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
 
