@@ -4698,12 +4698,13 @@ DELIMITER ;
 
 
 -- ==================================================================
---call Fabric_fabric('add','a','b')
+--call Fabric_fabric('ADD',null,'a','b')
+--call Fabric_fabric('GET','111bf531-6b06-11eb-a1a5-4e53d94465b4',null,null)
 
 DROP procedure IF EXISTS `Fabric_fabric`;
 
 DELIMITER $$
-CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _img_url varchar(225),_img_json TEXT)
+CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _id char(36),IN _img_url varchar(225),_img_json TEXT)
 Fabric_fabric:
 BEGIN
 
@@ -4729,12 +4730,13 @@ BEGIN
         
         SELECT @_uniqueId as 'id' ;
     ELSEIF (_action = 'GET') THEN
-     SELECT 'get';
-    ELSE
-            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _action not found';
-            LEAVE Fabric_fabric;    
-    END IF;
+        IF (_id IS NULL) THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _id can not be empty';
+            LEAVE Fabric_fabric;
+        END IF;
 
+        SELECT img_url,img_json FROM fabric_img where id = _id;
+	    END IF;
 END$$
 
 DELIMITER ;
