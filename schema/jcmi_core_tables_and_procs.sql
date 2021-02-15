@@ -230,6 +230,7 @@ BEGIN
     DECLARE _securityBitwise varchar(100);
     DECLARE _individualSecurityBitwise varchar(100);
     DECLARE _brand_preferenceJSON text;
+    DECLARE _magentoCustomerId INT default 0;
 
     DECLARE _DISABLE_MFA INT default 1; -- 0 is enable MFA
 
@@ -288,6 +289,8 @@ BEGIN
         
          select brand_preferenceJSON into _brand_preferenceJSON  from customer_brand left join customer on (customer_brand.brandUUID = customer.customer_brandUUID)
         where customer.customerUUID = _customerUUID;
+        select customerx_externalId into _magentoCustomerId from 
+        customer_xref where customerx_externalName like '%magento%' and customerUUID = _customerUUID ;
 
         if (_DISABLE_MFA = 0) THEN
             select SESSION_generateAccessCode(4) into _USER_loginEmailValidationCode;
@@ -339,7 +342,8 @@ BEGIN
                    _securityBitwise               as securityBitwise,
                    _individualSecurityBitwise     as individualSecurityBitwise,
                    _brand_preferenceJSON         as brandpreferenceJSON,
-                   _customerUUID                  as customerUUID;
+                   _customerUUID                  as customerUUID,
+                   _magentoCustomerId			  as magentoCustomerId;
 
         ELSE
 
@@ -374,7 +378,8 @@ BEGIN
                    _securityBitwise               as securityBitwise,
                    _individualSecurityBitwise     as individualSecurityBitwise,
                    _brand_preferenceJSON          as brandpreferenceJSON,
-                   _customerUUID                  as customerUUID;
+                   _customerUUID                  as customerUUID,
+                    _magentoCustomerId			  as magentoCustomerId;
 
         END IF;
 
