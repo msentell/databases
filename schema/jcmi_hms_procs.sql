@@ -2684,9 +2684,9 @@ BEGIN
     END IF;
 
     IF (_userUUID IS NULL) THEN
+    END IF;
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _userUUID missing';
         LEAVE ASSETPART_assetpart;
-    END IF;
 
 
 
@@ -4383,7 +4383,26 @@ ELSEIF(_action ='UPDATE_TEMPLATE' and _checklistUUID is not null) THEN
     END IF;
 ELSEIF(_action = 'DELETE_CHECKLISTITEM' and _checklist_itemUUID is not null) THEN
 		delete from checklist_item where checklist_itemUUID = _checklist_itemUUID;
-	
+ELSEIF(_action = 'UPDATE_CHECKLIST') THEN
+        IF(_checklistUUID is null) THEN
+             SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _checklistUUID required';
+        LEAVE CHECKLIST_checklist;
+        END IF;
+        IF(_userUUID is null) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _userUUID missing';
+            LEAVE CHECKLIST_checklist;
+        END IF;
+
+	 set  @l_sql = CONCAT('update checklist set checklist_updatedTS=now(), checklist_updatedByUUID=\'', _userUUID,'\'');      
+		 if (_checklist_name is not null) THEN
+                      set @l_sql = CONCAT(@l_sql,',checklist_name = \'', _checklist_name,'\'');
+		 END IF;
+     set @l_sql = CONCAT( @l_sql ,' where checklistUUID = \'', _checklistUUID,'\';');
+     IF (_DEBUG=1) THEN select _action, @l_sql ; END IF;
+     select _checklist_name as checklistTitle;
+     PREPARE stmt FROM @l_sql;
+		EXECUTE stmt;
+		DEALLOCATE PREPARE stmt;
 ELSEIF(_action = 'COMPLETE' or _action = 'RESET') THEN
 	select checklist_history_workorderUUID into _workorderUUID from checklist_history
 			where checklist_historyUUID = _historyUUID;
