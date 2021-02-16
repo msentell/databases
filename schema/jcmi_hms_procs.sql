@@ -1890,7 +1890,7 @@ BEGIN
 END$$
 
 DELIMITER ;
--- ==================================================================
+    -- ==================================================================
 
 -- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID, 0,_startLimitIndex,_dataCount);
 -- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null, 0,null,null);
@@ -4142,7 +4142,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
         set _foundId = null;
 
         select workorderUUID into _foundId from workorder where workorderUUID=_workorderUUID;
-
+		
         if (_foundId is null) THEN
             if (_DEBUG=1) THEN select '_workorderUUID',_workorderUUID; END IF;
             if (_DEBUG=1) THEN select 'CREATE WO ',_workorderUUID,' ',_assetUUID,' ',_workorder_locationUUID,' ',_checklist_name; END IF;
@@ -4162,7 +4162,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
                         null,null,null,null,
                         null,null
                     );
-
+                   
                     -- 	 		ELSE
 
                                     -- this will replace the checklistUUID for the historyUUID version of it.
@@ -4251,8 +4251,8 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
         -- update item record if noted
 
     -- 4. if all items on the checklist are completed, then close the WO
-
-    select _historyUUID as 'historyUUID',_workorderUUID as 'workorderUUID', _checklist_itemIds as 'checklistItemUUIDs', _checklist_itemHistoryIds as 'historyItemUUIDs';
+		 select workorder_name, workorder_number into @workorderName, @workorderNumber  from workorder where workorderUUID = _workorderUUID ;
+		select _historyUUID as 'historyUUID',_workorderUUID as 'workorderUUID', _checklist_itemIds as 'checklistItemUUIDs', _checklist_itemHistoryIds as 'historyItemUUIDs',@workorderName as workorderName, @workorderNumber as  workOrderNumber;
 ELSEIF (_action = 'CREATE_CHECKLIST') THEN
     if (_customerUUID is null) THEN
 		SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call CHECKLIST_checklist: _customerUUID required';
