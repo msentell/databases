@@ -4723,7 +4723,7 @@ DELIMITER ;
 DROP procedure IF EXISTS `Fabric_fabric`;
 
 DELIMITER $$
-CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _id char(36),IN _img_url varchar(225),_img_json TEXT)
+CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _id char(36),IN _name char(36),IN _img_url varchar(225),_img_json TEXT)
 Fabric_fabric:
 BEGIN
 
@@ -4743,9 +4743,13 @@ BEGIN
             SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _img_json can not be empty';
             LEAVE Fabric_fabric;
         END IF;
+        IF (_name IS NULL) THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _name can not be empty';
+            LEAVE Fabric_fabric;
+        END IF;
 
         SET @_uniqueId = uuid();
-        INSERT INTO fabric_img (id,img_url,img_json) VALUES (@_uniqueId,_img_url,_img_json);
+        INSERT INTO fabric_img (id,img_name,img_url,img_json) VALUES (@_uniqueId,_name,_img_url,_img_json);
         
         SELECT @_uniqueId as 'id' ;
     ELSEIF (_action = 'GET') THEN
