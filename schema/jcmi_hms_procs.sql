@@ -4758,7 +4758,7 @@ BEGIN
             LEAVE Fabric_fabric;
         END IF;
 
-        SELECT img_url,img_json FROM fabric_img where id = _id;
+        SELECT img_url,img_json as 'fabJSON' FROM fabric_img where id = _id;
 	    END IF;
 END$$
 
