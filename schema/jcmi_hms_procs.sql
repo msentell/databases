@@ -697,52 +697,54 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
     END IF;
 
 
-    if (_workorder_checklistUUID is not null AND _workorder_frequency>1) THEN
+    if (_workorder_checklistUUID is not null AND _workorder_frequency > 0) THEN
 
         select checklist_name,'CHECKLIST'
         into _workorder_actions,_workorder_type
         from checklist where checklistUUID = _workorder_checklistUUID;
 
-        if (_workorder_frequencyScope = 'DAILY') THEN
+                if (_workorder_frequencyScope = 'DAILY') THEN
 
-select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
-(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
- (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
- (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
- (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
- (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
- (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency DAY)
-and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
-order by v.selected_date;
+        select group_concat(dates) INTO _woDates from (
+        select  DATE_FORMAT(v.selected_date, _dateFormat) as dates, row_number() over (order by selected_date) as row_num from
+        (select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
+        (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+        (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+        where selected_date between _workorder_scheduleDate and  _workorder_dueDate
+        and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
+        order by v.selected_date ) s  where (row_num-1) % _workorder_frequency  = 0; --  (row_num -1) is bcz it should consider from today.. elso it will not
 
-        ELSEIF (_workorder_frequencyScope = 'WEEKLY') THEN
+                ELSEIF (_workorder_frequencyScope = 'WEEKLY') THEN
 
-select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
-(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
- (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
- (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
- (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
- (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
- (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency WEEK)
-and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
-order by v.selected_date;
+        select group_concat(dates) INTO _woDates from (
+        select DATE_FORMAT(v.selected_date, _dateFormat) as dates, ROW_NUMBER() OVER (order by v.selected_date ) as row_num  from
+        (select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
+        (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+        (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4 ) as v
+        where selected_date between _workorder_scheduleDate and _workorder_dueDate and FIND_IN_SET (dayname(v.selected_date), _daysToMaintain)  order by v.selected_date ) s where (s.row_num -1) % _workorder_frequency = 0;
 
-        ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
 
-select group_concat(DATE_FORMAT(v.selected_date, _dateFormat)) INTO _woDates from
-(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date from
- (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
- (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
- (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
- (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
- (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-where selected_date between date(now()) and  DATE_ADD(date(now()), INTERVAL _workorder_frequency MONTH)
-and FIND_IN_SET (dayname(selected_date),_daysToMaintain) and (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) = 1
-order by v.selected_date;
+                ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
 
-        END IF;
+        select group_concat(dates) INTO _woDates from (
+        select DATE_FORMAT(v.selected_date, _dateFormat) as dates, ROW_NUMBER() over (order by selected_date) as row_num from
+        (select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date  from
+        (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+        (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+        where selected_date between _workorder_scheduleDate and _workorder_dueDate
+        and FIND_IN_SET (dayname(selected_date), _daysToMaintain) and  (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) = 1 order by v.selected_date 
+        ) s  where (s.row_num - 1) % _workorder_frequency = 0 ; -- (s.row_num - 1) is bcz it will consider from today.. elso no
+
+                END IF;
 
         set _workorderUUID = null; -- force creating of new WO's
 
