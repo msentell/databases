@@ -4717,8 +4717,9 @@ DELIMITER ;
 
 
 -- ==================================================================
---call Fabric_fabric('ADD',null,'a','b')
---call Fabric_fabric('GET','111bf531-6b06-11eb-a1a5-4e53d94465b4',null,null)
+--call Fabric_fabric('ADD',null,'<name>','<img url>','<img json>')
+--call Fabric_fabric('GET','<fabric_img id>',null,null,null)
+--call Fabric_fabric('LIST',null,null,null,null)
 
 DROP procedure IF EXISTS `Fabric_fabric`;
 
@@ -4759,7 +4760,9 @@ BEGIN
         END IF;
 
         SELECT img_url,img_json as 'fabJSON' FROM fabric_img where id = _id;
-	    END IF;
+    ELSEIF (_action = 'LIST') THEN
+        SELECT id,img_url as 'url',img_name as 'name' FROM fabric_img where img_name IS NOT NULL;
+	END IF;
 END$$
 
 DELIMITER ;
