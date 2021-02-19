@@ -232,16 +232,16 @@ END$$
 DELIMITER ;
 -- ==================================================================
 
--- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON,diagnostic_node_warning,diagnostic_node_warningSeverity);
--- call DIAGNOSTIC_node('GETNODE', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null,null);
--- call DIAGNOSTIC_node('GET', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null,null, null, null, null, null, null,null,null,null,null);
--- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON',null,null);
--- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON','diagnostic_node_warning',diagnostic_node_warningSeverity);
--- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null,null,null);
--- call DIAGNOSTIC_node('UPDATE','1','5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null ,'testing_tiltle rtghjy', 'diagnosticnodeprompt', 'diagnostic_node_optionPrompt', '[{"coordinates":[{}],"color":"red","forwardId":"1599760999552"}]', 'https://jcmi.sfo2.digitaloceanspaces.com/demodata/Hendrix/diagnostics/Heating1.JPG', 'false','hello','hijky');
--- call DIAGNOSTIC_node('GET_ASSETPARTS','1',null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null);
--- call DIAGNOSTIC_node('GET_AVAILABLE_ASSETPARTS','1',null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null);
-
+-- call DIAGNOSTIC_node(action,userId,diagnostic_nodeUUID, diagnostic_node_diagnosticUUID, diagnostic_node_statusId,diagnostic_node_title, diagnostic_node_prompt, diagnostic_node_optionPrompt, diagnostic_node_hotSpotJSON, diagnostic_node_imageSetJSON, diagnostic_node_optionSetJSON,diagnostic_node_warning,diagnostic_node_warningSeverity,diagnostic_node_fabricId);
+-- call DIAGNOSTIC_node('GETNODE', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null,null,null);
+-- call DIAGNOSTIC_node('GET', '1', '5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null,null, null, null, null, null, null,null,null,null,null,null);
+-- call DIAGNOSTIC_node('CREATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title', 'diagnostic_node_prompt', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON',null,null,null);
+-- call DIAGNOSTIC_node('UPDATE', '1', '10', '633a54011d76432b9fa18b0b6308c189', null,'diagnostic_node_title2', 'diagnostic_node_prompt2', 'diagnostic_node_optionPrompt', 'diagnostic_node_hotSpotJSON', 'diagnostic_node_imageSetJSON', 'diagnostic_node_optionSetJSON','diagnostic_node_warning',diagnostic_node_warningSeverity,null);
+-- call DIAGNOSTIC_node('DELETE', '1',  '10', null, null,null, null, null, null, null, null,null,null,null);
+-- call DIAGNOSTIC_node('UPDATE','1','5d84cb09d6fb473baba1b8914fc', '633a54011d76432b9fa18b0b6308', null ,'testing_tiltle rtghjy', 'diagnosticnodeprompt', 'diagnostic_node_optionPrompt', '[{"coordinates":[{}],"color":"red","forwardId":"1599760999552"}]', 'https://jcmi.sfo2.digitaloceanspaces.com/demodata/Hendrix/diagnostics/Heating1.JPG', 'false','hello','hijky',null);
+-- call DIAGNOSTIC_node('GET_ASSETPARTS','1',null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null);
+-- call DIAGNOSTIC_node('GET_AVAILABLE_ASSETPARTS','1',null, '633a54011d76432b9fa18b0b6308c189', null,null, null, null, null, null, null,null,null,null);
+-- call DIAGNOSTIC_node('UPDATE', '1', '10', null, null,null, null, null, null, 'new img url', null,null,null,'new fab id');
 
 DROP procedure IF EXISTS `DIAGNOSTIC_node`;
 
@@ -259,7 +259,8 @@ CREATE PROCEDURE `DIAGNOSTIC_node`(IN _action VARCHAR(100),
                                    IN _diagnostic_node_imageSetJSON text,
                                    IN _diagnostic_node_optionSetJSON text,
                                    IN _diagnostic_node_warning VARCHAR(255),
-                                   IN _diagnostic_node_warningSeverity VARCHAR(45))
+                                   IN _diagnostic_node_warningSeverity VARCHAR(45),
+                                   IN _diagnostic_node_fabricId CHAR(36))
 DIAGNOSTIC_node:
 BEGIN
     DECLARE commaNeeded INT DEFAULT 0;
@@ -435,6 +436,9 @@ BEGIN
         if (_diagnostic_node_warningSeverity is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',diagnostic_node_warningSeverity= \'', _diagnostic_node_warningSeverity, '\'');
         END IF;
+        if (_diagnostic_node_fabricId is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',diagnostic_node_fabricId= \'', _diagnostic_node_fabricId, '\'');
+        END IF;
 
         set @l_sql = CONCAT(@l_sql, ' where diagnostic_nodeUUID = \'', _diagnostic_nodeUUID, '\';');
 
@@ -482,7 +486,7 @@ DIAGNOSTIC_getNode:
 BEGIN
 
     SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT =
-            'call DIAGNOSTIC_getNode: deprecated use: call DIAGNOSTIC_node(GET, 1, null, 633a54011d76432b9fa18b0b6308c189, null,null, null, null, null, null, null); ';
+            'call DIAGNOSTIC_getNode: deprecated use: call DIAGNOSTIC_node(GET, 1, null, 633a54011d76432b9fa18b0b6308c189, null,null, null, null, null, null, null,null); ';
     LEAVE DIAGNOSTIC_getNode;
 
 
@@ -2643,14 +2647,15 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call ASSETPART_assetpart(action, _userUUID, _customerUUID, asset_partUUID, asset_part_template_part_sku,asset_part_statusId, asset_part_sku,asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor);
--- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5', null, null,null, null, null, null, null, null, null, null, null, null, null, null, null);
--- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5',  '0090d1d3b414471485c5e8b6f390a150', null,null, null, null, null, null, null, null, null, null, null, null, null, null);
--- call ASSETPART_assetpart('CREATE', '1', '3792f636d9a843d190b8425cc06257f5',  10, 'asset_part_template_part_sku',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 1, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor');
--- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, 'asset_part_template_part_sku2',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 0, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor');
--- call ASSETPART_assetpart('DELETE', '1', '3792f636d9a843d190b8425cc06257f5',  10, null,null, null, null,null,null,null,null,null,null,null,null, null,null);
--- call ASSETPART_assetpart('SET_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null, null, 0, 'tesing_updated_dignosticUUID', null, null);
--- call ASSETPART_assetpart('REMOVE_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null,null, 0, null, null, null);
+-- call ASSETPART_assetpart(action, _userUUID, _customerUUID, asset_partUUID, asset_part_template_part_sku,asset_part_statusId, asset_part_sku,asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor,_asset_part_fabricId);
+-- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5', null, null,null, null, null, null, null, null, null, null, null, null, null, null, null,null,null);
+-- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5',  '0090d1d3b414471485c5e8b6f390a150', null,null, null, null, null, null, null, null, null, null, null, null, null, null,null);
+-- call ASSETPART_assetpart('CREATE', '1', '3792f636d9a843d190b8425cc06257f5',  10, 'asset_part_template_part_sku',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 1, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor',null);
+-- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, 'asset_part_template_part_sku2',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 0, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor',null);
+-- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, null,null,null,null, null, null, null,'img url',null, null,null, null,null, null,'1');
+-- call ASSETPART_assetpart('DELETE', '1', '3792f636d9a843d190b8425cc06257f5',  10, null,null, null, null,null,null,null,null,null,null,null,null, null,null,null);
+-- call ASSETPART_assetpart('SET_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null, null, 0, 'tesing_updated_dignosticUUID', null, null,null);
+-- call ASSETPART_assetpart('REMOVE_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null,null, 0, null, null, null,null);
 
 DROP procedure IF EXISTS `ASSETPART_assetpart`;
 
@@ -2672,7 +2677,8 @@ CREATE PROCEDURE `ASSETPART_assetpart`(IN _action VARCHAR(100),
                                        IN _asset_part_isPurchasable VARCHAR(255),
                                        IN _asset_part_diagnosticUUID VARCHAR(255),
                                        IN _asset_part_magentoUUID VARCHAR(255),
-                                       IN _asset_part_vendor VARCHAR(255))
+                                       IN _asset_part_vendor VARCHAR(255),
+                                       IN _asset_part_fabricId CHAR(36))
 ASSETPART_assetpart:
 BEGIN
 
@@ -2686,9 +2692,9 @@ BEGIN
     END IF;
 
     IF (_userUUID IS NULL) THEN
-    END IF;
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _userUUID missing';
         LEAVE ASSETPART_assetpart;
+    END IF;
 
 
 
@@ -2822,6 +2828,9 @@ BEGIN
         END IF;
         if (_asset_part_isPurchasable is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',asset_part_isPurchasable = ', _asset_part_isPurchasable);
+        END IF;
+        if (_asset_part_fabricId is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',asset_part_fabricId = \'', _asset_part_fabricId, '\'');
         END IF;
 
 
