@@ -602,7 +602,7 @@ null,'HIGH','31-01-2021',null,
 null,'Sunday,Monday,Tuesday'
 );
 
-*/
+    */
 DROP procedure IF EXISTS `WORKORDER_create`;
 
 
@@ -637,7 +637,7 @@ IN _daysToMaintain VARCHAR(100)
 )
 WORKORDER_create: BEGIN
 
-DECLARE _DEBUG INT DEFAULT 0;
+DECLARE _DEBUG INT DEFAULT 1;
 
 DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
 DECLARE _maxWO INT;
@@ -701,13 +701,16 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
     END IF;
 
 
-    if (_workorder_checklistUUID is not null AND _workorder_frequency > 0) THEN
-
-        select checklist_name,'CHECKLIST'
-        into _workorder_actions,_workorder_type
-        from checklist where checklistUUID = _workorder_checklistUUID;
-
-                if (_workorder_frequencyScope = 'DAILY') THEN
+  if (_workorder_frequency > 0) THEN
+            if(_workorder_checklistUUID is not null) THEN
+                select checklist_name,'CHECKLIST'
+                into _workorder_actions,_workorder_type
+                from checklist where checklistUUID = _workorder_checklistUUID;
+            ELSE
+                select 'action', 'CHECKLIST' into _workorder_actions, _workorder_type;
+            END IF;
+        
+    if (_workorder_frequencyScope = 'DAILY') THEN
 
         select group_concat(dates) INTO _woDates from (
         select  DATE_FORMAT(v.selected_date, _dateFormat) as dates, row_number() over (order by selected_date) as row_num from
@@ -717,11 +720,11 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
         (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
         (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
         (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-        where selected_date between _workorder_scheduleDate and  _workorder_dueDate
+        where selected_date between _workorder_scheduleDate and  _workorder_completeDate
         and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
         order by v.selected_date ) s  where (row_num-1) % _workorder_frequency  = 0; --  (row_num -1) is bcz it should consider from today.. elso it will not
-
-                ELSEIF (_workorder_frequencyScope = 'WEEKLY') THEN
+			IF (_DEBUG=1) THEN select 'created daily,',_woDates, _workorder_completeDate, _workorder_scheduleDate,_daysToMaintain, _workorder_frequency; END IF;
+    ELSEIF (_workorder_frequencyScope = 'WEEKLY') THEN
 
         select group_concat(dates) INTO _woDates from (
         select DATE_FORMAT(v.selected_date, _dateFormat) as dates, ROW_NUMBER() OVER (order by v.selected_date ) as row_num  from
@@ -731,10 +734,10 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
         (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
         (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
         (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4 ) as v
-        where selected_date between _workorder_scheduleDate and _workorder_dueDate and FIND_IN_SET (dayname(v.selected_date), _daysToMaintain)  order by v.selected_date ) s where (s.row_num -1) % _workorder_frequency = 0;
+        where selected_date between _workorder_scheduleDate and _workorder_completeDate and FIND_IN_SET (dayname(v.selected_date), _daysToMaintain)  order by v.selected_date ) s where (s.row_num -1) % _workorder_frequency = 0;
 
 
-                ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
+    ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
 
         select group_concat(dates) INTO _woDates from (
         select DATE_FORMAT(v.selected_date, _dateFormat) as dates, ROW_NUMBER() over (order by selected_date) as row_num from
@@ -744,7 +747,7 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
         (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
         (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
         (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-        where selected_date between _workorder_scheduleDate and _workorder_dueDate
+        where selected_date between _workorder_scheduleDate and _workorder_completeDate
         and FIND_IN_SET (dayname(selected_date), _daysToMaintain) and  (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) = 1 order by v.selected_date 
         ) s  where (s.row_num - 1) % _workorder_frequency = 0 ; -- (s.row_num - 1) is bcz it will consider from today.. elso no
 
@@ -758,11 +761,16 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
 
     END IF;
 
-IF (_DEBUG=1) THEN select _action,_woDates; END IF;
+    IF (_DEBUG=1) THEN select _action,_woDates; END IF;
 
 
     set _workorder_definition = 'CM-';
-    set _workorder_tag = concat(_workorder_checklistUUID,':',_workorder_frequencyScope,':',_workorder_frequency);
+    IF(_workorder_checklistUUID is not null) THEN
+		set _workorder_tag = concat(_workorder_checklistUUID,':',_workorder_frequencyScope,':',_workorder_frequency);
+	ELSE 
+    -- added unique id after checklist , as this could be dupilicated
+		set _workorder_tag = concat('Checklist:', UUID(),':',_workorder_frequencyScope,':',_workorder_frequency);
+	END IF;
     IF (_workorder_type = 'CHECKLIST') THEN
         set _workorder_status = 'IN_PROGRESS';
     ELSE
@@ -4683,40 +4691,54 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call ATTACHMENT_attachment('5eb71fddbe04419bb7fda53fb0ef31ae','ASSET-PART')
--- call ATTACHMENT_attachment('4e64ea9a159f45308019edcfd9dd9cd8','ASSET')
+-- call ATTACHMENT_attachment(null,'5eb71fddbe04419bb7fda53fb0ef31ae','ASSET-PART', null,null)
+-- call ATTACHMENT_attachment(null, '4e64ea9a159f45308019edcfd9dd9cd8','ASSET', null, null)
+-- call ATTACHMENT_attachment('UPDATE_ATTACHMENT','2efb73617c614b1e8d686da738a3ed91', 'ASSET', '85a9fc657d60484eb35009250b50f9c7', 'HVAC Unit')
 
 DROP procedure IF EXISTS `ATTACHMENT_attachment`;
 
 DELIMITER $$
-CREATE PROCEDURE `ATTACHMENT_attachment`(IN _partId char(32),IN _partType char(32))
+CREATE PROCEDURE `ATTACHMENT_attachment`( IN _action char(32), IN _partId char(32),IN _partType char(32), IN _attachmentuuid CHAR(32), IN _attachment_description varchar(100))
 ATTACHMENT_attachment:
 BEGIN
-
-    DECLARE DEBUG INT DEFAULT 0;
+	
+    DECLARE DEBUG INT DEFAULT 1;
     DECLARE asset_part_id char(60);
-
-    IF (_partId IS NULL) THEN
-        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partId can not be empty';
-        LEAVE ATTACHMENT_attachment;
-    END IF;
-
-    IF (_partType IS NULL) THEN
+	IF(_action = 'UPDATE_ATTACHMENT') THEN 
+		IF(_attachmentuuid is null) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachmentuuid can not be empty';
+            LEAVE ATTACHMENT_attachment;
+        END IF;
+        IF(_attachment_description is NULL) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_description can not be empty';
+             LEAVE ATTACHMENT_attachment; 
+		END IF;
+			update attachment set attachment_updatedts = now() ,attachment_description = _attachment_description where attachmentuuid = _attachmentuuid ;
+    ELSEIF(_action = 'CREATE_ATTACHMENT') THEN
+		select _action	;
+    ELSE
+		IF (_partId IS NULL) THEN
+         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partId can not be empty';
+         LEAVE ATTACHMENT_attachment; 
+         END IF;
+         
+		IF (_partType IS NULL) THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partType can not be empty';
         LEAVE ATTACHMENT_attachment;
-    END IF;
-
+		END IF;
+	END IF;
+    
     IF(_partType = 'ASSET' or _partType = 'ASSET-PART') THEN
 
         IF(_partType = 'ASSET') THEN
             SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
         ELSE
-            asset_part_id = _partId;
+           set asset_part_id = _partId;
         END IF;
 
         SELECT * FROM attachment a LEFT JOIN asset_part_attachment_join apj ON (a.attachmentUUID = apj.apaj_attachmentUUID)
         WHERE apj.apaj_asset_partUUID = asset_part_id;
-
+        
     ELSE
          SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partType not matching with conditions';
          LEAVE ATTACHMENT_attachment;
