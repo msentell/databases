@@ -4750,14 +4750,17 @@ DELIMITER ;
 
 
 -- ==================================================================
---call Fabric_fabric('ADD',null,'<name>','<img url>','<img json>')
---call Fabric_fabric('GET','<fabric_img id>',null,null,null)
---call Fabric_fabric('LIST',null,null,null,null)
+--call Fabric_fabric('ADD',null,null,'<name>','<img url>','<img json>')
+--call Fabric_fabric('GET','<_partId>',<_partType>,null,null,null)
+--call Fabric_fabric('GET','e0a6967bf19e47ddab7c2a6147da1e98','LOCATION',null,null,null)
+--call Fabric_fabric('GET','4c2d6b13a0f647b08bf11d37ab78b211','ASSET-PART',null,null,null)
+--call Fabric_fabric('GET','1611765382204','DIAGNOSTIC-NODE',null,null,null)
+--call Fabric_fabric('LIST',null,null,null,null,null)
 
 DROP procedure IF EXISTS `Fabric_fabric`;
 
 DELIMITER $$
-CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _id char(36),IN _name char(36),IN _img_url varchar(225),_img_json TEXT)
+CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _partId char(36),IN _partType char(36),IN _name char(36),IN _img_url varchar(225),_img_json TEXT)
 Fabric_fabric:
 BEGIN
 
@@ -4787,12 +4790,28 @@ BEGIN
         
         SELECT @_uniqueId as 'id' ;
     ELSEIF (_action = 'GET') THEN
-        IF (_id IS NULL) THEN
-            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _id can not be empty';
+        IF (_partId IS NULL) THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _partId can not be empty';
             LEAVE Fabric_fabric;
         END IF;
 
-        SELECT img_url,img_json as 'fabJSON' FROM fabric_img where id = _id;
+        set @l_SQL = 'select fi.img_name as name,fi.img_url as url,fi.img_json as fabJSON from fabric_img fi left join ' ;
+
+        IF(_partType = 'LOCATION')THEN
+        	set @l_SQL=	CONCAT(@l_SQL, 'location l on (fi.id = l.location_fabricId) where l.locationUUID = \'',_partId,'\'');
+        ELSEIF(_partType = 'ASSET-PART')THEN
+        	set @l_SQL=	CONCAT(@l_SQL, 'asset_part ap on (fi.id = ap.asset_part_fabricId) where ap.asset_partUUID = \'',_partId,'\'');
+        ELSEIF(_partType = 'DIAGNOSTIC-NODE')THEN
+        	set @l_SQL=	CONCAT(@l_SQL, 'diagnostic_node dn on (fi.id = dn.diagnostic_node_fabricId) where dn.diagnostic_nodeUUID = \'',_partId,'\'');
+        ELSE
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _partType not matching';
+            LEAVE Fabric_fabric;
+        END IF;
+
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
     ELSEIF (_action = 'LIST') THEN
         SELECT id,img_url as 'url',img_name as 'name' FROM fabric_img where img_name IS NOT NULL;
 	END IF;
