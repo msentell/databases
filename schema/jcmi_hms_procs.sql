@@ -4750,17 +4750,19 @@ DELIMITER ;
 
 
 -- ==================================================================
---call Fabric_fabric('ADD',null,null,'<name>','<img url>','<img json>')
---call Fabric_fabric('GET','<_partId>',<_partType>,null,null,null)
---call Fabric_fabric('GET','e0a6967bf19e47ddab7c2a6147da1e98','LOCATION',null,null,null)
---call Fabric_fabric('GET','4c2d6b13a0f647b08bf11d37ab78b211','ASSET-PART',null,null,null)
---call Fabric_fabric('GET','1611765382204','DIAGNOSTIC-NODE',null,null,null)
---call Fabric_fabric('LIST',null,null,null,null,null)
+-->call Fabric_fabric('ADD',null,null,null,'<name>','<img url>','<img json>')
+-->call Fabric_fabric('GET','<_partId>',<_partType>,null,null,null,null)
+--call Fabric_fabric('GET','e0a6967bf19e47ddab7c2a6147da1e98','LOCATION',null,null,null,null)
+--call Fabric_fabric('GET','4c2d6b13a0f647b08bf11d37ab78b211','ASSET-PART',null,null,null,null)
+--call Fabric_fabric('GET','1611765382204','DIAGNOSTIC-NODE',null,null,null,null)
+-->call Fabric_fabric('GET_JSON',null,null,<_id:fabric_img id>,null,null,null)
+--call Fabric_fabric('GET_JSON',null,null,'00207fbc-6d26-11eb-a1a5-4e53d94465b4',null,null,null)
+--call Fabric_fabric('LIST',null,null,null,null,null,null)
 
 DROP procedure IF EXISTS `Fabric_fabric`;
 
 DELIMITER $$
-CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _partId char(36),IN _partType char(36),IN _name char(36),IN _img_url varchar(225),_img_json TEXT)
+CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _partId char(36),IN _partType char(36),IN _id char(36),IN _name char(36),IN _img_url varchar(225),_img_json TEXT)
 Fabric_fabric:
 BEGIN
 
@@ -4795,7 +4797,7 @@ BEGIN
             LEAVE Fabric_fabric;
         END IF;
 
-        set @l_SQL = 'select fi.img_name as name,fi.img_url as url,fi.img_json as fabJSON from fabric_img fi left join ' ;
+        set @l_SQL = 'select fi.id as id,fi.img_name as name,fi.img_url as url,fi.img_json as fabJSON from fabric_img fi left join ' ;
 
         IF(_partType = 'LOCATION')THEN
         	set @l_SQL=	CONCAT(@l_SQL, 'location l on (fi.id = l.location_fabricId) where l.locationUUID = \'',_partId,'\'');
@@ -4811,7 +4813,12 @@ BEGIN
         PREPARE stmt FROM @l_SQL;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
-
+    ELSEIF (_action = 'GET_JSON') THEN
+        IF (_id IS NULL) THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _id can not be empty';
+            LEAVE Fabric_fabric;
+        END IF;
+        select img_json as fabJSON from fabric_img where id = _id;
     ELSEIF (_action = 'LIST') THEN
         SELECT id,img_url as 'url',img_name as 'name' FROM fabric_img where img_name IS NOT NULL;
 	END IF;
