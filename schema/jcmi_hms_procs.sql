@@ -4757,6 +4757,8 @@ DELIMITER ;
 --call Fabric_fabric('GET','1611765382204','DIAGNOSTIC-NODE',null,null,null,null)
 -->call Fabric_fabric('GET_JSON',null,null,<_id:fabric_img id>,null,null,null)
 --call Fabric_fabric('GET_JSON',null,null,'00207fbc-6d26-11eb-a1a5-4e53d94465b4',null,null,null)
+-->call Fabric_fabric('UPDATE',null,null,<_id:fabric_img id>,'<name>','<img url>','<img json>')
+--call Fabric_fabric('UPDATE',null,null,'00207fbc-6d26-11eb-a1a5-4e53d94465b4','kl','updated-text','{}')
 --call Fabric_fabric('LIST',null,null,null,null,null,null)
 
 DROP procedure IF EXISTS `Fabric_fabric`;
@@ -4791,6 +4793,43 @@ BEGIN
         INSERT INTO fabric_img (id,img_name,img_url,img_json) VALUES (@_uniqueId,_name,_img_url,_img_json);
         
         SELECT @_uniqueId as 'id' ;
+    ELSEIF (_action = 'UPDATE') THEN
+        IF (_id IS NULL) THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _id can not be empty';
+            LEAVE Fabric_fabric;
+		END IF;
+        IF(_name IS NULL and _img_url IS NULL and _img_json IS NULL )THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: no parameter to update';
+            LEAVE Fabric_fabric;
+		END IF;
+        set @l_SQL = 'update fabric_img set ' ;
+        set @comma_flag = 0;
+        IF(_name IS NOT NULL)THEN
+            set @comma_flag = 1;
+            set @l_SQL=	CONCAT(@l_SQL,'img_name = \'',_name,'\'');
+		END IF;
+        IF(_img_url IS NOT NULL)THEN
+            set @comma_flag = 1;
+            if(@comma_flag = 1)then
+                set @l_SQL=	CONCAT(@l_SQL,',');
+            end if;
+            set @l_SQL=	CONCAT(@l_SQL,'img_url = \'',_img_url,'\'');
+		END IF;
+        IF(_img_json IS NOT NULL)THEN
+            if(@comma_flag = 1)then
+                set @l_SQL=	CONCAT(@l_SQL,',');
+            end if;
+            set @l_SQL=	CONCAT(@l_SQL,'img_json = \'',_img_json,'\'');
+        END IF;
+
+         set @l_SQL=CONCAT(@l_SQL,' WHERE id = \'',_id,'\'');
+
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+        select 'updated';
+
     ELSEIF (_action = 'GET') THEN
         IF (_partId IS NULL) THEN
             SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call Fabric_fabric: _partId can not be empty';
