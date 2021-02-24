@@ -633,7 +633,9 @@ IN _workorder_frequency INT,
 IN _workorder_frequencyScope VARCHAR(100),
 IN _wapj_asset_partUUID VARCHAR(100),
 IN _wapj_quantity INT,
-IN _daysToMaintain VARCHAR(100)
+IN _daysToMaintain VARCHAR(100),
+IN _monthlyRecurrType VARCHAR(50),
+IN monthlyRecuttValue INT
 )
 WORKORDER_create: BEGIN
 
@@ -738,19 +740,31 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
 
 
     ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
-		set @weekoftheDay = FLOOR((DAYOFMONTH(_workorder_scheduleDate) - 1) / 7) + 1;
-        select group_concat(dates) INTO _woDates from (
-        select DATE_FORMAT(v.selected_date, _dateFormat) as dates, ROW_NUMBER() over (order by selected_date) as row_num from
-        (select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date  from
-        (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
-        (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
-        (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
-        (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
-        (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-        where selected_date between _workorder_scheduleDate and _workorder_completeDate
-        and FIND_IN_SET (dayname(selected_date), _daysToMaintain) and  (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) =  @weekoftheDay order by v.selected_date 
-        ) s  where (s.row_num - 1) % _workorder_frequency = 0 ; -- (s.row_num - 1) is bcz it will consider from today.. elso no
-        
+		IF(_monthlyRecurrType = 'DAY') then
+				select group_concat(dates) INTO _woDates from (
+				select DATE_FORMAT(v.selected_date, _dateFormat) as dates, ROW_NUMBER() over (order by selected_date) as row_num from
+				(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date  from
+				(select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+				(select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+				(select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+				(select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+				(select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+				where selected_date between _workorder_scheduleDate and _workorder_completeDate
+				and FIND_IN_SET (dayname(selected_date), _daysToMaintain) and  (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) =  monthlyRecuttValue order by v.selected_date 
+				) s  where (s.row_num - 1) % _workorder_frequency = 0 ; -- (s.row_num - 1) is bcz it will consider from today.. elso no
+			ELSE
+				select group_concat(dates) INTO _woDates from (
+				select DATE_FORMAT(v.selected_date, _dateFormat) as dates, ROW_NUMBER() over (order by selected_date) as row_num from
+				(select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) selected_date  from
+				(select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+				(select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+				(select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+				(select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+				(select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
+				where selected_date between _workorder_scheduleDate and _workorder_completeDate
+				and  DAYOFMONTH(selected_date) =  monthlyRecuttValue order by v.selected_date 
+				) s  where (s.row_num - 1) % _workorder_frequency = 0 ; -- (s.row_num - 1) is bcz it will consider from today.. elso no
+			END IF;
     END IF;
 
         set _workorderUUID = null; -- force creating of new WO's
