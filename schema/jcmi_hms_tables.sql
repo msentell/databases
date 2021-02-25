@@ -892,20 +892,12 @@ DROP TABLE IF EXISTS privilege_bitwise;
 CREATE TABLE `privilege_bitwise` (
    	privilege_key varchar(25)   NOT NULL,
     privilege_category varchar(25) NULL DEFAULT 'SYSTEM', -- ALARM, SYSTEM
+    privilege_description varchar(255) NULL,
     privilege_bitWise bigint  NULL,
   	PRIMARY KEY (privilege_key)
     )
 ENGINE = InnoDB ;
 
-DROP TABLE IF EXISTS privilege_bitwise;
-
-CREATE TABLE `privilege_bitwise` (
-   	privilege_key varchar(25)   NOT NULL,
-    privilege_category varchar(25) NULL DEFAULT 'SYSTEM', -- ALARM, SYSTEM
-    privilege_bitWise bigint  NULL,
-  	PRIMARY KEY (privilege_key)
-    )
-ENGINE = InnoDB ;
 
 DROP TABLE IF EXISTS barcode;
 
