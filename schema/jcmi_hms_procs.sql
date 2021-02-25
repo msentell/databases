@@ -4705,18 +4705,23 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call ATTACHMENT_attachment(null,'5eb71fddbe04419bb7fda53fb0ef31ae','ASSET-PART', null,null)
--- call ATTACHMENT_attachment(null, '4e64ea9a159f45308019edcfd9dd9cd8','ASSET', null, null)
--- call ATTACHMENT_attachment('UPDATE_ATTACHMENT','2efb73617c614b1e8d686da738a3ed91', 'ASSET', '85a9fc657d60484eb35009250b50f9c7', 'HVAC Unit')
+-- call ATTACHMENT_attachment(null,'5eb71fddbe04419bb7fda53fb0ef31ae','ASSET-PART', null,null, null, null, null, null, null)
+-- call ATTACHMENT_attachment(null, '4e64ea9a159f45308019edcfd9dd9cd8','ASSET', null, null, null, null, null, null, null)
+-- call ATTACHMENT_attachment('UPDATE_ATTACHMENT','2efb73617c614b1e8d686da738a3ed91', 'ASSET', '85a9fc657d60484eb35009250b50f9c7', 'HVAC Unit', null, null, null, null, null)
+-- call ATTACHMENT_attachment('CREATE_ATTACHMENT','2efb73617c614b1e8d686da738a3ed91' , 'ASSET', null,'newly added features', 'HVAC Unit', '1', 
+-- 'https://jcmi.sfo2.digitaloceanspaces.com/attachment-temp/87c7f772-8d9c-4cb2-b5f5-ed4fe03f9ee3_1614244345251.jpeg', 'a30af0ce5e07474487c39adab6269d5f',
+-- '2')
 
 DROP procedure IF EXISTS `ATTACHMENT_attachment`;
 
 DELIMITER $$
-CREATE PROCEDURE `ATTACHMENT_attachment`( IN _action char(32), IN _partId char(32),IN _partType char(32), IN _attachmentuuid CHAR(32), IN _attachment_description varchar(100))
+CREATE PROCEDURE `ATTACHMENT_attachment`( IN _action char(32), IN _partId char(36),IN _partType char(36), IN _attachmentuuid CHAR(36), IN _attachment_description varchar(1000),
+											IN _attachment_shortName varchar(100), IN _attachmentStatus int, IN _attachment_fileURL varchar(255), IN _attachment_customerUUid varchar(36),
+                                            IN _attachment_createdByUUID varchar(36))
 ATTACHMENT_attachment:
 BEGIN
 	
-    DECLARE DEBUG INT DEFAULT 1;
+    DECLARE DEBUG INT DEFAULT 0;
     DECLARE asset_part_id char(60);
 	IF(_action = 'UPDATE_ATTACHMENT') THEN 
 		IF(_attachmentuuid is null) THEN
@@ -4727,9 +4732,49 @@ BEGIN
 			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_description can not be empty';
              LEAVE ATTACHMENT_attachment; 
 		END IF;
-			update attachment set attachment_updatedts = now() ,attachment_description = _attachment_description where attachmentuuid = _attachmentuuid ;
+        set @l_sql = CONCAT('update attachment set attachment_updatedts = now()');
+        IF(_attachment_description is not null) THEN
+		set @l_sql = CONCAT(@l_sql, ',attachment_description =\'', _attachment_description, '\'');
+        END IF;
+        IF(_attachment_fileURL is not null) THEN 
+        set @l_sql = CONCAT(@l_sql, ', attachment_fileURL=\'', _attachment_fileURL,'\'');
+        END IF;
+		 set @l_sql = CONCAT(@l_sql, ' where attachmentuuid =\'', _attachmentuuid,'\';');
+        if(DEBUG =1) THEN select @l_sql, _action; END IF;
+        PREPARE stmt from @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+	ELSEIF(_action = 'DELETE_ATTACHMENT') THEN
+		IF(_attachmentuuid is null) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachmentuuid can not be empty';
+            LEAVE ATTACHMENT_attachment;
+        END IF;
+       update attachment set attachment_deleteTS = now() where  attachmentuuid= _attachmentuuid;
     ELSEIF(_action = 'CREATE_ATTACHMENT') THEN
-		select _action	;
+        IF(_attachment_description is NULL) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_description can not be empty';
+             LEAVE ATTACHMENT_attachment; 
+		END IF;
+         IF(_attachment_fileURL is NULL) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_fileURL can not be empty';
+             LEAVE ATTACHMENT_attachment; 
+		END IF;
+          IF(_attachment_customerUUID is NULL) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: attachment_customerUUID can not be empty';
+             LEAVE ATTACHMENT_attachment;
+		END IF;
+           set _attachmentuuid = uuid();
+        insert INTO attachment(`attachmentUUID`,`attachment_statusId`,`attachment_fileURL`,`attachment_shortName`,`attachment_description`,`attachment_mimeType`,
+				`attachment_customerUUID`,`attachment_createdByUUID`,`attachment_acknowledgedByUUID`,`attachment_updatedTS`,`attachment_createdTS`,`attachment_deleteTS`)
+				values(_attachmentuuid, _attachmentStatus, _attachment_fileURL, _attachment_shortName
+                , _attachment_description,'PDF', _attachment_customerUUid , _attachment_createdByUUID, null, now(), now(), null);
+		IF(_partType = 'ASSET') THEN
+            SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
+        ELSE
+           set asset_part_id = _partId;
+        END IF;
+        insert into asset_part_attachment_join(`apaj_asset_partUUID`, `apaj_attachmentUUID`, `apaj_createdTS`)
+			values(asset_part_id, _attachmentuuid, now());
     ELSE
 		IF (_partId IS NULL) THEN
          SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partId can not be empty';
@@ -4749,9 +4794,9 @@ BEGIN
         ELSE
            set asset_part_id = _partId;
         END IF;
-
+		
         SELECT * FROM attachment a LEFT JOIN asset_part_attachment_join apj ON (a.attachmentUUID = apj.apaj_attachmentUUID)
-        WHERE apj.apaj_asset_partUUID = asset_part_id;
+        WHERE apj.apaj_asset_partUUID = asset_part_id and attachment_deleteTS is null ;
         
     ELSE
          SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partType not matching with conditions';

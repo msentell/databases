@@ -461,6 +461,7 @@ CREATE TABLE `attachment` (
     attachment_customerUUID CHAR(36)  NOT NULL,
 
     attachment_createdByUUID CHAR(36)  NULL,
+    attachment_acknowledgedByUUID CHAR(36)  NULL,
     attachment_updatedByUUID CHAR(36)  NULL,
    	attachment_updatedTS datetime  NULL,
   	attachment_createdTS datetime  NULL default now(),
