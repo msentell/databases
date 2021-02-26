@@ -583,7 +583,7 @@ _workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,
 _workorder_checklistUUID,_workorder_checklistHistoryUUID,_workorder_status,_workorder_type,_workorder_name,_workorder_number,_workorder_details,
 _workorder_actions,_workorder_priority,_workorder_dueDate,_workorder_completeDate,
 _workorder_scheduleDate,_workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
-_wapj_quantity
+_wapj_quantity,_monthlyRecurrType,monthlyRecuttValue
 );
 
 call WORKORDER_create('CREATE', 'a30af0ce5e07474487c39adab6269d5f',1,
@@ -591,7 +591,7 @@ UUID(),null,null,null,null,
 '2b61b61eb4d141799a9560cccb109f59',null,null,null,null,null,null,
 null,null,null,null,
 '24-09-2020',null,5,'DAILY',null,
-null);
+null, null, null);
 
 call WORKORDER_create('CREATE','a30af0ce5e07474487c39adab6269d5f','2',
 '1606299064282','1600957239770','2',null,'edfe4b13ffcf47e0afa5fc6d3cfe19b7',
@@ -599,7 +599,7 @@ call WORKORDER_create('CREATE','a30af0ce5e07474487c39adab6269d5f','2',
 'ABC-01',null,'ABC-01',
 null,'HIGH','31-01-2021',null,
 '25-11-2020','25-11-2020','4','DAILY',null,
-null,'Sunday,Monday,Tuesday'
+null,'Sunday,Monday,Tuesday', null, null
 );
 
     */
@@ -998,7 +998,9 @@ IN _workorder_frequency INT,
 IN _workorder_frequencyScope VARCHAR(100),
 IN _wapj_asset_partUUID VARCHAR(100),
 IN _wapj_quantity INT,
-IN _daysToMaintain VARCHAR(100)
+IN _daysToMaintain VARCHAR(100),
+IN _monthlyRecurrType VARCHAR(50),
+IN monthlyRecuttValue INT
 )
 WORKORDER_workOrder: BEGIN
 
@@ -1103,7 +1105,8 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
                                     _workorder_groupUUID, _workorder_assetUUID, _workorder_checklistUUID, _workorder_checklistHistoryUUID,
                                     _workorder_status, _workorder_type, _workorder_name, _workorder_number, _workorder_details, _workorder_actions,
                                     _workorder_priority, _workorder_dueDate, _workorder_completeDate, _workorder_scheduleDate, _workorder_rescheduleDate,
-                                    _workorder_frequency, _workorder_frequencyScope, _wapj_asset_partUUID, _wapj_quantity, _daysToMaintain
+                                    _workorder_frequency, _workorder_frequencyScope, _wapj_asset_partUUID, _wapj_quantity, _daysToMaintain,
+                                    _monthlyRecurrType, monthlyRecuttValue 
                                     );
                 LEAVE WORKORDER_workOrder;
             END IF;
@@ -4193,7 +4196,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
                         _historyUUID,null,'CHECKLIST',CONCAT('Checklist - ',_checklist_name),null,_assetName,
                         _assetName,null,null,null,null,
                         null,null,null,null,
-                        null,null
+                        null,null,null,null
                     );
                    
                     -- 	 		ELSE
