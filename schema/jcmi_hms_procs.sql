@@ -1026,7 +1026,7 @@ IF(_action ='GET' or _action = 'GETALL') THEN
 
     if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-        set  @l_sql = CONCAT('SELECT w.*,u.user_userName,cl.checklist_name, cl.checklist_statusId, a.asset_name, g.group_name, clh.checklist_history_statusId FROM workorder w 
+        set  @l_sql = CONCAT('SELECT w.*,u.user_userName,cl.checklist_name, cl.checklist_statusId, a.asset_name, g.group_name, clh.checklist_history_statusId, clh.checklist_history_comment FROM workorder w 
         left join jcmi_core.user u on(u.userUUID = w.workorder_userUUID ) 
         left join checklist cl on(w.workorder_checklistUUID = cl.checklistUUID)
 		left join checklist_history clh on (clh.checklist_history_checklistUUID = cl.checklistUUID and clh.checklist_history_workorderUUID = w.workorderUUID)
@@ -3933,7 +3933,8 @@ IN _checklist_item_successRange varchar(255),
 IN _checklist_history_item_resultFlag INT,
 IN _checklist_history_item_resultText varchar(255),
 IN _checklist_history_item_historyUUID char(36),
-IN _checklist_partRequired INT
+IN _checklist_partRequired INT,
+IN _checklist_history_comment varchar(255)
 )
 CHECKLIST_checklist: BEGIN
 
@@ -4062,9 +4063,15 @@ ELSEIF( _action = 'VALIDATE' or _action= 'COMPLETE') THEN
 			else
 				set  _workorder_actions = CONCAT(_workorder_actions,',', CHAR(13), @WorkorderAction);
             END IF;
+            IF(_checklist_history_comment is not null) THEN
+					set _workorder_actions = CONCAT(_workorder_actions, CHAR(13), 'cmt: ', _checklist_history_comment);
+            END IF;
            update workorder set  workorder_updatedTS=now(), workorder_actions = _workorder_actions where workorderUUID = _workorderUUID;
             select _workorder_actions, @WorkorderAction;
           END IF;
+          if(_checklist_history_comment is not null and _historyUUID is not null) THEN
+				update checklist_history set checklist_history_updatedtS = now(), checklist_history_comment = _checklist_history_comment where checklist_historyUUid = _historyUUID;
+		 END IF;
 	END IF;
 ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
