@@ -3958,6 +3958,7 @@ DECLARE _checklist_itemIds varchar(1024) DEFAULT '';
 DECLARE _checklist_history_resultFlag INT DEFAULT 0;
 DECLARE _checklistStatus INT default 1;
 DECLARE failedChecklistCount INT default 0;
+ DECLARE  _workorder_actions  VARCHAR(1000) default '';
 IF(_action='GET')Then
 
      set  @l_sql = CONCAT('select cl.*,clh.* from checklist cl left join checklist_history clh on
@@ -4052,7 +4053,17 @@ ELSEIF( _action = 'VALIDATE' or _action= 'COMPLETE') THEN
 	END IF;
     IF(_action= 'COMPLETE') THEN 
           IF(_checklist_statusId is not null) THEN
-			update checklist_history set  checklist_history_statusId = _checklist_statusId where checklist_historyUUID = _historyUUID ; -- COMPLETE_PASSED
+			update checklist_history set  checklist_history_statusId = _checklist_statusId where checklist_historyUUID = _historyUUID ; -- 3 -> COMPLETE_PASSED
+            IF(_checklist_statusId = '3') THEN set @checklistStatus = '(COMPLETE_PASSED)'; ELSE set  @checklistStatus = '(COMPLETE_FAILED)'; END IF;
+            set @WorkorderAction = CONCAT(_checklist_name, @checklistStatus);
+            select workorder_actions into _workorder_actions from workorder where workorderUUID= _workorderUUID;
+            if(_workorder_actions is null) THEN 
+				set  _workorder_actions = @WorkorderAction;
+			else
+				set  _workorder_actions = CONCAT(_workorder_actions,',', CHAR(13), @WorkorderAction);
+            END IF;
+           update workorder set  workorder_updatedTS=now(), workorder_actions = _workorder_actions where workorderUUID = _workorderUUID;
+            select _workorder_actions, @WorkorderAction;
           END IF;
 	END IF;
 ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
@@ -4213,7 +4224,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
                                     );
                     */
        ELSE
-				update workorder set workorder_checklistHistoryUUID = _historyUUID where workorderUUID = _workorderUUID;
+				update workorder set workorder_checklistHistoryUUID = _historyUUID, workorder_status='IN_PROGRESS' where workorderUUID = _workorderUUID;
        END IF;
 
     ELSE -- history found, so update records
