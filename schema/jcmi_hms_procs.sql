@@ -4945,3 +4945,32 @@ END$$
 
 DELIMITER ;
 
+-- ==================================================================
+-- > call GROUP_group('GET-LIST',<user_id>)
+-- GROUP_group('GET-LIST',1)
+
+DROP procedure IF EXISTS `GROUP_group`;
+
+DELIMITER $$
+CREATE PROCEDURE `GROUP_group`(IN _action char(32),IN _userid char(36))
+GROUP_group:
+BEGIN
+
+    DECLARE DEBUG INT DEFAULT 0;
+
+    IF (_action IS NULL) THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group: _action can not be empty';
+        LEAVE GROUP_group;
+    END IF;
+
+      IF (_userid IS NULL) THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group: _userid can not be empty';
+        LEAVE GROUP_group;
+    END IF;
+
+    IF(_action = 'GET-LIST') THEN
+        SELECT * FROM user_group;
+	END IF;
+END$$
+
+DELIMITER ;
