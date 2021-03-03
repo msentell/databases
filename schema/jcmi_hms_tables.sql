@@ -851,6 +851,7 @@ CREATE TABLE `checklist_history` (
     checklist_history_updatedTS datetime  NULL,
     checklist_history_createdTS datetime  NULL default now(),
     checklist_history_deleteTS datetime  NULL,
+    checklist_history_comment VARCHAR(255) NULL
 
     PRIMARY KEY (checklist_historyUUID))
 ENGINE = InnoDB ;

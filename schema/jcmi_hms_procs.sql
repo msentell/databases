@@ -583,7 +583,7 @@ _workorderUUID,_workorder_locationUUID,_workorder_userUUID,_workorder_groupUUID,
 _workorder_checklistUUID,_workorder_checklistHistoryUUID,_workorder_status,_workorder_type,_workorder_name,_workorder_number,_workorder_details,
 _workorder_actions,_workorder_priority,_workorder_dueDate,_workorder_completeDate,
 _workorder_scheduleDate,_workorder_rescheduleDate,_workorder_frequency,_workorder_frequencyScope,_wapj_asset_partUUID,
-_wapj_quantity
+_wapj_quantity,_monthlyRecurrType,monthlyRecuttValue
 );
 
 call WORKORDER_create('CREATE', 'a30af0ce5e07474487c39adab6269d5f',1,
@@ -591,7 +591,7 @@ UUID(),null,null,null,null,
 '2b61b61eb4d141799a9560cccb109f59',null,null,null,null,null,null,
 null,null,null,null,
 '24-09-2020',null,5,'DAILY',null,
-null);
+null, null, null);
 
 call WORKORDER_create('CREATE','a30af0ce5e07474487c39adab6269d5f','2',
 '1606299064282','1600957239770','2',null,'edfe4b13ffcf47e0afa5fc6d3cfe19b7',
@@ -599,7 +599,7 @@ call WORKORDER_create('CREATE','a30af0ce5e07474487c39adab6269d5f','2',
 'ABC-01',null,'ABC-01',
 null,'HIGH','31-01-2021',null,
 '25-11-2020','25-11-2020','4','DAILY',null,
-null,'Sunday,Monday,Tuesday'
+null,'Sunday,Monday,Tuesday', null, null
 );
 
     */
@@ -998,7 +998,9 @@ IN _workorder_frequency INT,
 IN _workorder_frequencyScope VARCHAR(100),
 IN _wapj_asset_partUUID VARCHAR(100),
 IN _wapj_quantity INT,
-IN _daysToMaintain VARCHAR(100)
+IN _daysToMaintain VARCHAR(100),
+IN _monthlyRecurrType VARCHAR(50),
+IN monthlyRecuttValue INT
 )
 WORKORDER_workOrder: BEGIN
 
@@ -1024,7 +1026,7 @@ IF(_action ='GET' or _action = 'GETALL') THEN
 
     if (_workorder_dueDate IS NOT NULL) THEN set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, _dateFormat); END IF;
 
-        set  @l_sql = CONCAT('SELECT w.*,u.user_userName,cl.checklist_name, cl.checklist_statusId, a.asset_name, g.group_name, clh.checklist_history_statusId FROM workorder w 
+        set  @l_sql = CONCAT('SELECT w.*,u.user_userName,cl.checklist_name, cl.checklist_statusId, a.asset_name, g.group_name, clh.checklist_history_statusId, clh.checklist_history_comment FROM workorder w 
         left join jcmi_core.user u on(u.userUUID = w.workorder_userUUID ) 
         left join checklist cl on(w.workorder_checklistUUID = cl.checklistUUID)
 		left join checklist_history clh on (clh.checklist_history_checklistUUID = cl.checklistUUID and clh.checklist_history_workorderUUID = w.workorderUUID)
@@ -1103,7 +1105,8 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
                                     _workorder_groupUUID, _workorder_assetUUID, _workorder_checklistUUID, _workorder_checklistHistoryUUID,
                                     _workorder_status, _workorder_type, _workorder_name, _workorder_number, _workorder_details, _workorder_actions,
                                     _workorder_priority, _workorder_dueDate, _workorder_completeDate, _workorder_scheduleDate, _workorder_rescheduleDate,
-                                    _workorder_frequency, _workorder_frequencyScope, _wapj_asset_partUUID, _wapj_quantity, _daysToMaintain
+                                    _workorder_frequency, _workorder_frequencyScope, _wapj_asset_partUUID, _wapj_quantity, _daysToMaintain,
+                                    _monthlyRecurrType, monthlyRecuttValue 
                                     );
                 LEAVE WORKORDER_workOrder;
             END IF;
@@ -3930,7 +3933,8 @@ IN _checklist_item_successRange varchar(255),
 IN _checklist_history_item_resultFlag INT,
 IN _checklist_history_item_resultText varchar(255),
 IN _checklist_history_item_historyUUID char(36),
-IN _checklist_partRequired INT
+IN _checklist_partRequired INT,
+IN _checklist_history_comment varchar(255)
 )
 CHECKLIST_checklist: BEGIN
 
@@ -3955,6 +3959,7 @@ DECLARE _checklist_itemIds varchar(1024) DEFAULT '';
 DECLARE _checklist_history_resultFlag INT DEFAULT 0;
 DECLARE _checklistStatus INT default 1;
 DECLARE failedChecklistCount INT default 0;
+ DECLARE  _workorder_actions  VARCHAR(1000) default '';
 IF(_action='GET')Then
 
      set  @l_sql = CONCAT('select cl.*,clh.* from checklist cl left join checklist_history clh on
@@ -4049,8 +4054,24 @@ ELSEIF( _action = 'VALIDATE' or _action= 'COMPLETE') THEN
 	END IF;
     IF(_action= 'COMPLETE') THEN 
           IF(_checklist_statusId is not null) THEN
-			update checklist_history set  checklist_history_statusId = _checklist_statusId where checklist_historyUUID = _historyUUID ; -- COMPLETE_PASSED
+			update checklist_history set  checklist_history_statusId = _checklist_statusId where checklist_historyUUID = _historyUUID ; -- 3 -> COMPLETE_PASSED
+            IF(_checklist_statusId = '3') THEN set @checklistStatus = '(COMPLETE_PASSED)'; ELSE set  @checklistStatus = '(COMPLETE_FAILED)'; END IF;
+            set @WorkorderAction = CONCAT(_checklist_name, @checklistStatus);
+            select workorder_actions into _workorder_actions from workorder where workorderUUID= _workorderUUID;
+            if(_workorder_actions is null) THEN 
+				set  _workorder_actions = @WorkorderAction;
+			else
+				set  _workorder_actions = CONCAT(_workorder_actions,',', CHAR(13), @WorkorderAction);
+            END IF;
+            IF(_checklist_history_comment is not null) THEN
+					set _workorder_actions = CONCAT(_workorder_actions, CHAR(13), 'cmt: ', _checklist_history_comment);
+            END IF;
+           update workorder set  workorder_updatedTS=now(), workorder_actions = _workorder_actions where workorderUUID = _workorderUUID;
+            select _workorder_actions, @WorkorderAction;
           END IF;
+          if(_checklist_history_comment is not null and _historyUUID is not null) THEN
+				update checklist_history set checklist_history_updatedtS = now(), checklist_history_comment = _checklist_history_comment where checklist_historyUUid = _historyUUID;
+		 END IF;
 	END IF;
 ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
 
@@ -4193,7 +4214,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
                         _historyUUID,null,'CHECKLIST',CONCAT('Checklist - ',_checklist_name),null,_assetName,
                         _assetName,null,null,null,null,
                         null,null,null,null,
-                        null,null
+                        null,null,null,null
                     );
                    
                     -- 	 		ELSE
@@ -4210,7 +4231,7 @@ ELSEIF( _action ='UPDATE_HISTORY' or _action ='FAIL_CHECKLIST_CREATEWO' ) THEN
                                     );
                     */
        ELSE
-				update workorder set workorder_checklistHistoryUUID = _historyUUID where workorderUUID = _workorderUUID;
+				update workorder set workorder_checklistHistoryUUID = _historyUUID, workorder_status='IN_PROGRESS' where workorderUUID = _workorderUUID;
        END IF;
 
     ELSE -- history found, so update records
@@ -4924,3 +4945,32 @@ END$$
 
 DELIMITER ;
 
+-- ==================================================================
+-- > call GROUP_group('GET-LIST',<user_id>)
+-- GROUP_group('GET-LIST',1)
+
+DROP procedure IF EXISTS `GROUP_group`;
+
+DELIMITER $$
+CREATE PROCEDURE `GROUP_group`(IN _action char(32),IN _userid char(36))
+GROUP_group:
+BEGIN
+
+    DECLARE DEBUG INT DEFAULT 0;
+
+    IF (_action IS NULL) THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group: _action can not be empty';
+        LEAVE GROUP_group;
+    END IF;
+
+      IF (_userid IS NULL) THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group: _userid can not be empty';
+        LEAVE GROUP_group;
+    END IF;
+
+    IF(_action = 'GET-LIST') THEN
+        SELECT * FROM user_group;
+	END IF;
+END$$
+
+DELIMITER ;
