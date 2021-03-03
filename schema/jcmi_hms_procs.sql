@@ -4946,13 +4946,20 @@ END$$
 DELIMITER ;
 
 -- ==================================================================
--- > call GROUP_group('GET-LIST',<user_id>)
--- GROUP_group('GET-LIST',1)
+-- > call GROUP_group('GET-LIST',<user_id>,<group_id>,<customer_id>)
+-- call GROUP_group('GET-LIST',1,null,null)
+-- call GROUP_group('GET-LIST',1,1,null)
+-- call GROUP_group('GET-LIST',1,null,'a30af0ce5e07474487c39adab6269d5f')
 
 DROP procedure IF EXISTS `GROUP_group`;
 
 DELIMITER $$
-CREATE PROCEDURE `GROUP_group`(IN _action char(32),IN _userid char(36))
+CREATE PROCEDURE `GROUP_group`(
+    IN _action char(32),
+    IN _userid char(36),
+    IN _groupid char(36),
+    IN _customerId char(36)
+    )
 GROUP_group:
 BEGIN
 
@@ -4969,8 +4976,23 @@ BEGIN
     END IF;
 
     IF(_action = 'GET-LIST') THEN
-        SELECT * FROM user_group;
-	END IF;
+        SET @l_SQL = 'SELECT * FROM user_group';
+        
+        IF(_groupid IS NOT NULL)THEN
+            -- left join user_group_join
+            SET @l_SQL = CONCAT(@l_SQL,' ug left join user_group_join ugj on (ug.groupUUID = ugj.ugj_groupUUID)');
+            -- filter users of group by _groupid
+            SET @l_SQL = CONCAT(@l_SQL,' where ug.groupUUID = \'',_groupid,'\';');
+        ELSEIF(_customerId IS NOT NULL)THEN
+            -- filter group by _customerId
+            SET @l_SQL = CONCAT(@l_SQL,' where group_customerUUID = \'',_customerId,'\';');
+        END IF;
+    END IF;
+
+    PREPARE stmt FROM @l_SQL;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
 END$$
 
 DELIMITER ;
