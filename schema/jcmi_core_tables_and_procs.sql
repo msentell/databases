@@ -920,7 +920,7 @@ BEGIN
 		where group_customerUUID = _customerId order by group_name;
 
     ELSEIF (_action = 'GET_LIST_OF_USER') THEN
-		set @l_sql = CONCAT('SELECT userUUID, user_userName FROM `user` where userUUID IN (\'',_user_userUUID,'\')');
+		set @l_sql = CONCAT('','SELECT userUUID, user_userName FROM `user` where userUUID IN (',_user_userUUID,')');
 		PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
