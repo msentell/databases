@@ -5026,3 +5026,39 @@ BEGIN
                 and ch.checklist_history_updatedTS < (curdate() - INTERVAL DAYOFWEEK(curdate())+7 DAY) ) as failed_cl_lastweek;
     END IF;
 END$$
+-- ==================================================================
+-- > call PRIVILAGE_privilage('GET-LIST',<user_id>)
+-- call PRIVILAGE_privilage('GET-LIST',1);
+DROP procedure IF EXISTS `PRIVILAGE_privilage`;
+
+DELIMITER $$
+CREATE PROCEDURE `PRIVILAGE_privilage`(
+    IN _action char(32),
+    IN _userid char(36),
+    )
+GROUP_group:
+BEGIN
+
+    DECLARE DEBUG INT DEFAULT 0;
+
+    IF (_action IS NULL) THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call PRIVILAGE_privilage: _action can not be empty';
+        LEAVE GROUP_group;
+    END IF;
+
+      IF (_userid IS NULL) THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call PRIVILAGE_privilage: _userid can not be empty';
+        LEAVE GROUP_group;
+    END IF;
+
+    IF(_action = 'GET-LIST') THEN
+        SET @l_SQL = 'SELECT * FROM PRIVILAGE_privilage';
+    END IF;
+
+    PREPARE stmt FROM @l_SQL;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+END$$
+
+DELIMITER ;
