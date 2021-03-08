@@ -801,7 +801,8 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
 
 
     -- TODO get configuration for workorder naming
-    select count(*) into _maxWO from workorder;
+    -- excluding first 3 charecters(CM-) and convert ti integer and get max number of workorder 
+    SELECT MAX(CAST(SUBSTRING(workorder_number, 4, length(workorder_number)-3) AS UNSIGNED))+1 into _maxWO FROM workorder;
     set _workorder_number = CONCAT(_workorder_definition,_maxWO);
     set _workorder_scheduleDate = STR_TO_DATE(_date, _dateFormat);
     if (_workorderUUID is null) THEN set _workorderUUID=UUID(); END IF;
