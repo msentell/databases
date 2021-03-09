@@ -2,6 +2,15 @@
 use cm_hms_auth;
 use jcmi_core;
 DELIMITER ;
+-- ==================================================================
+-- > call CUSTOMER_customer(
+--    <_action>,<user_id>,<_customerUUID>,<_customerBrandUUID>,<_customerStatusId>,
+--    <_customerName>,<_customerLogo>,<_customerSecurityBitwise>,<_customerPreferenceJSON>,
+--    <_xRefName>,<_xRefId>)
+-- > call CUSTOMER_customer('ASSIGN-BRAND',<_user_id>,<_customerUUID>,<_customerBrandUUID>,null,null,null,null,null,null);
+-- call CUSTOMER_customer('ASSIGN-BRAND',1,'a30af0ce5e07474487c39adab6269d5g','3',null,null,null,null,null,null,null);
+-- > call CUSTOMER_customer('REMOVE-BRAND',<_user_id>,<_customerUUID>,<_customerBrandUUID>,null,null,null,null,null,null);
+-- call CUSTOMER_customer('REMOVE-BRAND',1,'a30af0ce5e07474487c39adab6269d5g','3',null,null,null,null,null,null,null);
 
 DROP procedure IF EXISTS `CUSTOMER_customer`;
 
@@ -92,11 +101,32 @@ BEGIN
         DEALLOCATE PREPARE stmt;
     ELSEIF (_action = 'REMOVE' AND _customerUUID IS NOT NULL AND _customerUUID != '') THEN
         DELETE FROM customer WHERE customerUUID = _customerUUID;
-    END IF;
+    ELSEIF (_action ='ASSIGN-BRAND')THEN
+        
+        IF (_customerBrandUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customer_brandUUID missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+        IF (_customerUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
 
+        update customer set customer_brandUUID = _customerBrandUUID, customer_updatedByUUID = _userUUID, customer_updatedTS = now()   where  customerUUID = _customerUUID;
+    ELSEIF (_action ='REMOVE-BRAND')THEN
+        
+        IF (_customerUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
+            LEAVE CUSTOMER_customer;
+        END IF;
+
+        update customer set customer_brandUUID = null, customer_updatedByUUID = _userUUID, customer_updatedTS = now()   where  customerUUID = _customerUUID;   
+    END IF;
+    
 END$$
 
 Delimiter ;
+-- ==================================================================
 
 use cm_hms_auth;
 DROP procedure IF EXISTS `CUSTOMER_CustomerBrand`;
