@@ -4947,19 +4947,24 @@ END$$
 DELIMITER ;
 
 -- ==================================================================
--- > call GROUP_group('GET-LIST',<user_id>,<group_id>,<customer_id>)
--- call GROUP_group('GET-LIST',1,null,null)
--- call GROUP_group('GET-LIST',1,1,null)
--- call GROUP_group('GET-LIST',1,null,'a30af0ce5e07474487c39adab6269d5f')
+-- > call GROUP_group('GET-LIST',<targetedUserId_id>,<group_id>,<customer_id>,<user_id>)
+-- call GROUP_group('GET-LIST',1,null,null,null)
+-- call GROUP_group('GET-LIST',1,1,null,null)
+-- call GROUP_group('GET-LIST',1,null,'a30af0ce5e07474487c39adab6269d5f',null)
+-- > call GROUP_group('ADD-USER',<targetedUserId_id>,<group_id>,null,<user_id>);
+-- call GROUP_group('ADD-USER',6,3,null,1);
+-- > call GROUP_group('REMOVE-USER',<targetedUserId_id>,<group_id>,null,null);
+-- call GROUP_group('REMOVE-USER',6,3,null,null);
 
 DROP procedure IF EXISTS `GROUP_group`;
 
 DELIMITER $$
 CREATE PROCEDURE `GROUP_group`(
     IN _action char(32),
-    IN _userid char(36),
+    IN _targetedUserId char(36),
     IN _groupid char(36),
-    IN _customerId char(36)
+    IN _customerId char(36),
+    IN _userid char(36)
     )
 GROUP_group:
 BEGIN
@@ -4971,8 +4976,8 @@ BEGIN
         LEAVE GROUP_group;
     END IF;
 
-      IF (_userid IS NULL) THEN
-        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group: _userid can not be empty';
+      IF (_targetedUserId IS NULL) THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group: _targetedUserId can not be empty';
         LEAVE GROUP_group;
     END IF;
 
@@ -4988,16 +4993,36 @@ BEGIN
             -- filter group by _customerId
             SET @l_SQL = CONCAT(@l_SQL,' where group_customerUUID = \'',_customerId,'\';');
         END IF;
-    END IF;
+        
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    
+    ELSEIF(_action = 'ADD-USER')THEN
+        
+        IF(_groupid IS NULL)THEN
+         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _groupid can not be empty';
+         LEAVE GROUP_group;
+        END IF;
 
-    PREPARE stmt FROM @l_SQL;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
+        INSERT INTO user_group_join (ugj_groupUUID,ugj_userUUID,ugj_createdByUUID,ugj_createdTS) 
+        VALUES(_groupid,_targetedUserId,_userid,now());
+
+    ELSEIF(_action = 'REMOVE-USER')THEN
+        
+        IF(_groupid IS NULL)THEN
+         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _groupid can not be empty';
+         LEAVE GROUP_group;
+        END IF;
+
+        Delete FROM user_group_join WHERE ugj_groupUUID = _groupid and ugj_userUUID = _targetedUserId;
+
+    END IF;
 
 END$$
 
 DELIMITER ;
-
+-- ==================================================================
 DROP procedure IF EXISTS `STATS_stats`;
 
 DELIMITER $$
