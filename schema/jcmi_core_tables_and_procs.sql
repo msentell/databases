@@ -664,7 +664,7 @@ DELIMITER $$
 CREATE PROCEDURE `USER_user`(IN _action VARCHAR(100),
                              IN _customerId VARCHAR(100),
                              IN _userUUID CHAR(36), -- user making the request
-                             IN _user_userUUID CHAR(36), -- target user
+                             IN _user_userUUID longtext, -- target user
                              IN _user_userName VARCHAR(100),
                              IN _user_loginEmail VARCHAR(255),
                              IN _user_loginPW VARCHAR(100),
@@ -921,7 +921,7 @@ BEGIN
 
     ELSEIF (_action = 'GET_LIST_OF_USER') THEN
 		set @l_sql = CONCAT('','SELECT userUUID, user_userName FROM `user` where userUUID IN (',_user_userUUID,')');
-		PREPARE stmt FROM @l_sql;
+        PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
     ELSE
@@ -947,6 +947,7 @@ BEGIN
 END$$
 
 DELIMITER ;
+
 
 DROP procedure IF EXISTS `ATT_getPicklist`;
 
