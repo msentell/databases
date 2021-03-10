@@ -447,7 +447,15 @@ CREATE TABLE `asset_alert` (
   	INDEX alert_idx (alert_assetUUID))
 ENGINE = InnoDB ;
 
+DROP TABLE IF EXISTS asset_attachment_join;
 
+CREATE TABLE `asset_attachment_join` (
+                                         aaj_asset_assetUUID CHAR(36)  NOT NULL,
+                                         aaj_attachmentUUID CHAR(36)  NOT NULL,
+                                         aaj_createdTS datetime  NULL default now(),
+
+                                         PRIMARY KEY (aaj_asset_assetUUID,aaj_attachmentUUID))
+    ENGINE = InnoDB ;
 
 DROP TABLE IF EXISTS attachment;
 
