@@ -4739,7 +4739,7 @@ DROP procedure IF EXISTS `ATTACHMENT_attachment`;
 DELIMITER $$
 CREATE PROCEDURE `ATTACHMENT_attachment`( IN _action char(32), IN _partId char(36),IN _partType char(36), IN _attachmentuuid CHAR(36), IN _attachment_description varchar(1000),
 											IN _attachment_shortName varchar(100), IN _attachmentStatus int, IN _attachment_fileURL varchar(255), IN _attachment_customerUUid varchar(36),
-                                            IN _attachment_createdByUUID varchar(36))
+                                            IN _attachment_createdByUUID varchar(36), IN _attachment_mineType varchar(50))
 ATTACHMENT_attachment:
 BEGIN
 
@@ -4760,6 +4760,9 @@ BEGIN
         END IF;
         IF(_attachment_fileURL is not null) THEN
         set @l_sql = CONCAT(@l_sql, ', attachment_fileURL=\'', _attachment_fileURL,'\'');
+        END IF;
+         IF(_attachment_mineType is not null and _attachment_mineType != '' ) THEN
+        set @l_sql = CONCAT(@l_sql, ', attachment_mimeType =\'', _attachment_mineType,'\'');
         END IF;
 		 set @l_sql = CONCAT(@l_sql, ' where attachmentuuid =\'', _attachmentuuid,'\';');
         if(DEBUG =1) THEN select @l_sql, _action; END IF;
@@ -4789,7 +4792,7 @@ BEGIN
         insert INTO attachment(`attachmentUUID`,`attachment_statusId`,`attachment_fileURL`,`attachment_shortName`,`attachment_description`,`attachment_mimeType`,
 				`attachment_customerUUID`,`attachment_createdByUUID`,`attachment_acknowledgedByUUID`,`attachment_updatedTS`,`attachment_createdTS`,`attachment_deleteTS`)
 				values(_attachmentuuid, _attachmentStatus, _attachment_fileURL, _attachment_shortName
-                , _attachment_description,'PDF', _attachment_customerUUid , _attachment_createdByUUID, null, now(), now(), null);
+                , _attachment_description,_attachment_mineType, _attachment_customerUUid , _attachment_createdByUUID, null, now(), now(), null);
 		IF(_partType = 'ASSET') THEN
             SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
         ELSE
