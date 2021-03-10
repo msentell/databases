@@ -4950,14 +4950,16 @@ END$$
 DELIMITER ;
 
 -- ==================================================================
--- > call GROUP_group('GET-LIST',<targetedUserId_id>,<group_id>,<customer_id>,<user_id>)
--- call GROUP_group('GET-LIST',1,null,null,null)
+-- > call GROUP_group('GET-LIST',<targetedUserId_id>,<group_id>,<group_name>,<customer_id>,<user_id>)
+-- call GROUP_group('GET-LIST',1,null,null,null,null)
 -- call GROUP_group('GET-LIST',1,1,null,null)
--- call GROUP_group('GET-LIST',1,null,'a30af0ce5e07474487c39adab6269d5f',null)
--- > call GROUP_group('ADD-USER',<targetedUserId_id>,<group_id>,null,<user_id>);
--- call GROUP_group('ADD-USER',6,3,null,1);
--- > call GROUP_group('REMOVE-USER',<targetedUserId_id>,<group_id>,null,null);
--- call GROUP_group('REMOVE-USER',6,3,null,null);
+-- call GROUP_group('GET-LIST',1,null,null,'a30af0ce5e07474487c39adab6269d5f',null)
+-- > call GROUP_group('ADD-USER',<targetedUserId_id>,<group_id>,null,null,<user_id>);
+-- call GROUP_group('ADD-USER',6,3,null,null,1);
+-- > call GROUP_group('REMOVE-USER',<targetedUserId_id>,<group_id>,null,null,null);
+-- call GROUP_group('REMOVE-USER',6,3,null,null,null);
+-- > call GROUP_group('ADD-GROUP',<targetedUserId_id>,null,<group_name>,<customer_id>,<user_id>);
+-- call GROUP_group('ADD-GROUP',1,null,'new grp','a30af0ce5e07474487c39adab6269d5f',1);
 
 DROP procedure IF EXISTS `GROUP_group`;
 
@@ -4966,6 +4968,7 @@ CREATE PROCEDURE `GROUP_group`(
     IN _action char(32),
     IN _targetedUserId char(36),
     IN _groupid char(36),
+    IN _groupName char(36),
     IN _customerId char(36),
     IN _userid char(36)
     )
@@ -5000,7 +5003,25 @@ BEGIN
         PREPARE stmt FROM @l_SQL;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
-    
+    ELSEIF(_action='ADD-GROUP')THEN
+        
+        IF(_groupName IS NULL)THEN
+         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _groupName can not be empty';
+         LEAVE GROUP_group;
+        END IF;
+        IF(_customerId IS NULL)THEN
+         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _customerId can not be empty';
+         LEAVE GROUP_group;
+        END IF;
+        IF(_userid IS NULL)THEN
+         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _userid can not be empty';
+         LEAVE GROUP_group;
+        END IF;
+
+        set @nxtGUUID = null;
+        select max(groupUUID)+1 from user_group into @nxtGUUID;
+        insert into user_group values(@nxtGUUID,_customerId,_groupName,_userid,null,null,now(),null,0);
+
     ELSEIF(_action = 'ADD-USER')THEN
         
         IF(_groupid IS NULL)THEN
