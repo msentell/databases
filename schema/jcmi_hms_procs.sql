@@ -72,9 +72,10 @@ BEGIN
 
     ELSEIF (_action = 'ASSET') THEN
 
-        select a.*, p.*
+        select a.*, p.*, pt.*
         from asset a
                  left join asset_part p on (a.asset_partUUID = p.asset_partUUID)
+                 left join part_template pt on (p.asset_part_template_part_sku = pt.part_sku)
         where assetUUID = _id;
 
     ELSEIF (_action = 'ASSET-PART') THEN
@@ -801,7 +802,7 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
 
 
     -- TODO get configuration for workorder naming
-    -- excluding first 3 charecters(CM-) and convert ti integer and get max number of workorder 
+    -- excluding first 3 charecters(CM-) and convert ti integer and get max number of workorder
     SELECT MAX(CAST(SUBSTRING(workorder_number, 4, length(workorder_number)-3) AS UNSIGNED))+1 into _maxWO FROM workorder;
     set _workorder_number = CONCAT(_workorder_definition,_maxWO);
     set _workorder_scheduleDate = STR_TO_DATE(_date, _dateFormat);
@@ -4989,7 +4990,7 @@ BEGIN
 
     IF(_action = 'GET-LIST') THEN
         SET @l_SQL = 'SELECT * FROM user_group';
-        
+
         IF(_groupid IS NOT NULL)THEN
             -- left join user_group_join
             SET @l_SQL = CONCAT(@l_SQL,' ug left join user_group_join ugj on (ug.groupUUID = ugj.ugj_groupUUID)');
@@ -4999,12 +5000,12 @@ BEGIN
             -- filter group by _customerId
             SET @l_SQL = CONCAT(@l_SQL,' where group_customerUUID = \'',_customerId,'\';');
         END IF;
-        
+
         PREPARE stmt FROM @l_SQL;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
     ELSEIF(_action='ADD-GROUP')THEN
-        
+
         IF(_groupName IS NULL)THEN
          SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _groupName can not be empty';
          LEAVE GROUP_group;
@@ -5025,17 +5026,17 @@ BEGIN
         select @nxtGUUID as 'id',_groupName as 'name';
 
     ELSEIF(_action = 'ADD-USER')THEN
-        
+
         IF(_groupid IS NULL)THEN
          SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _groupid can not be empty';
          LEAVE GROUP_group;
         END IF;
 
-        INSERT INTO user_group_join (ugj_groupUUID,ugj_userUUID,ugj_createdByUUID,ugj_createdTS) 
+        INSERT INTO user_group_join (ugj_groupUUID,ugj_userUUID,ugj_createdByUUID,ugj_createdTS)
         VALUES(_groupid,_targetedUserId,_userid,now());
 
     ELSEIF(_action = 'REMOVE-USER')THEN
-        
+
         IF(_groupid IS NULL)THEN
          SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _groupid can not be empty';
          LEAVE GROUP_group;
