@@ -511,6 +511,7 @@ CREATE TABLE `part_template` (
   	part_createdTS datetime  NULL default now(),
    	part_deleteTS datetime  NULL,
     part_tags varchar(255) NULL,
+    part_metaDataJSON TEXT NULL,
 
     -- PRIMARY KEY (part_partUUID),
     PRIMARY KEY (part_sku))
@@ -573,6 +574,7 @@ CREATE TABLE `asset_part` (
   	asset_part_createdTS datetime  NULL default now(),
    	asset_part_deleteTS datetime  NULL,
     asset_part_tags varchar(255) NULL,
+    asset_part_metaDataJSON TEXT NULL,
 
   	PRIMARY KEY (asset_partUUID))
 ENGINE = InnoDB ;
