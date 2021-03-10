@@ -5022,6 +5022,8 @@ BEGIN
         select max(groupUUID)+1 from user_group into @nxtGUUID;
         insert into user_group values(@nxtGUUID,_customerId,_groupName,_userid,null,null,now(),null,0);
 
+        select @nxtGUUID as 'id',_groupName as 'name';
+
     ELSEIF(_action = 'ADD-USER')THEN
         
         IF(_groupid IS NULL)THEN
