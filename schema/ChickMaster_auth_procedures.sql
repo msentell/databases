@@ -227,3 +227,90 @@ BEGIN
 END$$
 
 DELIMITER ;
+-- ==================================================================
+DROP procedure IF EXISTS `SECURITY_bitwise2`;
+/*
+call SECURITY_bitwise2(_action,_userId,_hierarchyId,_hierarchyType,_att_bitwise);
+call SECURITY_bitwise2('ADD','1','10f15063ba49451baf43e750c0be4805','BRAND',2);
+call SECURITY_bitwise2('REMOVE','1','10f15063ba49451baf43e750c0be4805','BRAND',4);
+call SECURITY_bitwise2('ADD','1','059cfac3b0e3440fb4d499f85036b4ba','CUSTOMER',4);
+call SECURITY_bitwise2('REMOVE','1','059cfac3b0e3440fb4d499f85036b4ba','CUSTOMER',4);
+*/
+/*
+
+Name	Description
+&	Bitwise AND
+>>	Right shift
+<<	Left shift
+^	Bitwise XOR
+BIT_COUNT()	Return the number of bits that are set
+|	Bitwise OR
+~	Bitwise inversion
+
+*/
+
+DELIMITER $$
+CREATE PROCEDURE SECURITY_bitwise2(IN _action VARCHAR(100),
+                                  IN _userId CHAR(36),
+                                  IN _hierarchyId CHAR(36),
+                                  IN _hierarchyType CHAR(36),
+                                  IN _att_bitwise BIGINT)
+SECURITY_bitwise2:
+BEGIN
+
+    DECLARE _DEBUG INT DEFAULT 1;
+    
+    IF(_action IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise2: _action can not be empty';
+        LEAVE SECURITY_bitwise2;
+    END IF;
+    IF(_userId IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise2: _userId can not be empty';
+        LEAVE SECURITY_bitwise2;
+    END IF;
+    IF(_hierarchyType IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise2: _hierarchyType can not be empty';
+        LEAVE SECURITY_bitwise2;
+    END IF;
+    IF(_hierarchyId IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise2: _hierarchyId can not be empty';
+        LEAVE SECURITY_bitwise2;
+    END IF;
+
+    -- GET CURRENT BITWISE
+    SET @CUR_BITWISE = null;
+
+    IF(_hierarchyType = 'BRAND')THEN
+        select brand_securityBitwise into @CUR_BITWISE from customer_brand where brandUUID = _hierarchyId;
+    ELSEIF(_hierarchyType = 'CUSTOMER')THEN
+        select customer_securityBitwise into @CUR_BITWISE from customer where customerUUID = _hierarchyId;
+    ELSE
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise2: _hierarchyType did not match any.';
+        LEAVE SECURITY_bitwise2;
+    END IF;
+
+    IF(@CUR_BITWISE IS NULL)THEN
+        SET @CUR_BITWISE = 0;
+    END IF;
+
+    -- BITWISE UPDATE OPERATION
+    SET @UPDATED_BITWISE = null;
+
+    IF(_action = 'ADD')THEN
+        SELECT @CUR_BITWISE|_att_bitwise into @UPDATED_BITWISE;
+    ELSEIF(_action = 'REMOVE')THEN
+        SELECT @CUR_BITWISE^_att_bitwise into @UPDATED_BITWISE;
+    ELSE
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise2: _action did not match any.';
+        LEAVE SECURITY_bitwise2;
+    END IF;
+    
+    -- SET UPDATED BITWISE
+    IF(_hierarchyType = 'BRAND')THEN
+        update customer_brand SET brand_securityBitwise = @UPDATED_BITWISE where brandUUID = _hierarchyId;
+    ELSEIF(_hierarchyType = 'CUSTOMER')THEN
+         update customer SET customer_securityBitwise = @UPDATED_BITWISE where customerUUID = _hierarchyId;
+    END IF;
+    
+END$$
+DELIMITER ;
