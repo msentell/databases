@@ -11,6 +11,8 @@ DELIMITER ;
 -- call CUSTOMER_customer('ASSIGN-BRAND',1,'a30af0ce5e07474487c39adab6269d5g','3',null,null,null,null,null,null,null);
 -- > call CUSTOMER_customer('REMOVE-BRAND',<_user_id>,<_customerUUID>,<_customerBrandUUID>,null,null,null,null,null,null);
 -- call CUSTOMER_customer('REMOVE-BRAND',1,'a30af0ce5e07474487c39adab6269d5g','3',null,null,null,null,null,null,null);
+-- > call CUSTOMER_customer('GET',<user_id>,<_customerUUID>,null,null,null,null,null,null,null,null);
+-- call CUSTOMER_customer('GET',1,'059cfac3b0e3440fb4d499f85036b4ba',null,null,null,null,null,null,null,null);
 
 DROP procedure IF EXISTS `CUSTOMER_customer`;
 
@@ -56,7 +58,7 @@ BEGIN
            SELECT * FROM customer c INNER JOIN customer_xref x on c.customerUUID = x.customerUUID WHERE x.customerx_externalName = _xRefName AND x.customerx_externalId = _xRefId;
            LEAVE CUSTOMER_customer;
         END IF;
-        SELECT * FROM customer WHERE customerUUID = _customerUUID;
+        SELECT * FROM customer c LEFT JOIN customer_brand cb on (c.customer_brandUUID = cb.brandUUID) WHERE customerUUID = _customerUUID;
     ELSEIF (_action = 'CREATE') THEN
         IF (_customerUUID IS NULL OR _customerUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
