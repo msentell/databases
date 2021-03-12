@@ -196,8 +196,8 @@ _USER_loginPWReset);
 call USER_login('ACCESS', null, 1, null, null, null, 0, null);
 call USER_login('ACCESS', null, 1, 'mail@mail.com', null, null, 1, null);
 call USER_login('VERIFYEMAIL', null, null, 'mail@mail.com', null, '5997055', null, null);
-call USER_login('FORGOTPASSWORD', null, null, 'mail@mail.com', null, null, null, null);
-call USER_login('RESETPASSWORD', null, 1, null, '12345', null, null, null);
+call USER_login('FORGOT_PASSWORD', null, null, 'mail@mail.com', null, null, null, null);
+call USER_login('RESET_PASSWORD', null, 1, null, '12345', null, null, null);
 call USER_login('LOGIN', null, null, 'mail@mail.com', '12345', null, null, null);
 call USER_login('RESENDMFA', null, 1, null, null, null, null, null);
 call USER_login('MFA', null, null, 'mail@mail.com', null, '2015', null, null);
@@ -231,7 +231,7 @@ BEGIN
     DECLARE _individualSecurityBitwise varchar(100);
     DECLARE _brand_preferenceJSON text;
     DECLARE _magentoCustomerId INT default 0;
-
+    DECLARE _otp varchar(6);
     DECLARE _DISABLE_MFA INT default 1; -- 0 is enable MFA
 
     DECLARE DEBUG INT DEFAULT 0;
@@ -446,50 +446,70 @@ BEGIN
 
         END IF;
 
-    ELSEIF (_action = 'FORGOTPASSWORD' and _USER_loginEmail is not null) THEN
+    ELSEIF (_action = 'FORGOT_PASSWORD' and _USER_loginEmail is not null) THEN
 
         -- set _USER_loginEmailValidationCode = SESSION_generateAccessCode(7);
         select userUUID, user_loginEnabled, `user_loginPW`, user_loginEmailVerified
         into _entityId, _USER_loginEnabled,_USER_loginPW,_USER_loginEmailVerified
         from `user`
-        where user_loginEmail = _USER_loginEmail
-          and user_loginEnabled = 1;
+        where user_loginEmail = _USER_loginEmail;
+        IF(_USER_loginEnabled != 1) THEN
+          SIGNAL SQLSTATE '45004' SET MESSAGE_TEXT = 'You are not allowed to login please contact support team.', MYSQL_ERRNO = 12;
+            LEAVE USER_login;
+        END IF;
 
-        if (_entityId is not null and _USER_loginEnabled > 0 and _USER_loginEmailVerified is not null) THEN
+        if (_entityId is not null and _USER_loginEmailVerified is not null) THEN
             -- update contact set password=_USER_loginEmailValidationCode, emailValidationCode=_USER_loginEmailValidationCode where contactId=_entityId;
             -- call updateNotificationQueue('ADD',null,null,'PASSWORD_TEMPORARY','EMAIL',null,_entityId,null,0,null,null);
-            call NOTIFICATION_notification(
-                    'CREATE', null,
-                    'PASSWORD_TEMPORARY', null, 'EMAIL',
-                    _entityId, null, null, null, null,
-                    null, 2,
-                    null, null,
-                    concat('Your password is: ', _USER_loginPW, ' Please change once you log back in.'),
-                    'Password Reminder', null
-                );
-
+            -- call NOTIFICATION_notification(
+            --         'CREATE', null,
+            --         'PASSWORD_TEMPORARY', null, 'EMAIL',
+            --         _entityId, null, null, null, null,
+            --         null, 2,
+            --         null, null,
+            --         concat('Your password is: ', _USER_loginPW, ' Please change once you log back in.'),
+            --         'Password Reminder', null
+            --     );
+            select floor(rand()*100000-1) into _otp;
+            update `user` set  user_loginEmailValidationCode = _otp where useruuid = _entityId;
+            select _otp;
+            select * from jcmi_hms.notification_template where notification_category = _action;
+		ELSE
+			SIGNAL SQLSTATE '45004' SET MESSAGE_TEXT = 'There is no account with the specified email. Please check once.', MYSQL_ERRNO = 12;
+            LEAVE USER_login;
         END IF;
 
         if (DEBUG = 1) THEN
             select _action, _entityId, _USER_loginPW, _USER_loginEnabled, _USER_loginEmailVerified;
         END IF;
 
-    ELSEIF (_action = 'RESETPASSWORD' and _entityId is not null and _USER_loginPW is not null) THEN
-
-        select user_loginEnabled, user_loginPW, user_loginEmailVerified
-        into _USER_loginEnabled,_password,_USER_loginEmailVerified
-        from `user`
-        where userUUID = _entityId;
-
-        if (_entityId is not null and _USER_loginEnabled > 0 and _USER_loginEmailVerified is not null) THEN
-
+    ELSEIF (_action = 'RESET_PASSWORD' and (_entityId is not null or _USER_loginEmail is not null) and _USER_loginPW is not null) THEN
+			if(_entityId is not null) THEN
+				select user_loginEnabled, user_loginPW, user_loginEmailVerified
+				into _USER_loginEnabled,_password,_USER_loginEmailVerified
+				from `user`
+				where userUUID = _entityId;
+			ELSE 
+				 select user_loginEnabled, user_loginPW, user_loginEmailVerified
+				into _USER_loginEnabled,_password,_USER_loginEmailVerified
+				from `user`
+				where user_loginemail = _USER_loginEmail;
+			END IF;
+        if ((_entityId is not null or _USER_loginEmail is not null) and _USER_loginEnabled > 0 and _USER_loginEmailVerified is not null) THEN
+		IF(_entityId is not null) THEN
             update `user`
             set user_loginEmailValidationCode=null,
                 `user_loginPW`= _USER_loginPW,
                 user_loginFailedAttempts=0
             where userUUID = _entityId;
-
-        end if;
+		ELSe 
+        update `user`
+            set user_loginEmailValidationCode=null,
+                `user_loginPW`= _USER_loginPW,
+                user_loginFailedAttempts=0
+            where user_loginemail = _USER_loginEmail;
+        END IF;
+	END IF;
         -- update entity set USER_loginPW=_USER_loginPW, USER_loginPWReset=0  where entityId=_entityId;
 
         if (DEBUG = 1) THEN
