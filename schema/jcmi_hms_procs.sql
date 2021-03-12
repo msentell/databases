@@ -5020,7 +5020,7 @@ BEGIN
         END IF;
 
         set @nxtGUUID = null;
-        select max(groupUUID)+1 from user_group into @nxtGUUID;
+        select UUID() into @nxtGUUID;
         insert into user_group values(@nxtGUUID,_customerId,_groupName,_userid,null,null,now(),null,0);
 
         select @nxtGUUID as 'id',_groupName as 'name';
