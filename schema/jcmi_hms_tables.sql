@@ -482,11 +482,11 @@ ENGINE = InnoDB ;
 DROP TABLE IF EXISTS part_attachment_join;
 
 CREATE TABLE `part_attachment_join` (
-    paj_part_partUUID CHAR(36)  NOT NULL,
+    paj_part_sku varchar(100) NOT NULL,
     paj_attachmentUUID CHAR(36)  NOT NULL,
   	paj_createdTS datetime  NULL default now(),
 
-  	PRIMARY KEY (paj_part_partUUID,paj_attachmentUUID))
+  	PRIMARY KEY (paj_part_sku,paj_attachmentUUID))
 ENGINE = InnoDB ;
 
 

@@ -4794,13 +4794,20 @@ BEGIN
 				`attachment_customerUUID`,`attachment_createdByUUID`,`attachment_acknowledgedByUUID`,`attachment_updatedTS`,`attachment_createdTS`,`attachment_deleteTS`)
 				values(_attachmentuuid, _attachmentStatus, _attachment_fileURL, _attachment_shortName
                 , _attachment_description,_attachment_mineType, _attachment_customerUUid , _attachment_createdByUUID, null, now(), now(), null);
-		IF(_partType = 'ASSET') THEN
-            SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
-        ELSE
-           set asset_part_id = _partId;
+-- DEAL WITH INSERTING INTO RIGHT TABLE
+        IF(_partType = 'ASSET') THEN
+            insert into asset_attachment_join(`aaj_asset_assetUUID`, `aaj_attachmentUUID`, `aaj_createdTS`)
+            values(_partId, _attachmentuuid, now());
+#             SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
+        ELSEIF(_partType = 'ASSET-PART') THEN
+            insert into asset_part_attachment_join(`apaj_asset_partUUID`, `apaj_attachmentUUID`, `apaj_createdTS`)
+            values(_partId, _attachmentuuid, now());
+        ELSEIF(_partType = 'PART-TEMPLATE') THEN
+            insert into part_attachment_join(`paj_part_sku`, `paj_attachmentUUID`, `paj_createdTS`)
+            values(_partId, _attachmentuuid, now());
         END IF;
-        insert into asset_part_attachment_join(`apaj_asset_partUUID`, `apaj_attachmentUUID`, `apaj_createdTS`)
-			values(asset_part_id, _attachmentuuid, now());
+        #         insert into asset_part_attachment_join(`apaj_asset_partUUID`, `apaj_attachmentUUID`, `apaj_createdTS`)
+# 			values(asset_part_id, _attachmentuuid, now());
     ELSE
 		IF (_partId IS NULL) THEN
          SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partId can not be empty';
@@ -4812,17 +4819,41 @@ BEGIN
         LEAVE ATTACHMENT_attachment;
 		END IF;
 	END IF;
-
-    IF(_partType = 'ASSET' or _partType = 'ASSET-PART') THEN
-
-        IF(_partType = 'ASSET') THEN
-            SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
-        ELSE
-           set asset_part_id = _partId;
-        END IF;
-
-        SELECT * FROM attachment a LEFT JOIN asset_part_attachment_join apj ON (a.attachmentUUID = apj.apaj_attachmentUUID)
-        WHERE apj.apaj_asset_partUUID = asset_part_id and attachment_deleteTS is null ;
+-- FOR _partType of ASSET, return records for ASSETS UNION ASSET_PART UNION PART_TEMPLATE
+-- FOR _partType of ASSET-PART, return records for ASSET-PART UNION PART_TEMPLATE
+-- FOR _partType of PART_TEMPLATE, return recors for PART_TEMPLATE
+    IF(_partType = 'ASSET') THEN
+        SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
+        SELECT asset_part_template_part_sku into template_part_id FROM asset_part where asset_partUUID = asset_part_id;
+        SELECT a.*, 'ASSET' as partType FROM attachment a LEFT JOIN asset_attachment_join aaj ON (a.attachmentUUID = aaj.aaj_attachmentUUID)
+        WHERE aaj.aaj_asset_assetUUID = _partId and a.attachment_deleteTS is null
+        UNION
+        SELECT b.*, 'PART' as partType FROM attachment b LEFT JOIN asset_part_attachment_join apj ON (b.attachmentUUID = apj.apaj_attachmentUUID)
+        WHERE apj.apaj_asset_partUUID = asset_part_id and b.attachment_deleteTS is null
+        UNION
+        SELECT c.*, 'FACTORY' as partType FROM attachment c LEFT JOIN part_attachment_join paj ON (c.attachmentUUID = paj.paj_attachmentUUID)
+        WHERE paj.paj_part_sku = template_part_id and c.attachment_deleteTS is null ;
+    ELSEIF(_partType = 'ASSET-PART') THEN
+        SELECT asset_part_template_part_sku into template_part_id FROM asset_part where asset_partUUID = _partId;
+        SELECT b.*, 'PART' as partType FROM attachment b LEFT JOIN asset_part_attachment_join apj ON (b.attachmentUUID = apj.apaj_attachmentUUID)
+        WHERE apj.apaj_asset_partUUID = _partId and b.attachment_deleteTS is null
+        UNION
+        SELECT c.*, 'FACTORY' as partType FROM attachment c LEFT JOIN part_attachment_join paj ON (c.attachmentUUID = paj.paj_attachmentUUID)
+        WHERE paj.paj_part_sku = template_part_id and c.attachment_deleteTS is null ;
+    ELSEIF(_partType = 'PART-TEMPLATE') THEN
+        SELECT c.*, 'FACTORY' as partType FROM attachment c LEFT JOIN part_attachment_join paj ON (c.attachmentUUID = paj.paj_attachmentUUID)
+        WHERE paj.paj_part_sku = _partId and c.attachment_deleteTS is null ;
+#     END IF;
+#     IF(_partType = 'ASSET' or _partType = 'ASSET-PART') THEN
+#
+#         IF(_partType = 'ASSET') THEN
+#             SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
+#         ELSE
+#            set asset_part_id = _partId;
+#         END IF;
+#
+#         SELECT a.*, 'ASSET' as partType FROM attachment a LEFT JOIN asset_part_attachment_join apj ON (a.attachmentUUID = apj.apaj_attachmentUUID)
+#         WHERE apj.apaj_asset_partUUID = asset_part_id and attachment_deleteTS is null ;
 
     ELSE
          SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partType not matching with conditions';
