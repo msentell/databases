@@ -4984,8 +4984,10 @@ DELIMITER ;
 -- ==================================================================
 -- > call GROUP_group('GET-LIST',<targetedUserId_id>,<group_id>,<group_name>,<customer_id>,<user_id>)
 -- call GROUP_group('GET-LIST',1,null,null,null,null)
--- call GROUP_group('GET-LIST',1,1,null,null)
+-- call GROUP_group('GET-LIST',1,1,null,null,null)
 -- call GROUP_group('GET-LIST',1,null,null,'a30af0ce5e07474487c39adab6269d5f',null)
+-- > call GROUP_group('GET-USER-LIST',<targetedUserId_id>,<group_id>,null,null,null)
+-- call GROUP_group('GET-USER-LIST',1,1,null,null,null)
 -- > call GROUP_group('ADD-USER',<targetedUserId_id>,<group_id>,null,null,<user_id>);
 -- call GROUP_group('ADD-USER',6,3,null,null,1);
 -- > call GROUP_group('REMOVE-USER',<targetedUserId_id>,<group_id>,null,null,null);
@@ -5023,14 +5025,28 @@ BEGIN
         SET @l_SQL = 'SELECT * FROM user_group';
 
         IF(_groupid IS NOT NULL)THEN
-            -- left join user_group_join
-            SET @l_SQL = CONCAT(@l_SQL,' ug left join user_group_join ugj on (ug.groupUUID = ugj.ugj_groupUUID)');
-            -- filter users of group by _groupid
-            SET @l_SQL = CONCAT(@l_SQL,' where ug.groupUUID = \'',_groupid,'\';');
+            -- filter group by _groupid
+            SET @l_SQL = CONCAT(@l_SQL,' where groupUUID = \'',_groupid,'\';');
         ELSEIF(_customerId IS NOT NULL)THEN
             -- filter group by _customerId
             SET @l_SQL = CONCAT(@l_SQL,' where group_customerUUID = \'',_customerId,'\';');
         END IF;
+
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    ELSEIF(_action = 'GET-USER-LIST') THEN
+        SET @l_SQL = 'SELECT * FROM user_group';
+
+        IF(_groupid IS NULL)THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group: _groupid can not be empty';
+            LEAVE GROUP_group;
+        END IF;
+
+        -- left join user_group_join
+        SET @l_SQL = CONCAT(@l_SQL,' ug left join user_group_join ugj on (ug.groupUUID = ugj.ugj_groupUUID)');
+        -- filter users of group by _groupid
+        SET @l_SQL = CONCAT(@l_SQL,' where ug.groupUUID = \'',_groupid,'\';');
 
         PREPARE stmt FROM @l_SQL;
         EXECUTE stmt;
@@ -5145,4 +5161,93 @@ BEGIN
 
 END$$
 
+DELIMITER ;
+-- ==================================================================
+DROP procedure IF EXISTS `SECURITY_bitwise3`;
+/*
+call SECURITY_bitwise3(_action,_userId,_hierarchyId,_hierarchyType,_att_bitwise);
+> call SECURITY_bitwise3('ADD',_userId,_hierarchyId,_hierarchyType,_att_bitwise);
+call SECURITY_bitwise3('ADD','1','10f15063ba49451baf43e750c0be4805','BRAND',2);
+> call SECURITY_bitwise3('REMOVE',_userId,_hierarchyId,_hierarchyType,_att_bitwise);
+call SECURITY_bitwise3('REMOVE','1','10f15063ba49451baf43e750c0be4805','BRAND',4);
+*/
+/*
+
+Name	Description
+&	Bitwise AND
+>>	Right shift
+<<	Left shift
+^	Bitwise XOR
+BIT_COUNT()	Return the number of bits that are set
+|	Bitwise OR
+~	Bitwise inversion
+
+*/
+
+DELIMITER $$
+CREATE PROCEDURE SECURITY_bitwise3(IN _action VARCHAR(100),
+                                  IN _userId CHAR(36),
+                                  IN _hierarchyId CHAR(36),
+                                  IN _hierarchyType CHAR(36),
+                                  IN _att_bitwise BIGINT)
+SECURITY_bitwise3:
+BEGIN
+
+    DECLARE _DEBUG INT DEFAULT 1;
+    
+    IF(_action IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise3: _action can not be empty';
+        LEAVE SECURITY_bitwise3;
+    END IF;
+    IF(_userId IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise3: _userId can not be empty';
+        LEAVE SECURITY_bitwise3;
+    END IF;
+    IF(_hierarchyType IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise3: _hierarchyType can not be empty';
+        LEAVE SECURITY_bitwise3;
+    END IF;
+    IF(_hierarchyId IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise3: _hierarchyId can not be empty';
+        LEAVE SECURITY_bitwise3;
+    END IF;
+
+    -- GET CURRENT BITWISE
+    SET @CUR_BITWISE = null;
+
+    IF(_hierarchyType = 'GROUP')THEN
+        select group_securityBitwise into @CUR_BITWISE from user_group where groupUUID = _hierarchyId;
+    ELSEIF(_hierarchyType = 'USER')THEN
+        -- in hold for now.
+        SELECT 'in hold for now';
+    ELSE
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise3: _hierarchyType did not match any.';
+        LEAVE SECURITY_bitwise3;
+    END IF;
+
+    IF(@CUR_BITWISE IS NULL)THEN
+        SET @CUR_BITWISE = 0;
+    END IF;
+
+    -- BITWISE UPDATE OPERATION
+    SET @UPDATED_BITWISE = null;
+
+    IF(_action = 'ADD')THEN
+        SELECT @CUR_BITWISE|_att_bitwise into @UPDATED_BITWISE;
+    ELSEIF(_action = 'REMOVE')THEN
+        SELECT @CUR_BITWISE^_att_bitwise into @UPDATED_BITWISE;
+    ELSE
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise3: _action did not match any.';
+        LEAVE SECURITY_bitwise3;
+    END IF;
+    
+    -- SET UPDATED BITWISE
+    IF(_hierarchyType = 'GROUP')THEN
+        update user_group SET group_securityBitwise = @UPDATED_BITWISE where groupUUID = _hierarchyId;
+    ELSEIF(_hierarchyType = 'USER')THEN
+       -- in hold for now.
+        SELECT 'in hold for now';
+    END IF;
+    
+END$$
 DELIMITER ;
