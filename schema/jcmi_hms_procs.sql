@@ -3417,7 +3417,7 @@ _USER_loginPWReset);
 
 call USER_login('ACCESS', null, 1, null, null, null, 0, null);
 call USER_login('ACCESS', null, 1, 'mail@mail.com', null, null, 1, null);
-call USER_login('VERIFYEMAIL', null, null, 'mail@mail.com', null, '5997055', null, null);
+call USER_login('VERIFY_OTP', null, null, 'mail@mail.com', null, '5997055', null, null);
 call USER_login('FORGOTPASSWORD', null, null, 'mail@mail.com', null, null, null, null);
 call USER_login('RESETPASSWORD', null, 1, null, '12345', null, null, null);
 call USER_login('LOGIN', null, null, 'mail@mail.com', '12345', null, null, null);
@@ -3767,7 +3767,7 @@ BEGIN
 
         -- select _entityId as entityId, _USER_loginEmailValidationCode as validationCode;
 
-    ELSEIF (_action = 'VERIFYEMAIL' and _USER_loginEmailValidationCode is NOT null and
+    ELSEIF (_action = 'VERIFY_OTP' and _USER_loginEmailValidationCode is NOT null and
             _USER_loginEmail is not null) THEN
 
         select userUUID

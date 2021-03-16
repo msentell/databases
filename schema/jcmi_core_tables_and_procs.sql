@@ -195,7 +195,7 @@ _USER_loginPWReset);
 
 call USER_login('ACCESS', null, 1, null, null, null, 0, null);
 call USER_login('ACCESS', null, 1, 'mail@mail.com', null, null, 1, null);
-call USER_login('VERIFYEMAIL', null, null, 'mail@mail.com', null, '5997055', null, null);
+call USER_login('VERIFY_OTP', null, null, 'mail@mail.com', null, '5997055', null, null);
 call USER_login('FORGOT_PASSWORD', null, null, 'mail@mail.com', null, null, null, null);
 call USER_login('RESET_PASSWORD', null, 1, null, '12345', null, null, null);
 call USER_login('LOGIN', null, null, 'mail@mail.com', '12345', null, null, null);
@@ -233,6 +233,7 @@ BEGIN
     DECLARE _magentoCustomerId INT default 0;
     DECLARE _otp varchar(6);
     DECLARE _DISABLE_MFA INT default 1; -- 0 is enable MFA
+    DECLARE _otpSessionTime int;
 
     DECLARE DEBUG INT DEFAULT 0;
 
@@ -470,10 +471,11 @@ BEGIN
             --         concat('Your password is: ', _USER_loginPW, ' Please change once you log back in.'),
             --         'Password Reminder', null
             --     );
-            select floor(rand()*100000-1) into _otp;
-            update `user` set  user_loginEmailValidationCode = _otp where useruuid = _entityId;
+            select floor(rand()* (99999-10000 + 1) + 10000) into _otp;
+            update `user` set  user_loginEmailValidationCode = _otp, user_updatedTS = now() where useruuid = _entityId;
             select _otp;
             select * from jcmi_hms.notification_template where notification_category = _action;
+            select user_updatedTS from user where useruuid = _entityId;
 		ELSE
 			SIGNAL SQLSTATE '45004' SET MESSAGE_TEXT = 'There is no account with the specified email. Please check once.', MYSQL_ERRNO = 12;
             LEAVE USER_login;
@@ -618,16 +620,21 @@ BEGIN
 
         -- select _entityId as entityId, _USER_loginEmailValidationCode as validationCode;
 
-    ELSEIF (_action = 'VERIFYEMAIL' and _USER_loginEmailValidationCode is NOT null and
+    ELSEIF (_action = 'VERIFY_OTP' and _USER_loginEmailValidationCode is NOT null and
             _USER_loginEmail is not null) THEN
 
-        select userUUID
-        into _entityId
+        select userUUID, user_updatedTS
+        into _entityId, @userUpdated
         from `user`
         where user_loginEmail = _USER_loginEmail
           and user_loginEmailValidationCode = _USER_loginEmailValidationCode;
-
-
+	
+		select  minute(TIMEDIFF(@userUpdated, now())) into _otpSessionTime;
+        select _otpSessionTime;
+		IF(_otpSessionTime > 30) THEN
+			 SIGNAL SQLSTATE '45006' SET MESSAGE_TEXT = 'Session Time out Please try again', MYSQL_ERRNO = 12;
+            LEAVE USER_login;
+        END IF;
         if (DEBUG = 1) THEN select _action, _entityId, _USER_loginEmail, _USER_loginEmailValidationCode; END IF;
 
         if (_entityId is null) THEN
