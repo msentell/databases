@@ -710,6 +710,7 @@ BEGIN
     DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
     DECLARE _userFoundUUID CHAR(36);
     DECLARE _commaNeeded INT;
+    DECLARE _createdUserId varchar(36);
 
     IF (_action = 'GET-LIST') THEN
 
@@ -951,6 +952,17 @@ BEGIN
         PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
+	ELSEIF(_action = 'CREATE_USER') THEN
+    set _createdUserId  = uuid();
+		insert into user(userUUID, user_customerUUID, user_userName, user_loginEmail, user_loginEmailVerified, user_loginEnabled, user_loginPW, user_securityBitwise, 
+		user_individualSecurityBitwise, user_createdByUUID, user_createdTS) values (_createdUserId, _customerId, _user_userName, _user_loginEmail,
+		now(),'1',_user_loginPW,null, null, _customerId, now());
+        insert into user_profile(user_profile_userUUID,user_profile_avatarSrc, user_profile_phone,
+		user_profile_locationUUID, user_profile_preferenceJSON, user_profile_createdByUUID, user_profile_createdTS) values(_createdUserId, null, _user_profile_phone
+		,_user_profile_locationUUID, null, _customerId ,now());
+        insert into jcmi_hms.user_group_join(ugj_groupUUID, ugj_userUUID, ugj_createdByUUID, ugj_createdTS) 
+        values(_groupUUID,_createdUserId, _customerId,now());
+        select * from user;
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
         LEAVE USER_user;
