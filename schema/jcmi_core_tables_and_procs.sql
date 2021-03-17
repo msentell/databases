@@ -628,10 +628,10 @@ BEGIN
         from `user`
         where user_loginEmail = _USER_loginEmail
           and user_loginEmailValidationCode = _USER_loginEmailValidationCode;
-	
-		select  minute(TIMEDIFF(@userUpdated, now())) into _otpSessionTime;
-        select _otpSessionTime;
-		IF(_otpSessionTime > 30) THEN
+          
+          select timediff(now(), @userUpdated ) into _otpSessionTime;
+
+		IF(minute(_otpSessionTime) >= 30 or hour(_otpSessionTime) >= 1 ) THEN
 			 SIGNAL SQLSTATE '45006' SET MESSAGE_TEXT = 'Session Time out Please try again', MYSQL_ERRNO = 12;
             LEAVE USER_login;
         END IF;
@@ -642,7 +642,7 @@ BEGIN
             LEAVE USER_login;
         END IF;
 
-        update `user` set user_loginEmailVerified=now(), user_loginEmailValidationCode=null where userUUID = _entityId;
+        update `user` set user_updatedTS = now(), user_loginEmailValidationCode=null where userUUID = _entityId;
 
     END IF;
 
