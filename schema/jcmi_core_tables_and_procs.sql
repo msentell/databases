@@ -257,7 +257,7 @@ BEGIN
         into _entityId, _customerUUID, _userName, _USER_loginEnabled,_password,_USER_loginEmailVerified, _securityBitwise, _individualSecurityBitwise
         from `user`
         where user_loginEmail = _USER_loginEmail;
-
+		
         if (DEBUG = 1) THEN
             select _action,
                    _USER_loginEmail,
@@ -643,7 +643,14 @@ BEGIN
         END IF;
 
         update `user` set user_updatedTS = now(), user_loginEmailValidationCode=null where userUUID = _entityId;
-
+	ELSE IF(_action = 'VERIFY_EMAIL') THEN
+		if(_USER_loginEmail is null) THEN
+			 SIGNAL SQLSTATE '45006' SET MESSAGE_TEXT = '_USER_loginEmail is required', MYSQL_ERRNO = 12;
+            LEAVE USER_login;
+        END IF;
+		select count(*) into @count from user where user_loginEmail = _USER_loginEmail;
+        select @count as isAnyUsers;
+        END IF;
     END IF;
 
 END$$
