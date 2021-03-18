@@ -246,6 +246,11 @@ BEGIN
     IF (_action = 'LOGIN' and _USER_loginEmail is NOT null and _USER_loginPW is not null) THEN
 
 
+		select count(*) into @count from user where user_loginEmail = _USER_loginEmail;
+        if(@count >1) THEN 
+			  SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call USER_login: Duplicate email found. Please contact support team';
+            LEAVE USER_login;
+         END IF;
         select userUUID,
                user_customerUUID,
                user_userName,
@@ -330,7 +335,7 @@ BEGIN
             IF (_startLocationUUID is null) THEN
                 select locationUUID
                 into _startLocationUUID
-                from location
+                from jcmi_hms.location
                 where location_customerUUID = _customerUUID
                   and location_isPrimary = 1
                 LIMIT 1;
@@ -367,7 +372,7 @@ BEGIN
             IF (_startLocationUUID is null) THEN
                 select locationUUID
                 into _startLocationUUID
-                from location
+                from jcmi_hms.location
                 where location_customerUUID = _customerUUID
                   and location_isPrimary = 1
                 LIMIT 1;
@@ -448,14 +453,27 @@ BEGIN
         END IF;
 
     ELSEIF (_action = 'FORGOT_PASSWORD' and _USER_loginEmail is not null) THEN
-
+		select count(*) into @count from user where user_loginEmail = _USER_loginEmail;
+        if(@count >1) THEN 
+			  SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'Duplicate email found. Please contact support team';
+            LEAVE USER_login;
+         END IF;
         -- set _USER_loginEmailValidationCode = SESSION_generateAccessCode(7);
         select userUUID, user_loginEnabled, `user_loginPW`, user_loginEmailVerified
         into _entityId, _USER_loginEnabled,_USER_loginPW,_USER_loginEmailVerified
         from `user`
         where user_loginEmail = _USER_loginEmail;
-        IF(_USER_loginEnabled != 1) THEN
-          SIGNAL SQLSTATE '45004' SET MESSAGE_TEXT = 'You are not allowed to login please contact support team.', MYSQL_ERRNO = 12;
+         if (_entityId is null) THEN
+            SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'User not found';
+            LEAVE USER_login;
+        END IF;
+        if (_USER_loginEnabled = 0) THEN
+            SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'Login not enabled';
+            LEAVE USER_login;
+        END IF;
+
+        if (_USER_loginEmailVerified is null) THEN
+            SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'Email not verified';
             LEAVE USER_login;
         END IF;
 
