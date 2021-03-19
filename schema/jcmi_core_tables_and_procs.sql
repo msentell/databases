@@ -706,7 +706,7 @@ call USER_user('LOGOUT', null,null,_user_userUUID,null,null,null,null,null,null,
 
 call USER_user('GETALLUSERS', 'a30af0ce5e07474487c39adab6269d5f',1,null,null,null,null,null,null,null,null,null,null,null);
 
-call USER_user('GET_LIST_OF_USER', null, null,'1\',\'2',null,null,null, null,null,null,null,null, null,null);
+call USER_user('GET_LIST_OF_USER', null, null,'\'1\',\'2\'',null,null,null, null,null,null,null,null, null,null);
 
 */
 
