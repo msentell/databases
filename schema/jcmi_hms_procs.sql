@@ -2969,7 +2969,7 @@ BEGIN
         END IF;
 
         select 'checklist' as tableName, checklistUUID as id, checklist_name as value, checklist_name as name,
-        checklist_partRequired as isPartRequire
+        checklist_assetRequired as isPartRequire
         from checklist
         where checklist_customerUUID = _customerId AND checklist_deleteTS is NULL
         order by checklist_name;
@@ -3849,7 +3849,7 @@ _checklist_statusId,_checklist_name, _checklist_recommendedFrequency,_checklist_
 _checklist_itemUUID,_checklist_item_statusId,_checklist_item_sortOrder,
 _checklist_item_prompt, _checklist_item_type, _checklist_item_optionSetJSON,
 _checklist_item_successPrompt, _checklist_item_successRange,
-checklist_history_item_resultFlag,checklist_history_item_resultText, _checklist_history_item_historyUUID, _checklist_partRequired
+checklist_history_item_resultFlag,checklist_history_item_resultText, _checklist_history_item_historyUUID, _checklist_assetRequired
 );
 
 call CHECKLIST_checklist(
@@ -3935,7 +3935,7 @@ IN _checklist_item_successRange varchar(255),
 IN _checklist_history_item_resultFlag INT,
 IN _checklist_history_item_resultText varchar(255),
 IN _checklist_history_item_historyUUID char(36),
-IN _checklist_partRequired INT,
+IN _checklist_assetRequired INT,
 IN _checklist_history_comment varchar(255)
 )
 CHECKLIST_checklist: BEGIN
@@ -4319,11 +4319,11 @@ ELSEIF (_action = 'CREATE_CHECKLIST') THEN
     insert into checklist (
                     checklistUUID, checklist_customerUUID, checklist_statusId, checklist_name, checklist_recommendedFrequency,
                     checklist_rulesJSON,
-                    checklist_createdByUUID, checklist_updatedByUUID, checklist_updatedTS, checklist_createdTS,checklist_partRequired
+                    checklist_createdByUUID, checklist_updatedByUUID, checklist_updatedTS, checklist_createdTS,checklist_assetRequired
                 ) values (
                     _checklistUUID, _customerUUID, 1, _checklist_name, _checklist_recommendedFrequency,
                     _checklist_rulesJSON,
-                    _userUUID, _userUUID, now(), now(), _checklist_partRequired
+                    _userUUID, _userUUID, now(), now(), _checklist_assetRequired
                 );
         select _checklistUUID;
 
