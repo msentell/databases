@@ -4986,8 +4986,9 @@ DELIMITER ;
 -- call GROUP_group('GET-LIST',1,null,null,null,null)
 -- call GROUP_group('GET-LIST',1,1,null,null,null)
 -- call GROUP_group('GET-LIST',1,null,null,'a30af0ce5e07474487c39adab6269d5f',null)
--- > call GROUP_group('GET-USER-LIST',<targetedUserId_id>,<group_id>,null,null,null)
--- call GROUP_group('GET-USER-LIST',1,1,null,null,null)
+-- > call GROUP_group('GET-USER-GROUP',<targetedUserId_id>,<group_id>,null,null,null)
+-- call GROUP_group('GET-USER-GROUP',1,1,null,null,null)
+-- call GROUP_group('GET-USER-GROUP','6',null,null,null,null)
 -- > call GROUP_group('ADD-USER',<targetedUserId_id>,<group_id>,null,null,<user_id>);
 -- call GROUP_group('ADD-USER',6,3,null,null,1);
 -- > call GROUP_group('REMOVE-USER',<targetedUserId_id>,<group_id>,null,null,null);
@@ -5035,18 +5036,18 @@ BEGIN
         PREPARE stmt FROM @l_SQL;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
-    ELSEIF(_action = 'GET-USER-LIST') THEN
+    ELSEIF(_action = 'GET-USER-GROUP') THEN
         SET @l_SQL = 'SELECT * FROM user_group';
-
-        IF(_groupid IS NULL)THEN
-            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group: _groupid can not be empty';
-            LEAVE GROUP_group;
-        END IF;
 
         -- left join user_group_join
         SET @l_SQL = CONCAT(@l_SQL,' ug left join user_group_join ugj on (ug.groupUUID = ugj.ugj_groupUUID)');
-        -- filter users of group by _groupid
-        SET @l_SQL = CONCAT(@l_SQL,' where ug.groupUUID = \'',_groupid,'\';');
+        -- filter users of group by groupUUID
+        IF(_groupid IS NOT NULL)THEN
+            SET @l_SQL = CONCAT(@l_SQL,' where ug.groupUUID = \'',_groupid,'\';');
+        -- filter users of group by ugj_userUUID
+        ELSEIF(_targetedUserId IS NOT NULL)THEN
+            SET @l_SQL = CONCAT(@l_SQL,' where ugj.ugj_userUUID = \'',_targetedUserId,'\';');
+        END IF;
 
         PREPARE stmt FROM @l_SQL;
         EXECUTE stmt;
