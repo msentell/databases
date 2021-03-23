@@ -1002,7 +1002,8 @@ IN _wapj_asset_partUUID VARCHAR(100),
 IN _wapj_quantity INT,
 IN _daysToMaintain VARCHAR(100),
 IN _monthlyRecurrType VARCHAR(50),
-IN monthlyRecuttValue INT
+IN monthlyRecuttValue INT,
+IN _workorderFilterDate VARCHAR(100)
 )
 WORKORDER_workOrder: BEGIN
 
@@ -1021,7 +1022,7 @@ DECLARE _date varchar(100);
 
 IF(_action ='GET' or _action = 'GETALL') THEN
 
-    IF(_customerId IS NULL or _customerId = '') THEN
+IF(_customerId IS NULL or _customerId = '') THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _customerId can not be empty';
         LEAVE WORKORDER_workOrder;
     END IF;
@@ -1084,7 +1085,16 @@ IF(_action ='GET' or _action = 'GETALL') THEN
                             ' AND w.workorder_deleteTS is null AND workorder_scheduleDate <= date_add(CURDATE(), interval 24*60*60 - 1 second)');
         set @l_sql = CONCAT(@l_sql,'order by w.workorder_status, workorder_scheduleDate desc');
 	else
-		set @l_sql = CONCAT(@l_sql,'order by w.workorder_number desc');
+		if(_workorderFilterDate is not null) THEN
+			  if (_commaNeeded=1) THEN set @l_sql = CONCAT(@l_sql,' AND '); END IF;
+              if(_workorder_status = 'COMPLETED') THEN
+				set @l_sql = CONCAT(@l_sql,'w.workorder_dueDate between \'', _workorderFilterDate ,'\' and \'', date(now()) ,'\' and workorder_status = \'','Complete','\'');
+			else
+				set @l_sql = CONCAT(@l_sql,'w.workorder_dueDate between \'', date(now())  ,'\' and \'', _workorderFilterDate ,'\' and workorder_status != \'','Complete','\'');
+			END IF;
+            set _commaNeeded=1;
+        END IF;
+		set @l_sql = CONCAT(@l_sql,' order by w.workorder_number desc');
         END IF;
         IF (_DEBUG=1) THEN select _action,@l_SQL; END IF;
 
