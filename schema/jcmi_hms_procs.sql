@@ -723,10 +723,10 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
         (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
         (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
         (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-        where selected_date between _workorder_scheduleDate and  _workorder_completeDate
+        where selected_date between _workorder_rescheduleDate and  _workorder_completeDate
         and FIND_IN_SET (dayname(selected_date),_daysToMaintain)
         order by v.selected_date ) s  where (row_num-1) % _workorder_frequency  = 0; --  (row_num -1) is bcz it should consider from today.. elso it will not
-			IF (_DEBUG=1) THEN select 'created daily,',_woDates, _workorder_completeDate, _workorder_scheduleDate,_daysToMaintain, _workorder_frequency; END IF;
+			IF (_DEBUG=1) THEN select 'created daily,',_woDates, _workorder_completeDate, _workorder_rescheduleDate,_daysToMaintain, _workorder_frequency; END IF;
     ELSEIF (_workorder_frequencyScope = 'WEEKLY') THEN
 
         select group_concat(dates) INTO _woDates from (
@@ -737,7 +737,7 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
         (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
         (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
         (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4 ) as v
-        where selected_date between _workorder_scheduleDate and _workorder_completeDate and FIND_IN_SET (dayname(v.selected_date), _daysToMaintain)  order by v.selected_date ) s where (s.row_num -1) % _workorder_frequency = 0;
+        where selected_date between _workorder_rescheduleDate and _workorder_completeDate and FIND_IN_SET (dayname(v.selected_date), _daysToMaintain)  order by v.selected_date ) s where (s.row_num -1) % _workorder_frequency = 0;
 
 
     ELSEIF (_workorder_frequencyScope = 'MONTHLY') THEN
@@ -750,7 +750,7 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
 				(select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
 				(select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
 				(select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-				where selected_date between _workorder_scheduleDate and _workorder_completeDate
+				where selected_date between _workorder_rescheduleDate and _workorder_completeDate
 				and FIND_IN_SET (dayname(selected_date), _daysToMaintain) and  (FLOOR((DAYOFMONTH(selected_date) - 1) / 7) + 1) =  monthlyRecuttValue order by v.selected_date
 				) s  where (s.row_num - 1) % _workorder_frequency = 0 ; -- (s.row_num - 1) is bcz it will consider from today.. elso no
 			ELSE
@@ -762,7 +762,7 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
 				(select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
 				(select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
 				(select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4) v
-				where selected_date between _workorder_scheduleDate and _workorder_completeDate
+				where selected_date between _workorder_rescheduleDate and _workorder_completeDate
 				and  DAYOFMONTH(selected_date) =  monthlyRecuttValue order by v.selected_date
 				) s  where (s.row_num - 1) % _workorder_frequency = 0 ; -- (s.row_num - 1) is bcz it will consider from today.. elso no
 			END IF;
