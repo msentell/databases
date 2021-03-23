@@ -798,7 +798,7 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
                LOOP
                  SET strLen = CHAR_LENGTH(_woDates);
 
-                 SET _date=SUBSTRING_INDEX(_woDates, ',', 1);
+                 SET _date = SUBSTRING_INDEX(_woDates, ',', 1);
 
 
     -- TODO get configuration for workorder naming
@@ -809,9 +809,9 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
     if (_workorderUUID is null) THEN set _workorderUUID=UUID(); END IF;
     if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = STR_TO_DATE(_date, _dateFormat); END IF;
     if (_workorder_priority is null) THEN set _workorder_priority='MEDIUM'; END IF;
-
-    set _workorder_scheduleDate_withTime = ADDTIME(STR_TO_DATE(_date, '%d-%m-%Y %H:%m'),'23:59');
-    set _workorder_dueDate_withTime = ADDTIME(STR_TO_DATE(_date, '%d-%m-%Y %H:%m'),'23:59');
+	select _workorder_dueDate, _workorder_scheduleDate, _date;
+    set _workorder_scheduleDate_withTime = ADDTIME(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d %H:%m'),'23:59');
+    set _workorder_dueDate_withTime = ADDTIME(STR_TO_DATE(_workorder_dueDate, '%Y-%m-%d %H:%m'),'23:59');
 
     -- based on frequencyScope and frequency, create 1-M WO's
     -- TODO
