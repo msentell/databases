@@ -5287,11 +5287,13 @@ BEGIN
     UNION
     SELECT wo.workorderUUID, 'WORKORDER' AS type, 2 AS weight, CONCAT(wo.workorder_number,'-',wo.workorder_name) AS title
     FROM workorder wo
+             LEFT JOIN asset woa on wo.workorder_assetUUID = woa.assetUUID and woa.asset_customerUUID = wo.workorder_customerUUID
     WHERE wo.workorder_customerUUID = @customer
       AND wo.workorder_deleteTS is null
       AND (UPPER(wo.workorder_name) LIKE @q OR
            UPPER(wo.workorder_details) LIKE @q OR
-           UPPER(wo.workorder_actions) like @q)
+           UPPER(wo.workorder_actions) like @q OR
+           UPPER(woa.asset_name) LIKE @q)
     UNION
     SELECT att.attachmentUUID, 'ATTACHMENT' AS type, 3 as weight, att.attachment_shortName AS title
     FROM attachment att
