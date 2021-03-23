@@ -5195,7 +5195,7 @@ SECURITY_bitwise3:
 BEGIN
 
     DECLARE _DEBUG INT DEFAULT 1;
-    
+
     IF(_action IS NULL)THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise3: _action can not be empty';
         LEAVE SECURITY_bitwise3;
@@ -5241,7 +5241,7 @@ BEGIN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SECURITY_bitwise3: _action did not match any.';
         LEAVE SECURITY_bitwise3;
     END IF;
-    
+
     -- SET UPDATED BITWISE
     IF(_hierarchyType = 'GROUP')THEN
         update user_group SET group_securityBitwise = @UPDATED_BITWISE where groupUUID = _hierarchyId;
@@ -5249,6 +5249,81 @@ BEGIN
        -- in hold for now.
         SELECT 'in hold for now';
     END IF;
-    
+
 END$$
 DELIMITER ;
+
+-- ==================================================================
+DROP procedure IF EXISTS `SEARCH_search`;
+
+DELIMITER $$
+CREATE PROCEDURE SEARCH_search(IN _action VARCHAR(100),
+                                   IN _userId CHAR(36),
+                                   IN _customerId CHAR(36),
+                                   IN _q TEXT)
+SEARCH_search:
+BEGIN
+
+    DECLARE _DEBUG INT DEFAULT 1;
+
+    IF(_q IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SEARCH_search: _q can not be empty';
+        LEAVE SEARCH_search;
+    END IF;
+    IF(_customerId IS NULL)THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SEARCH_search: _customerId can not be empty';
+        LEAVE SEARCH_search;
+    END IF;
+
+    SET @customer = _customerId;
+    SET @q = CONCAT('%',UPPER(_q),'%');
+
+    SELECT a.assetUUID AS uuid, 'ASSET' AS type, 1 AS weight, a.asset_name AS title
+    FROM asset a
+    WHERE a.asset_customerUUID = @customer
+      AND a.asset_deleteTS IS null
+      AND a.asset_statusId = 1
+      AND (UPPER(a.asset_name) LIKE @q OR UPPER(a.asset_shortName) LIKE @q)
+    UNION
+    SELECT wo.workorderUUID, 'WORKORDER' AS type, 2 AS weight, CONCAT(wo.workorder_number,'-',wo.workorder_name) AS title
+    FROM workorder wo
+    WHERE wo.workorder_customerUUID = @customer
+      AND wo.workorder_deleteTS is null
+      AND (UPPER(wo.workorder_name) LIKE @q OR
+           UPPER(wo.workorder_details) LIKE @q OR
+           UPPER(wo.workorder_actions) like @q)
+    UNION
+    SELECT att.attachmentUUID, 'ATTACHMENT' AS type, 3 as weight, att.attachment_shortName AS title
+    FROM attachment att
+    WHERE att.attachment_customerUUID = @customer
+      AND att.attachment_deleteTS is null
+      AND (UPPER(att.attachment_description) LIKE @q OR
+           UPPER(att.attachment_shortName) LIKE @q)
+    UNION
+    SELECT kb.knowledgeUUID, 'KB' AS type, 4 as weight, kb.knowledge_title AS title
+    FROM knowledge_base kb
+    WHERE kb.knowledge_deleteTS is null
+      AND kb.knowledge_statusId = 1
+      AND (UPPER(kb.knowledge_title) LIKE @q OR UPPER(kb.knowledge_tags) LIKE @q OR UPPER(kb.knowledge_content) LIKE @q)
+    UNION
+    SELECT ap.asset_partUUID, 'PART' AS type, 5 as weight, CONCAT('PART-',ap.asset_part_name) AS title
+    FROM asset_part ap
+    WHERE ap.asset_part_customerUUID = @customer
+      AND ap.asset_part_deleteTS is null
+      AND ap.asset_part_statusId = 1
+      AND (UPPER(ap.asset_part_name) like @q OR UPPER(ap.asset_part_description) like @q OR
+           UPPER(ap.asset_part_sku) like @q OR
+           UPPER(ap.asset_part_template_part_sku) like @q)
+    UNION
+    SELECT u.userUUID, 'USER' AS type, 6 as weight, u.user_userName as TITLE
+    FROM jcmi_core.user u
+    WHERE u.user_customerUUID = @customer
+      AND u.user_deleteTS is null
+      AND u.user_statusId = 1
+      AND (UPPER(u.user_userName) like @q)
+    ORDER BY weight;
+
+END$$
+
+# SET @q = UPPER('%mark%');
+# SET @customer = 'a30af0ce5e07474487c39adab6269d5f';
