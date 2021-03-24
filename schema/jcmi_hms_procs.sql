@@ -1138,7 +1138,7 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
             where  workorderUUID = _workorderUUID; -- removed prevous checklistHistoryId
 		END IF;
 
-         set  @l_sql = CONCAT('update workorder set workorder_updatedTS=now(), workorder_updatedByUUID=', _userUUID);
+         set  @l_sql = CONCAT('update workorder set workorder_updatedTS = now(), workorder_updatedByUUID= \'', _userUUID,'\'');
 
         if (_workorder_status IS NOT NULL) THEN
             set @l_sql = CONCAT(@l_sql,',workorder_status = \'', _workorder_status,'\'');
