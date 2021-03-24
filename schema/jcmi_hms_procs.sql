@@ -1297,11 +1297,11 @@ ELSEIF(_action ='COMPLETE' or _action ='BATCH-COMPLETE') THEN
         ELSE
          set @l_sql = CONCAT(@l_sql,' where workorderUUID= \'',_workorderUUID,'\';');
          END IF;
-         
+
         select workorder_checklistHistoryUUID
         into _workorder_checklistHistoryUUID
         from workorder where workorderUUID=_workorderUUID;
-		
+
         PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
@@ -5307,7 +5307,8 @@ BEGIN
       AND (UPPER(wo.workorder_name) LIKE @q OR
            UPPER(wo.workorder_details) LIKE @q OR
            UPPER(wo.workorder_actions) like @q OR
-           UPPER(woa.asset_name) LIKE @q)
+           UPPER(woa.asset_name) LIKE @q OR
+           UPPER(wo.workorder_number) LIKE @q)
     UNION
     SELECT att.attachmentUUID, 'ATTACHMENT' AS type, 3 as weight, att.attachment_shortName AS title
     FROM attachment att
