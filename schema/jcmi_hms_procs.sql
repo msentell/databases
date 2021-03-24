@@ -261,7 +261,7 @@ CREATE PROCEDURE `DIAGNOSTIC_node`(IN _action VARCHAR(100),
                                    IN _diagnostic_node_optionSetJSON text,
                                    IN _diagnostic_node_warning VARCHAR(255),
                                    IN _diagnostic_node_warningSeverity VARCHAR(45),
-                                   IN _diagnostic_node_fabricId CHAR(36))
+                                   IN _diagnostic_node_fabricId VARCHAR(255))
 DIAGNOSTIC_node:
 BEGIN
     DECLARE commaNeeded INT DEFAULT 0;
@@ -2260,7 +2260,7 @@ CREATE PROCEDURE `LOCATION_Location`(IN _action VARCHAR(100),
                                      IN _location_contact_name VARCHAR(100),
                                      IN _location_contact_email VARCHAR(100),
                                      IN _location_contact_phone VARCHAR(50),
-                                     IN _location_fabricId CHAR(36))
+                                     IN _location_fabricId VARCHAR(255))
 LOCATION_Location:
 BEGIN
     DECLARE commaNeeded INT DEFAULT 0;
@@ -2719,7 +2719,7 @@ CREATE PROCEDURE `ASSETPART_assetpart`(IN _action VARCHAR(100),
                                        IN _asset_part_diagnosticUUID VARCHAR(255),
                                        IN _asset_part_magentoUUID VARCHAR(255),
                                        IN _asset_part_vendor VARCHAR(255),
-                                       IN _asset_part_fabricId CHAR(36))
+                                       IN _asset_part_fabricId VARCHAR(255))
 ASSETPART_assetpart:
 BEGIN
 
@@ -4894,7 +4894,7 @@ DELIMITER ;
 DROP procedure IF EXISTS `Fabric_fabric`;
 
 DELIMITER $$
-CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _partId char(36),IN _partType char(36),IN _id char(36),IN _name char(36),IN _img_url varchar(225),_img_json TEXT)
+CREATE PROCEDURE `Fabric_fabric`(IN _action char(32),IN _partId char(36),IN _partType char(36),IN _id char(36),IN _name VARCHAR(255),IN _img_url varchar(225),_img_json TEXT)
 Fabric_fabric:
 BEGIN
 
