@@ -697,7 +697,7 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
 
     if(_daysToMaintain is null) then
         IF (_workorder_frequencyScope = 'DAILY') then
-         SET _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday';
+         SET _daysToMaintain = 'Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday';
         ELSEIF (_workorder_frequencyScope = 'WEEKLY' || _workorder_frequencyScope = 'MONTHLY') then
          SET _daysToMaintain = 'Monday';
         END IF;
