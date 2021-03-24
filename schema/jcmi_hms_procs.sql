@@ -1091,9 +1091,9 @@ IF(_customerId IS NULL or _customerId = '') THEN
 				set @l_sql = CONCAT(@l_sql,'w.workorder_completeDate between \'', _workorderFilterDate ,'\' and \'', date(now()) ,'\' and workorder_status = \'','Complete','\'');
 			else
 				IF(date(now()) < _workorderFilterDate) THEN
-					set @l_sql = CONCAT(@l_sql,'w.workorder_completeDate between \'', date(now())  ,'\' and \'', _workorderFilterDate ,'\' and workorder_status != \'','Complete','\'');
+					set @l_sql = CONCAT(@l_sql,'w.workorder_dueDate between \'', date(now())  ,'\' and \'', _workorderFilterDate ,'\' and workorder_status != \'','Complete','\'');
 				ELSE
-					set @l_sql = CONCAT(@l_sql,'w.workorder_completeDate between \'', _workorderFilterDate  ,'\' and \'', date(now())  ,'\' and workorder_status != \'','Complete','\'');
+					set @l_sql = CONCAT(@l_sql,'w.workorder_dueDate between \'', _workorderFilterDate  ,'\' and \'', date(now())  ,'\' and workorder_status != \'','Complete','\'');
 				END IF;
 			END IF;
             set _commaNeeded=1;
