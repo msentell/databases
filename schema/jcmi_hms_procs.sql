@@ -1105,15 +1105,12 @@ IF(_customerId IS NULL or _customerId = '') THEN
         PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
-
-ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE') THEN
-        IF (_workorderUUID IS NULL) THEN
+ELSEIF(_action = 'UPDATEALL') THEN 
+	IF (_workorderUUID IS NULL) THEN
             SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
             LEAVE WORKORDER_workOrder;
-        END IF;
-			select workorder_tag, workorder_checklistUUID, workorder_checklistHistoryUUID into _workorder_tag, @checklistUid,  @checklisthistoryuuid from workorder where workorderUUID = _workorderUUID;
-				IF (_action ='UPDATE') THEN
-
+	END IF;
+	select workorder_tag, workorder_checklistUUID, workorder_checklistHistoryUUID into _workorder_tag, @checklistUid,  @checklisthistoryuuid from workorder where workorderUUID = _workorderUUID;
             IF (_workorder_tag IS NOT NULL) THEN
                 DELETE FROM workorder WHERE workorder_tag = _workorder_tag and workorder_scheduleDate > now() ;
 
@@ -1126,8 +1123,12 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
                                     );
                 LEAVE WORKORDER_workOrder;
             END IF;
+ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE') THEN
+        IF (_workorderUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
+            LEAVE WORKORDER_workOrder;
         END IF;
-
+			select workorder_tag, workorder_checklistUUID, workorder_checklistHistoryUUID into _workorder_tag, @checklistUid, @checklisthistoryuuid from workorder where workorderUUID = _workorderUUID;
         IF(@checklistUid != _workorder_checklistUUID) THEN
             update checklist_history
             set checklist_history_statusId = 3
@@ -1137,7 +1138,7 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
             set workorder_checklistHistoryUUID = null
             where  workorderUUID = _workorderUUID; -- removed prevous checklistHistoryId
 		END IF;
-
+        
          set  @l_sql = CONCAT('update workorder set workorder_updatedTS = now(), workorder_updatedByUUID= \'', _userUUID,'\'');
 
         if (_workorder_status IS NOT NULL) THEN
