@@ -1053,6 +1053,16 @@ DELIMITER ;
 
 DROP procedure IF EXISTS `CUSTOMER_customer`;
 
+/*
+call USER_user(_action, _userUUID,_customerUUID,_customerBrandUUID,_customerStatusId,_customerName,
+_customerLogo,_customerSecurityBitwise,_customerPreferenceJSON,_xRefName,_xRefId,
+_customer_externalName
+);
+
+- >call CUSTOMER_customer('CREATE',_userUUID,null,_customerBrandUUID,null,_customerName,null,null,null,null,null,null);
+call CUSTOMER_customer('CREATE','1',null,'1',null,'cus-5',null,null,null,null,null,null);
+*/
+
 DELIMITER $$
 CREATE PROCEDURE `CUSTOMER_customer`(IN _action VARCHAR(100),
                                      IN _userUUID VARCHAR(100),
@@ -1064,10 +1074,11 @@ CREATE PROCEDURE `CUSTOMER_customer`(IN _action VARCHAR(100),
                                      IN _customerSecurityBitwise BIGINT,
                                      IN _customerPreferenceJSON TEXT,
                                      IN _xRefName VARCHAR(255),
-                                     IN _xRefId VARCHAR(255))
+                                     IN _xRefId VARCHAR(255),
+                                     IN _customer_externalName VARCHAR(50))
 CUSTOMER_customer:
 BEGIN
-    DECLARE _DEBUG INT DEFAULT 1;
+    DECLARE _DEBUG INT DEFAULT 0;
     IF (_action IS NULL or _action = '') THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _action can not be empty';
         LEAVE CUSTOMER_customer;
@@ -1097,19 +1108,19 @@ BEGIN
         END IF;
         SELECT * FROM customer WHERE customerUUID = _customerUUID;
     ELSEIF (_action = 'CREATE') THEN
-        IF (_customerUUID IS NULL OR _customerUUID = '') THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
-            LEAVE CUSTOMER_customer;
-        END IF;
-        IF (_customerName IS NULL OR _customerName = '') THEN
+       
+        -- _customerName is required
+        IF (_customerName IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerName missing';
-            LEAVE CUSTOMER_customer;
         END IF;
-        INSERT INTO customer (customerUUID, customer_externalName, customer_brandUUID, customer_statusId, customer_name,
-                              customer_logo, customer_securityBitwise, customer_preferenceJSON, customer_createdByUUID,
-                              customer_updatedByUUID, customer_updatedTS, customer_createdTS, customer_deleteTS)
-        VALUES (_customerUUID, _customerName, _customerBrandUUID, _customerStatusId, _customerName, _customerLogo,
-                _customerSecurityBitwise, _customerPreferenceJSON, _userUUID, _userUUID, now(), now(), null);
+        -- _customerBrandUUID is required
+        IF (_customerBrandUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerBrandUUID missing';
+        END IF;
+
+        INSERT INTO customer (customerUUID, customer_brandUUID,customer_name,customer_updatedTS,customer_updatedByUUID,customer_createdByUUID)
+        VALUES (uuid(),_customerBrandUUID,_customerName,now(),_userUUID,_userUUID);
+
     ELSEIF (_action = 'UPDATE') THEN
         IF (_customerUUID IS NULL or _customerUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
@@ -1143,6 +1154,8 @@ BEGIN
     END IF;
 
 END$$
+
+-- ==================================================================
 
 Delimiter ;
 
