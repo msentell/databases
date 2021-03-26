@@ -6,13 +6,13 @@ DELIMITER ;
 -- > call CUSTOMER_customer(
 --    <_action>,<user_id>,<_customerUUID>,<_customerBrandUUID>,<_customerStatusId>,
 --    <_customerName>,<_customerLogo>,<_customerSecurityBitwise>,<_customerPreferenceJSON>,
---    <_xRefName>,<_xRefId>)
--- > call CUSTOMER_customer('ASSIGN-BRAND',<_user_id>,<_customerUUID>,<_customerBrandUUID>,null,null,null,null,null,null);
--- call CUSTOMER_customer('ASSIGN-BRAND',1,'a30af0ce5e07474487c39adab6269d5g','3',null,null,null,null,null,null,null);
--- > call CUSTOMER_customer('REMOVE-BRAND',<_user_id>,<_customerUUID>,<_customerBrandUUID>,null,null,null,null,null,null);
--- call CUSTOMER_customer('REMOVE-BRAND',1,'a30af0ce5e07474487c39adab6269d5g','3',null,null,null,null,null,null,null);
--- > call CUSTOMER_customer('GET',<user_id>,<_customerUUID>,null,null,null,null,null,null,null,null);
--- call CUSTOMER_customer('GET',1,'059cfac3b0e3440fb4d499f85036b4ba',null,null,null,null,null,null,null,null);
+--    <_xRefName>,<_xRefId>,<_customer_externalName>)
+-- > call CUSTOMER_customer('ASSIGN-BRAND',<_user_id>,<_customerUUID>,<_customerBrandUUID>,null,null,null,null,null,null,null);
+-- call CUSTOMER_customer('ASSIGN-BRAND',1,'a30af0ce5e07474487c39adab6269d5g','3',null,null,null,null,null,null,null,null);
+-- > call CUSTOMER_customer('REMOVE-BRAND',<_user_id>,<_customerUUID>,<_customerBrandUUID>,null,null,null,null,null,null,null);
+-- call CUSTOMER_customer('REMOVE-BRAND',1,'a30af0ce5e07474487c39adab6269d5g','3',null,null,null,null,null,null,null,null);
+-- > call CUSTOMER_customer('GET',<user_id>,<_customerUUID>,null,null,null,null,null,null,null,null,null);
+-- call CUSTOMER_customer('GET',1,'059cfac3b0e3440fb4d499f85036b4ba',null,null,null,null,null,null,null,null,null);
 
 DROP procedure IF EXISTS `CUSTOMER_customer`;
 
@@ -27,7 +27,8 @@ CREATE PROCEDURE `CUSTOMER_customer`(IN _action VARCHAR(100),
                                      IN _customerSecurityBitwise BIGINT,
                                      IN _customerPreferenceJSON TEXT,
                                      IN _xRefName VARCHAR(255),
-                                     IN _xRefId VARCHAR(255))
+                                     IN _xRefId VARCHAR(255),
+									 IN _customer_externalName VARCHAR(50))
 CUSTOMER_customer:
 BEGIN
     DECLARE _DEBUG INT DEFAULT 1;
@@ -59,20 +60,18 @@ BEGIN
            LEAVE CUSTOMER_customer;
         END IF;
         SELECT * FROM customer c LEFT JOIN customer_brand cb on (c.customer_brandUUID = cb.brandUUID) WHERE customerUUID = _customerUUID;
-    ELSEIF (_action = 'CREATE') THEN
-        IF (_customerUUID IS NULL OR _customerUUID = '') THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
-            LEAVE CUSTOMER_customer;
-        END IF;
-        IF (_customerName IS NULL OR _customerName = '') THEN
+       ELSEIF (_action = 'CREATE') THEN
+        -- _customerName is required
+        IF (_customerName IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerName missing';
-            LEAVE CUSTOMER_customer;
         END IF;
-        INSERT INTO customer (customerUUID, customer_externalName, customer_brandUUID, customer_statusId, customer_name,
-                              customer_logo, customer_securityBitwise, customer_preferenceJSON, customer_createdByUUID,
-                              customer_updatedByUUID, customer_updatedTS, customer_createdTS, customer_deleteTS)
-        VALUES (_customerUUID, _customerName, _customerBrandUUID, _customerStatusId, _customerName, _customerLogo,
-                _customerSecurityBitwise, _customerPreferenceJSON, _userUUID, _userUUID, now(), now(), null);
+        -- _customerBrandUUID is required
+        IF (_customerBrandUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerBrandUUID missing';
+        END IF;
+
+        INSERT INTO customer (customerUUID, customer_brandUUID,customer_name,customer_updatedTS,customer_updatedByUUID,customer_createdByUUID)
+        VALUES (uuid(),_customerBrandUUID,_customerName,now(),_userUUID,_userUUID);
     ELSEIF (_action = 'UPDATE') THEN
         IF (_customerUUID IS NULL or _customerUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
