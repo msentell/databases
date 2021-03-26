@@ -3,6 +3,7 @@ use cm_hms_auth;
 use jcmi_core;
 DELIMITER ;
 -- ==================================================================
+/*
 -- > call CUSTOMER_customer(
 --    <_action>,<user_id>,<_customerUUID>,<_customerBrandUUID>,<_customerStatusId>,
 --    <_customerName>,<_customerLogo>,<_customerSecurityBitwise>,<_customerPreferenceJSON>,
@@ -13,7 +14,9 @@ DELIMITER ;
 -- call CUSTOMER_customer('REMOVE-BRAND',1,'a30af0ce5e07474487c39adab6269d5g','3',null,null,null,null,null,null,null,null);
 -- > call CUSTOMER_customer('GET',<user_id>,<_customerUUID>,null,null,null,null,null,null,null,null,null);
 -- call CUSTOMER_customer('GET',1,'059cfac3b0e3440fb4d499f85036b4ba',null,null,null,null,null,null,null,null,null);
-
+- >call CUSTOMER_customer('CREATE',_userUUID,null,_customerBrandUUID,null,_customerName,null,null,null,null,null,null);
+-  call CUSTOMER_customer('CREATE','1',null,'1',null,'cus-5',null,null,null,null,null,null);
+*/
 DROP procedure IF EXISTS `CUSTOMER_customer`;
 
 DELIMITER $$
@@ -69,9 +72,13 @@ BEGIN
         IF (_customerBrandUUID IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerBrandUUID missing';
         END IF;
-
+		
+        SET @New_Customer_id = uuid();
+        
         INSERT INTO customer (customerUUID, customer_brandUUID,customer_name,customer_updatedTS,customer_updatedByUUID,customer_createdByUUID)
-        VALUES (uuid(),_customerBrandUUID,_customerName,now(),_userUUID,_userUUID);
+        VALUES (@New_Customer_id,_customerBrandUUID,_customerName,now(),_userUUID,_userUUID);
+        
+        SELECT @New_Customer_id as 'customerId';
     ELSEIF (_action = 'UPDATE') THEN
         IF (_customerUUID IS NULL or _customerUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
