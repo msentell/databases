@@ -978,7 +978,7 @@ CREATE PROCEDURE `WORKORDER_workOrder` (
 IN _action VARCHAR(100),
 IN _customerId VARCHAR(100),
 IN _userUUID VARCHAR(100),
-IN _workorderUUID VARCHAR(1024),
+IN _workorderUUID TEXT,
 IN _workorder_locationUUID VARCHAR(100),
 IN _workorder_userUUID VARCHAR(100),
 IN _workorder_groupUUID VARCHAR(100),
@@ -1111,9 +1111,12 @@ ELSEIF(_action = 'UPDATEALL') THEN
             LEAVE WORKORDER_workOrder;
 	END IF;
 	select workorder_tag, workorder_checklistUUID, workorder_checklistHistoryUUID into _workorder_tag, @checklistUid,  @checklisthistoryuuid from workorder where workorderUUID = _workorderUUID;
-            IF (_workorder_tag IS NOT NULL) THEN
-                DELETE FROM workorder WHERE workorder_tag = _workorder_tag and workorder_scheduleDate > now() ;
-
+           select _workorder_tag, @checklistUid,  @checklisthistoryuuid ;
+           IF (_workorder_tag IS NOT NULL) THEN
+			 DELETE FROM workorder WHERE workorder_tag = _workorder_tag and workorder_scheduleDate > CURDATE();
+				if(_workorder_rescheduleDate <= DATE_FORMAT(CURDATE(), '%d-%m-%Y')) THEN
+					set _workorder_rescheduleDate = DATE_FORMAT(CURDATE(), '%d-%m-%Y');
+                END IF;
                 call WORKORDER_create('create', _customerId, _userUUID, _workorderUUID, _workorder_locationUUID, _workorder_userUUID,
                                     _workorder_groupUUID, _workorder_assetUUID, _workorder_checklistUUID, _workorder_checklistHistoryUUID,
                                     _workorder_status, _workorder_type, _workorder_name, _workorder_number, _workorder_details, _workorder_actions,
@@ -1128,7 +1131,7 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
             SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
             LEAVE WORKORDER_workOrder;
         END IF;
-			select workorder_tag, workorder_checklistUUID, workorder_checklistHistoryUUID into _workorder_tag, @checklistUid, @checklisthistoryuuid from workorder where workorderUUID = _workorderUUID;
+			select workorder_tag, workorder_checklistUUID, workorder_checklistHistoryUUID into _workorder_tag, @checklistUid,  @checklisthistoryuuid from workorder where workorderUUID = _workorderUUID;
         IF(@checklistUid != _workorder_checklistUUID) THEN
             update checklist_history
             set checklist_history_statusId = 3
