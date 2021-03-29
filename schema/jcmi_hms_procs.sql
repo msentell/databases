@@ -5000,19 +5000,19 @@ END$$
 DELIMITER ;
 
 -- ==================================================================
--- > call GROUP_group('GET-LIST',<targetedUserId_id>,<group_id>,<group_name>,<customer_id>,<user_id>)
--- call GROUP_group('GET-LIST',1,null,null,null,null)
--- call GROUP_group('GET-LIST',1,1,null,null,null)
--- call GROUP_group('GET-LIST',1,null,null,'a30af0ce5e07474487c39adab6269d5f',null)
--- > call GROUP_group('GET-USER-GROUP',<targetedUserId_id>,<group_id>,null,null,null)
--- call GROUP_group('GET-USER-GROUP',1,1,null,null,null)
--- call GROUP_group('GET-USER-GROUP','6',null,null,null,null)
--- > call GROUP_group('ADD-USER',<targetedUserId_id>,<group_id>,null,null,<user_id>);
--- call GROUP_group('ADD-USER',6,3,null,null,1);
--- > call GROUP_group('REMOVE-USER',<targetedUserId_id>,<group_id>,null,null,null);
--- call GROUP_group('REMOVE-USER',6,3,null,null,null);
--- > call GROUP_group('ADD-GROUP',<targetedUserId_id>,null,<group_name>,<customer_id>,<user_id>);
--- call GROUP_group('ADD-GROUP',1,null,'new grp','a30af0ce5e07474487c39adab6269d5f',1);
+-- > call GROUP_group('GET-LIST',<targetedUserId_id>,<group_id>,<group_name>,<customer_id>,<user_id>,<group_securityBitwise>)
+-- call GROUP_group('GET-LIST',1,null,null,null,null,null)
+-- call GROUP_group('GET-LIST',1,1,null,null,null,null)
+-- call GROUP_group('GET-LIST',1,null,null,'a30af0ce5e07474487c39adab6269d5f',null,null)
+-- > call GROUP_group('GET-USER-GROUP',<targetedUserId_id>,<group_id>,null,null,null,null)
+-- call GROUP_group('GET-USER-GROUP',1,1,null,null,null,null)
+-- call GROUP_group('GET-USER-GROUP','6',null,null,null,null,null)
+-- > call GROUP_group('ADD-USER',<targetedUserId_id>,<group_id>,null,null,<user_id>,null);
+-- call GROUP_group('ADD-USER',6,3,null,null,1,null);
+-- > call GROUP_group('REMOVE-USER',<targetedUserId_id>,<group_id>,null,null,null,null);
+-- call GROUP_group('REMOVE-USER',6,3,null,null,null,null);
+-- > call GROUP_group('ADD-GROUP',<targetedUserId_id>,null,<group_name>,<customer_id>,<user_id>,<group_securityBitwise>);
+-- call GROUP_group('ADD-GROUP',1,null,'new grp','a30af0ce5e07474487c39adab6269d5f',1,2);
 
 DROP procedure IF EXISTS `GROUP_group`;
 
@@ -5023,8 +5023,8 @@ CREATE PROCEDURE `GROUP_group`(
     IN _groupid char(36),
     IN _groupName char(36),
     IN _customerId char(36),
-    IN _userid char(36)
-    )
+    IN _userid char(36),
+    IN _group_securityBitwise BIGINT)
 GROUP_group:
 BEGIN
 
@@ -5072,6 +5072,8 @@ BEGIN
         DEALLOCATE PREPARE stmt;
     ELSEIF(_action='ADD-GROUP')THEN
 
+        SET @SECURITY_BITWISE=0;
+
         IF(_groupName IS NULL)THEN
          SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _groupName can not be empty';
          LEAVE GROUP_group;
@@ -5084,10 +5086,13 @@ BEGIN
          SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call GROUP_group:  _userid can not be empty';
          LEAVE GROUP_group;
         END IF;
+        IF(_group_securityBitwise IS NOT NULL)THEN
+         SET @SECURITY_BITWISE = _group_securityBitwise;
+        END IF;
 
         set @nxtGUUID = null;
         select UUID() into @nxtGUUID;
-        insert into user_group values(@nxtGUUID,_customerId,_groupName,_userid,null,null,now(),null,0);
+        insert into user_group values(@nxtGUUID,_customerId,_groupName,_userid,null,null,now(),null,@SECURITY_BITWISE);
 
         select @nxtGUUID as 'id',_groupName as 'name';
 
@@ -5153,25 +5158,24 @@ DROP procedure IF EXISTS `PRIVILAGE_privilage`;
 DELIMITER $$
 CREATE PROCEDURE `PRIVILAGE_privilage`(
     IN _action char(32),
-    IN _userid char(36),
-    )
-GROUP_group:
+    IN _userid char(36))
+PRIVILAGE_privilage:
 BEGIN
 
     DECLARE DEBUG INT DEFAULT 0;
 
     IF (_action IS NULL) THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call PRIVILAGE_privilage: _action can not be empty';
-        LEAVE GROUP_group;
+        LEAVE PRIVILAGE_privilage;
     END IF;
 
       IF (_userid IS NULL) THEN
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call PRIVILAGE_privilage: _userid can not be empty';
-        LEAVE GROUP_group;
+        LEAVE PRIVILAGE_privilage;
     END IF;
 
     IF(_action = 'GET-LIST') THEN
-        SET @l_SQL = 'SELECT * FROM PRIVILAGE_privilage';
+        SET @l_SQL = 'SELECT * FROM privilege_bitwise';
     END IF;
 
     PREPARE stmt FROM @l_SQL;
