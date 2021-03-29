@@ -1019,6 +1019,8 @@ DECLARE strLen    INT DEFAULT 0;
 DECLARE SubStrLen INT DEFAULT 0;
 DECLARE _woDates varchar(5000);
 DECLARE _date varchar(100);
+DECLARE _workorder_scheduleDate_withTime VARCHAR(100);
+DECLARE _workorder_dueDate_withTime VARCHAR(100);
 
 IF(_action ='GET' or _action = 'GETALL') THEN
 
@@ -1160,7 +1162,8 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
             set @l_sql = CONCAT(@l_sql,',workorder_priority = \'', _workorder_priority,'\'');
         END IF;
         if (_workorder_dueDate IS NOT NULL) THEN
-            set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', STR_TO_DATE(_workorder_dueDate, '%d-%m-%Y'),'\'');
+			set _workorder_dueDate_withTime = ADDTIME(STR_TO_DATE(_workorder_dueDate, '%d-%m-%Y %H:%m'),'23:59');
+            set @l_sql = CONCAT(@l_sql,',workorder_dueDate = \'', _workorder_dueDate_withTime ,'\'');
         END IF;
         if (_workorder_assetUUID IS NOT NULL) THEN
             set @l_sql = CONCAT(@l_sql,',workorder_assetUUID = \'', _workorder_assetUUID,'\'');
@@ -1178,7 +1181,8 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
         END IF;
        IF (_DEBUG=1) THEN select _workorder_scheduleDate,_workorder_scheduledate; END IF;
         if (_workorder_scheduleDate  IS NOT NULL) THEN
-            set @l_sql = CONCAT(@l_sql,',workorder_scheduleDate  =\'', STR_TO_DATE(_workorder_scheduleDate, '%d-%m-%Y'), '\'');
+			set _workorder_scheduleDate_withTime = ADDTIME(STR_TO_DATE(_workorder_scheduleDate, '%d-%m-%Y %H:%m'),'23:59');
+            set @l_sql = CONCAT(@l_sql,',workorder_scheduleDate  =\'', _workorder_scheduleDate_withTime, '\'');
         END IF;
         IF (_workorder_checklistUUID IS NOT NULL ) THEN
             set @l_sql = CONCAT(@l_sql,',workorder_checklistUUID = \'', _workorder_checklistUUID,'\'');
