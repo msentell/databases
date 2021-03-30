@@ -708,6 +708,9 @@ call USER_user('GETALLUSERS', 'a30af0ce5e07474487c39adab6269d5f',1,null,null,nul
 
 call USER_user('GET_LIST_OF_USER', null, null,'\'1\',\'2\'',null,null,null, null,null,null,null,null, null,null);
 
+call USER_user('CREATE_USER', 'a30af0ce5e07474487c39adab6269d5g', '1', null, 'Chase Hayes 12345', 'warifamebi@mailinator.com',
+ '123', null, null, '9dd2b334a38b454db75f5efedd2af513', '1234567', null, null, null);
+
 */
 
 DROP procedure IF EXISTS `USER_user`;
@@ -978,16 +981,14 @@ BEGIN
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
 	ELSEIF(_action = 'CREATE_USER') THEN
-    set _createdUserId  = uuid();
+    set @createdUserId  = uuid();
 		insert into user(userUUID, user_customerUUID, user_userName, user_loginEmail, user_loginEmailVerified, user_loginEnabled, user_loginPW, user_securityBitwise, 
-		user_individualSecurityBitwise, user_createdByUUID, user_createdTS) values (_createdUserId, _customerId, _user_userName, _user_loginEmail,
+		user_individualSecurityBitwise, user_createdByUUID, user_createdTS) values (@createdUserId, _customerId, _user_userName, _user_loginEmail,
 		now(),'1',_user_loginPW,null, null, _customerId, now());
         insert into user_profile(user_profile_userUUID,user_profile_avatarSrc, user_profile_phone,
-		user_profile_locationUUID, user_profile_preferenceJSON, user_profile_createdByUUID, user_profile_createdTS) values(_createdUserId, null, _user_profile_phone
+		user_profile_locationUUID, user_profile_preferenceJSON, user_profile_createdByUUID, user_profile_createdTS) values(@createdUserId, null, _user_profile_phone
 		,_user_profile_locationUUID, null, _customerId ,now());
-        insert into jcmi_hms.user_group_join(ugj_groupUUID, ugj_userUUID, ugj_createdByUUID, ugj_createdTS) 
-        values(_groupUUID,_createdUserId, _customerId,now());
-        select * from user;
+        select * from user where userUUID = @createdUserId;
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
         LEAVE USER_user;
@@ -1012,6 +1013,7 @@ END$$
 
 DELIMITER ;
 
+-- ==================================================================
 
 DROP procedure IF EXISTS `ATT_getPicklist`;
 
