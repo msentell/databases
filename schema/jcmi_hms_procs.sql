@@ -1985,11 +1985,6 @@ BEGIN
         LEAVE LOCATION_action;
     END IF;
 
-    IF (_customerUUID IS NULL and _action != 'SEARCH') THEN
-        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_action: _customerUUID missing';
-        LEAVE LOCATION_action;
-    END IF;
-
     IF (_action = 'SEARCH') THEN
 
 
@@ -2028,7 +2023,7 @@ BEGIN
             -- SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL,asset_part_name  as `name`,_type as `Type`
             -- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
 
-			SET @l_SQL = CONCAT('SELECT * FROM (SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
+			SET @l_SQL = CONCAT('SELECT * FROM (SELECT asset_partUUID as objUUID,asset_part_customerUUID as customerId,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
                                 FROM asset_part WHERE asset_part_statusId = 1 AND asset_part_name LIKE \'', _name, '\'');
 			IF(_customerUUID is not null) THEN
                 SET @l_SQL = CONCAT(@l_SQL ,' AND  asset_part_customerUUID= \'', _customerUUID, '\'');
@@ -2036,7 +2031,7 @@ BEGIN
 
             SET @l_SQL = CONCAT(@l_SQL ,' UNION');
 
-            SET @l_SQL = CONCAT(@l_SQL ,' SELECT part_sku as objUUID,part_imageURL as ImageURL,part_imageThumbURL as ThumbURL, part_name  as `name`, \'ASSET_PART\' as `Type`, \'FACTORY-PART\' as source
+            SET @l_SQL = CONCAT(@l_SQL ,' SELECT part_sku as objUUID,null as customerId,part_imageURL as ImageURL,part_imageThumbURL as ThumbURL, part_name  as `name`, \'ASSET_PART\' as `Type`, \'FACTORY-PART\' as source
                         FROM part_template pt WHERE part_statusId = 1 AND part_sku LIKE \'', _name, '\'OR part_name LIKE \'', _name,'\') ap
                         LEFT JOIN part_template pt ON (ap.source = \'FACTORY-PART\' AND ap.objUUID = pt.part_sku)
                         ORDER BY name ');
