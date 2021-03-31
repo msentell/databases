@@ -2029,7 +2029,7 @@ BEGIN
             -- 	FROM asset_part where asset_part_name like _name and asset_part_customerUUID =_customerUUID;
 
 			SET @l_SQL = CONCAT('SELECT * FROM (SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
-                                FROM asset_part WHERE asset_part_statusId = 1 AND asset_part_template_part_sku LIKE \'', _name, '\' OR asset_part_name LIKE \'', _name, '\'');
+                                FROM asset_part WHERE asset_part_statusId = 1 AND asset_part_name LIKE \'', _name, '\'');
 			IF(_customerUUID is not null) THEN
                 SET @l_SQL = CONCAT(@l_SQL ,' AND  asset_part_customerUUID= \'', _customerUUID, '\'');
             END IF;
@@ -2732,7 +2732,7 @@ ASSETPART_assetpart:
 BEGIN
 
 
-    DECLARE DEBUG INT DEFAULT 1;
+    DECLARE DEBUG INT DEFAULT 0;
 
 
     IF (_action IS NULL OR _action = '') THEN
