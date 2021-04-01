@@ -1947,14 +1947,14 @@ END$$
 DELIMITER ;
     -- ==================================================================
 
--- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_objUUID, 0,_startLimitIndex,_dataCount);
--- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null, 0,null,null);
--- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null, 0,null,null);
--- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'Avida Symphony',null, 0,null,null);
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',55, 0,null,null);
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',55, 0,null,null);
--- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',22, 0,null,null);
--- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'PARTS-USED', null,null, null,null,null,null);
+-- call LOCATION_action(action, _userUUID, _customerUUID, _type, _name,_desciption,_objUUID, 0,_locationId,_startLimitIndex,_dataCount);
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'LOCATION', 'test123Lo',null,null, 0,null,null,null);
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'ASSET', 'setter',null,null, 0,null,null,null);
+-- call LOCATION_action('SEARCH', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'Avida Symphony',null,null, 0,null,null,null);
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'LOCATION', 'DAVID',null,55, 0,null,null,null);
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET', 'ASSETDAVID',null,55, 0,null,null,null);
+-- call LOCATION_action('CREATE', '1', '3792f636d9a843d190b8425cc06257f5', 'ASSET-PART', 'ASSETPARTDAVID',null,22, 0,null,null,null);
+-- call LOCATION_action('SEARCH', '1', 'a30af0ce5e07474487c39adab6269d5f', 'PARTS-USED', null,null,null, null,null,null,null,null);
 DROP procedure IF EXISTS `LOCATION_action`;
 
 DELIMITER $$
@@ -1963,6 +1963,7 @@ CREATE PROCEDURE `LOCATION_action`(IN _action VARCHAR(100),
                                    IN _customerUUID VARCHAR(100),
                                    IN _type VARCHAR(100),
                                    IN _name VARCHAR(100),
+                                   IN _desciption VARCHAR(100),
                                    IN _objUUID VARCHAR(100),
                                    IN _isPrimary INT,
                                    IN _locationId VARCHAR(100),
@@ -2205,7 +2206,7 @@ BEGIN
                  location_contact_phone,
                  location_createdByUUID, location_updatedByUUID, location_updatedTS, location_createdTS,
                  location_deleteTS)
-                values (_objUUID, _customerUUID, 1, 'LOCATION', _name, _name, _isPrimary, null, null, null, null, null,
+                values (_objUUID, _customerUUID, 1, 'LOCATION', _name, _desciption, _isPrimary, null, null, null, null, null,
                         null, null, null, null, null, null,
                         _userUUID, _userUUID, now(), now(), null);
 
