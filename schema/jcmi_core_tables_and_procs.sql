@@ -989,6 +989,12 @@ BEGIN
 		user_profile_locationUUID, user_profile_preferenceJSON, user_profile_createdByUUID, user_profile_createdTS) values(@createdUserId, null, _user_profile_phone
 		,_user_profile_locationUUID, null, _customerId ,now());
         select * from user where userUUID = @createdUserId;
+	ELSEIF(_action = 'GET_AVATAR')THEN
+		IF(_userUUID is null) THEN
+			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _userUUID can not be empty';
+            LEAVE USER_user;
+		END IF;
+        select * from user_profile where user_profile_userUUID = _userUUID ;
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
         LEAVE USER_user;
