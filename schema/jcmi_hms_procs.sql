@@ -4764,6 +4764,7 @@ BEGIN
 
     DECLARE DEBUG INT DEFAULT 0;
     DECLARE asset_part_id char(60);
+    DECLARE template_part_id char(100);
 	IF(_action = 'UPDATE_ATTACHMENT') THEN
 		IF(_attachmentuuid is null) THEN
 			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachmentuuid can not be empty';
@@ -4841,26 +4842,38 @@ BEGIN
 -- FOR _partType of ASSET-PART, return records for ASSET-PART UNION PART_TEMPLATE
 -- FOR _partType of PART_TEMPLATE, return recors for PART_TEMPLATE
     IF(_partType = 'ASSET') THEN
+		IF(_attachment_customerUUid is NULL) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_customerUUid can not be empty';
+             LEAVE ATTACHMENT_attachment;
+		END IF;
         SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
         SELECT asset_part_template_part_sku into template_part_id FROM asset_part where asset_partUUID = asset_part_id;
         SELECT a.*, 'ASSET' as partType FROM attachment a LEFT JOIN asset_attachment_join aaj ON (a.attachmentUUID = aaj.aaj_attachmentUUID)
-        WHERE aaj.aaj_asset_assetUUID = _partId and a.attachment_deleteTS is null
+        WHERE aaj.aaj_asset_assetUUID = _partId and a.attachment_deleteTS is null and attachment_customerUUID = _attachment_customerUUid
         UNION
         SELECT b.*, 'PART' as partType FROM attachment b LEFT JOIN asset_part_attachment_join apj ON (b.attachmentUUID = apj.apaj_attachmentUUID)
-        WHERE apj.apaj_asset_partUUID = asset_part_id and b.attachment_deleteTS is null
+        WHERE apj.apaj_asset_partUUID = asset_part_id and b.attachment_deleteTS is null and attachment_customerUUID = _attachment_customerUUid
         UNION
         SELECT c.*, 'FACTORY' as partType FROM attachment c LEFT JOIN part_attachment_join paj ON (c.attachmentUUID = paj.paj_attachmentUUID)
-        WHERE paj.paj_part_sku = template_part_id and c.attachment_deleteTS is null ;
+        WHERE paj.paj_part_sku = template_part_id and c.attachment_deleteTS is null and attachment_customerUUID = _attachment_customerUUid ;
     ELSEIF(_partType = 'ASSET-PART') THEN
+		IF(_attachment_customerUUid is NULL) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_customerUUid can not be empty';
+             LEAVE ATTACHMENT_attachment;
+		END IF;
         SELECT asset_part_template_part_sku into template_part_id FROM asset_part where asset_partUUID = _partId;
         SELECT b.*, 'PART' as partType FROM attachment b LEFT JOIN asset_part_attachment_join apj ON (b.attachmentUUID = apj.apaj_attachmentUUID)
-        WHERE apj.apaj_asset_partUUID = _partId and b.attachment_deleteTS is null
+        WHERE apj.apaj_asset_partUUID = _partId and b.attachment_deleteTS is null and attachment_customerUUID = _attachment_customerUUid
         UNION
         SELECT c.*, 'FACTORY' as partType FROM attachment c LEFT JOIN part_attachment_join paj ON (c.attachmentUUID = paj.paj_attachmentUUID)
-        WHERE paj.paj_part_sku = template_part_id and c.attachment_deleteTS is null ;
+        WHERE paj.paj_part_sku = template_part_id and c.attachment_deleteTS is null and attachment_customerUUID = _attachment_customerUUid ;
     ELSEIF(_partType = 'PART-TEMPLATE') THEN
+		IF(_attachment_customerUUid is NULL) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_customerUUid can not be empty';
+             LEAVE ATTACHMENT_attachment;
+		END IF;
         SELECT c.*, 'FACTORY' as partType FROM attachment c LEFT JOIN part_attachment_join paj ON (c.attachmentUUID = paj.paj_attachmentUUID)
-        WHERE paj.paj_part_sku = _partId and c.attachment_deleteTS is null ;
+        WHERE paj.paj_part_sku = _partId and c.attachment_deleteTS is null and attachment_customerUUID = _attachment_customerUUid ;
 #     END IF;
 #     IF(_partType = 'ASSET' or _partType = 'ASSET-PART') THEN
 #
@@ -4869,7 +4882,7 @@ BEGIN
 #         ELSE
 #            set asset_part_id = _partId;
 #         END IF;
-#
+#   
 #         SELECT a.*, 'ASSET' as partType FROM attachment a LEFT JOIN asset_part_attachment_join apj ON (a.attachmentUUID = apj.apaj_attachmentUUID)
 #         WHERE apj.apaj_asset_partUUID = asset_part_id and attachment_deleteTS is null ;
 
