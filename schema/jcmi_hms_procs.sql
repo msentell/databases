@@ -4814,16 +4814,18 @@ BEGIN
 				values(_attachmentuuid, _attachmentStatus, _attachment_fileURL, _attachment_shortName
                 , _attachment_description,_attachment_mineType, _attachment_customerUUid , _attachment_createdByUUID, null, now(), now(), null);
 -- DEAL WITH INSERTING INTO RIGHT TABLE
-        IF(_partType = 'ASSET') THEN
-            insert into asset_attachment_join(`aaj_asset_assetUUID`, `aaj_attachmentUUID`, `aaj_createdTS`)
-            values(_partId, _attachmentuuid, now());
-#             SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
-        ELSEIF(_partType = 'ASSET-PART') THEN
-            insert into asset_part_attachment_join(`apaj_asset_partUUID`, `apaj_attachmentUUID`, `apaj_createdTS`)
-            values(_partId, _attachmentuuid, now());
-        ELSEIF(_partType = 'PART-TEMPLATE') THEN
-            insert into part_attachment_join(`paj_part_sku`, `paj_attachmentUUID`, `paj_createdTS`)
-            values(_partId, _attachmentuuid, now());
+		IF(_partType IS NOT NULL AND _partId IS NOT NULL)THEN
+			IF(_partType = 'ASSET') THEN
+				insert into asset_attachment_join(`aaj_asset_assetUUID`, `aaj_attachmentUUID`, `aaj_createdTS`)
+				values(_partId, _attachmentuuid, now());
+	#             SELECT asset_partUUID into asset_part_id FROM asset WHERE assetUUID = _partId;
+			ELSEIF(_partType = 'ASSET-PART') THEN
+				insert into asset_part_attachment_join(`apaj_asset_partUUID`, `apaj_attachmentUUID`, `apaj_createdTS`)
+				values(_partId, _attachmentuuid, now());
+			ELSEIF(_partType = 'PART-TEMPLATE') THEN
+				insert into part_attachment_join(`paj_part_sku`, `paj_attachmentUUID`, `paj_createdTS`)
+				values(_partId, _attachmentuuid, now());
+			END IF;
         END IF;
         #         insert into asset_part_attachment_join(`apaj_asset_partUUID`, `apaj_attachmentUUID`, `apaj_createdTS`)
 # 			values(asset_part_id, _attachmentuuid, now());
