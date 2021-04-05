@@ -995,6 +995,17 @@ BEGIN
             LEAVE USER_user;
 		END IF;
         select * from user_profile where user_profile_userUUID = _userUUID ;
+	ELSEIF(_action = 'UPDATE_AVATAR') THEN
+		IF(_userUUID is null) THEN
+			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _userUUID can not be empty';
+            LEAVE USER_user;
+		END IF;
+        IF(_user_profile_avatarSrc is null) THEN
+			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _user_profile_avatarSrc can not be empty';
+            LEAVE USER_user;
+		END IF;
+        update user_profile set user_profile_avatarSrc= _user_profile_avatarSrc where user_profile_userUUID= _userUUID;
+         select * from user_profile where user_profile_userUUID = _userUUID ;
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
         LEAVE USER_user;
