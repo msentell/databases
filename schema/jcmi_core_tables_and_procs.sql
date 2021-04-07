@@ -1005,7 +1005,15 @@ BEGIN
             LEAVE USER_user;
 		END IF;
         update user_profile set user_profile_avatarSrc= _user_profile_avatarSrc where user_profile_userUUID= _userUUID;
-         select * from user_profile where user_profile_userUUID = _userUUID ;
+         		select u.user_userName , u.user_loginEmail, u.user_securityBitwise , u.user_individualSecurityBitwise, up.user_profile_avatarSrc, 
+        up.user_profile_phone, user_profile_locationUUID from user u left join user_profile up on u.userUUID = up.user_profile_userUUID where userUUID = _userUUID ;
+	ELSEIF(_action = 'GET_USERDETAILS') THEN
+		IF(_userUUID is null) THEN
+			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _userUUID can not be empty';
+            LEAVE USER_user;
+		END IF;
+		select u.user_userName , u.user_loginEmail, u.user_securityBitwise , u.user_individualSecurityBitwise, up.user_profile_avatarSrc, 
+        up.user_profile_phone, user_profile_locationUUID from user u left join user_profile up on u.userUUID = up.user_profile_userUUID where userUUID = _userUUID ;
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
         LEAVE USER_user;
