@@ -74,11 +74,19 @@ BEGIN
         END IF;
 		
         SET @New_Customer_id = uuid();
+        SET @Brand_bitwise = 0;
+        SET @logo = null;
+
+        IF (_customerLogo IS NOT NULL) THEN
+           SET @logo = _customerLogo;
+        END IF;
+
+        SELECT brand_securityBitwise into @Brand_bitwise from customer_brand where brandUUID = _customerBrandUUID;
         
-        INSERT INTO customer (customerUUID, customer_brandUUID,customer_name,customer_updatedTS,customer_updatedByUUID,customer_createdByUUID)
-        VALUES (@New_Customer_id,_customerBrandUUID,_customerName,now(),_userUUID,_userUUID);
+        INSERT INTO customer (customerUUID, customer_brandUUID,customer_name,customer_updatedTS,customer_updatedByUUID,customer_createdByUUID,customer_securityBitwise,customer_logo)
+        VALUES (@New_Customer_id,_customerBrandUUID,_customerName,now(),_userUUID,_userUUID,@Brand_bitwise,@logo);
         
-        SELECT @New_Customer_id as 'customerId';
+        SELECT @New_Customer_id as 'customerId',@Brand_bitwise as 'bitwise';
     ELSEIF (_action = 'UPDATE') THEN
         IF (_customerUUID IS NULL or _customerUUID = '') THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerUUID missing';
