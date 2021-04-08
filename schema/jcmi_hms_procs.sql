@@ -1996,7 +1996,7 @@ BEGIN
             -- 	FROM asset where asset_name like _name and  asset_customerUUID=_customerUUID;
 
             SET @l_SQL =
-                CONCAT('SELECT assetUUID as objUUID, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',
+                CONCAT('SELECT assetUUID as objUUID,asset_customerUUID as customerId, null as ImageURL,null as ThumbURL, asset_name as `name`, \'',
                            _type, '\' as `Type`
 			FROM asset where asset_statusId = 1 ');
             IF(_name is not null) THEN
@@ -2013,7 +2013,7 @@ BEGIN
 			END IF;
         ELSEIF (_type = 'ASSET-PART' and _objUUID is not null) THEN
 
-         SET @l_SQL = CONCAT(' SELECT asset_partUUID as objUUID,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
+         SET @l_SQL = CONCAT(' SELECT asset_partUUID as objUUID,asset_part_customerUUID as customerId,asset_part_imageURL as ImageURL,asset_part_imageThumbURL as ThumbURL, asset_part_name  as `name`, \'ASSET_PART\' as `Type`, \'CUSTOMER-PART\' as source
                                 FROM asset_part WHERE asset_part_statusId = 1 AND asset_partUUID LIKE \'',_objUUID ,'\'');
 
         PREPARE stmt FROM @l_SQL;
