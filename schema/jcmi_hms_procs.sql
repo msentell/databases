@@ -968,6 +968,12 @@ null,null,null,null,null,
 null,null,null,null,
 null);
 
+call WORKORDER_workOrder('UPDATEALL', 'a30af0ce5e07474487c39adab6269d5f','2',
+'8747a035-8e2e-11eb-a1a5-4e53d94465b4','1599835949814','5',null,'cc8df5ca68534740a296b178f54bf3fb',
+'9e819250-88b6-11eb-a1a5-4e53d94465b4',null,'Open',null,'normal sss',null,'detail',
+null,'MEDIUM','21-03-2021','25-03-2021','21-03-2021',
+'26-03-2021','1','DAILY',null,
+null,null,'Daily', null, null);
 
 */
 DROP procedure IF EXISTS `WORKORDER_workOrder`;

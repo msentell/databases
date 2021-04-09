@@ -857,7 +857,7 @@ BEGIN
 
         ELSE -- update
         
-            set @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID =', _userUUID);
+            set @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID = \'', _userUUID, '\'');
 
             if (_user_userName is not null) THEN
                 set @l_sql = CONCAT(@l_sql, ',user_userName = \'', _user_userName, '\'');
@@ -873,7 +873,7 @@ BEGIN
             END IF;
 
                set @l_sql = CONCAT(@l_sql, ' where userUUID = \'', _user_userUUID, '\';');
-
+               
             IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
 
             PREPARE stmt FROM @l_sql;
@@ -895,9 +895,8 @@ BEGIN
                 set @l_sql = null;
 
                 set @l_sql =
-                        CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID =',
-                               _userUUID);
-
+                        CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID = \'', _userUUID, '\'');
+				
                 if (_user_profile_locationUUID is not null) THEN
                     set @l_sql = CONCAT(@l_sql, ',user_profile_locationUUID = \'', _user_profile_locationUUID, '\'');
                 END IF;
@@ -921,7 +920,7 @@ BEGIN
                 set @l_sql = CONCAT(@l_sql, ' where user_profile_userUUID = \'', _user_userUUID, '\';');
 
                 IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
-
+				
                 PREPARE stmt FROM @l_sql;
                 EXECUTE stmt;
                 DEALLOCATE PREPARE stmt;
