@@ -109,6 +109,8 @@ CREATE TABLE `user_profile` (
     user_profile_updatedTS datetime  NULL,
     user_profile_createdTS datetime  NULL default now(),
     user_profile_deleteTS datetime  NULL,
+    user_profile_aboutme text  NULL,
+    user_profile_title varchar(100)  NULL,
     PRIMARY KEY (user_profile_userUUID))
 ENGINE = InnoDB   AUTO_INCREMENT=1000;
 
@@ -683,7 +685,7 @@ DELIMITER ;
 call USER_user(_action, _customerId,
 _userUUID,_user_userUUID,_user_userName,_user_loginEmail,_user_loginPW,
 _user_statusId,_user_securityBitwise,_user_profile_locationUUID,_user_profile_phone,_user_profile_preferenceJSON,
-_user_profile_avatarSrc,_groupUUID
+_user_profile_avatarSrc,_groupUUID, _aboutUser, _userTitle
 );
 
 
@@ -691,25 +693,25 @@ _user_profile_avatarSrc,_groupUUID
 call USER_user('UPDATE', _customerId,
 _userUUID,_user_userUUID,_user_userName,_user_loginEmail,_user_loginPW,
 _user_statusId,_user_securityBitwise,_user_profile_locationUUID,_user_profile_phone,_user_profile_preferenceJSON,
-_user_profile_avatarSrc,_groupUUID
+_user_profile_avatarSrc,_groupUUID, _aboutUser, _userTitle
 );
 
-call USER_user('GET', '7e7165375b344ab4892c18effb3296f7',1,null,null,null,null,null,null,null,null,null,null,null);
+call USER_user('GET', '7e7165375b344ab4892c18effb3296f7',1,null,null,null,null,null,null,null,null,null,null,null,null,null);
 
-call USER_user('REMOVE', null,_userUUID,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID);
+call USER_user('REMOVE', null,_userUUID,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID,null,null);
 
-call USER_user('ADDGROUP', null,_userUUID,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID);
+call USER_user('ADDGROUP', null,_userUUID,_user_userUUID,null,null,null,null,null,null,null,null,null,_groupUUID,null,null);
 
-call USER_user('CHANGEPASSWORD', null,_userUUID,_user_userUUID,null,null,_user_loginPW,null,null,null,null,null,null,null);
+call USER_user('CHANGEPASSWORD', null,_userUUID,_user_userUUID,null,null,_user_loginPW,null,null,null,null,null,null,null,null,null);
 
-call USER_user('LOGOUT', null,null,_user_userUUID,null,null,null,null,null,null,null,null,null,null);
+call USER_user('LOGOUT', null,null,_user_userUUID,null,null,null,null,null,null,null,null,null,null,null,null);
 
-call USER_user('GETALLUSERS', 'a30af0ce5e07474487c39adab6269d5f',1,null,null,null,null,null,null,null,null,null,null,null);
+call USER_user('GETALLUSERS', 'a30af0ce5e07474487c39adab6269d5f',1,null,null,null,null,null,null,null,null,null,null,null,null,null);
 
-call USER_user('GET_LIST_OF_USER', null, null,'\'1\',\'2\'',null,null,null, null,null,null,null,null, null,null);
+call USER_user('GET_LIST_OF_USER', null, null,'\'1\',\'2\'',null,null,null, null,null,null,null,null, null,null,null,null);
 
 call USER_user('CREATE_USER', 'a30af0ce5e07474487c39adab6269d5g', '1', null, 'Chase Hayes 12345', 'warifamebi@mailinator.com',
- '123', null, null, '9dd2b334a38b454db75f5efedd2af513', '1234567', null, null, null);
+ '123', null, null, '9dd2b334a38b454db75f5efedd2af513', '1234567', null, null, null,null,null);
 
 */
 
@@ -729,7 +731,10 @@ CREATE PROCEDURE `USER_user`(IN _action VARCHAR(100),
                              IN _user_profile_phone VARCHAR(100),
                              IN _user_profile_preferenceJSON VARCHAR(1000),
                              IN _user_profile_avatarSrc varchar(255),
-                             IN _groupUUID CHAR(36))
+                             IN _groupUUID CHAR(36),
+                             IN _aboutUser text,
+                             IN _userTitle varchar(100)
+                             )
 USER_user:
 BEGIN
 
@@ -851,8 +856,8 @@ BEGIN
                     _userUUID, _userUUID, now(), now(), null);
 
         ELSE -- update
-
-            set @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID =', _userUUID);
+        
+            set @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID = \'', _userUUID, '\'');
 
             if (_user_userName is not null) THEN
                 set @l_sql = CONCAT(@l_sql, ',user_userName = \'', _user_userName, '\'');
@@ -868,7 +873,7 @@ BEGIN
             END IF;
 
                set @l_sql = CONCAT(@l_sql, ' where userUUID = \'', _user_userUUID, '\';');
-
+               
             IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
 
             PREPARE stmt FROM @l_sql;
@@ -884,14 +889,14 @@ BEGIN
 
 
             if (_user_profile_locationUUID is not null or _user_profile_phone is not null
-                or _user_profile_preferenceJSON is not null or _user_profile_avatarSrc is not null) THEN
+                or _user_profile_preferenceJSON is not null or _user_profile_avatarSrc is not null or 
+                _aboutUser is not null or _userTitle is not null) THEN
 
                 set @l_sql = null;
 
                 set @l_sql =
-                        CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID =',
-                               _userUUID);
-
+                        CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID = \'', _userUUID, '\'');
+				
                 if (_user_profile_locationUUID is not null) THEN
                     set @l_sql = CONCAT(@l_sql, ',user_profile_locationUUID = \'', _user_profile_locationUUID, '\'');
                 END IF;
@@ -905,12 +910,17 @@ BEGIN
                 if (_user_profile_avatarSrc is not null) THEN
                     set @l_sql = CONCAT(@l_sql, ',user_profile_avatarSrc = \'', _user_profile_avatarSrc, '\'');
                 END IF;
-
+                 if (_aboutUser is not null) THEN
+                    set @l_sql = CONCAT(@l_sql, ',user_profile_aboutme = \'', _aboutUser, '\'');
+                END IF;
+                 if (_userTitle is not null) THEN
+                    set @l_sql = CONCAT(@l_sql, ',user_profile_title = \'', _userTitle, '\'');
+                END IF;
 
                 set @l_sql = CONCAT(@l_sql, ' where user_profile_userUUID = \'', _user_userUUID, '\';');
 
                 IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
-
+				
                 PREPARE stmt FROM @l_sql;
                 EXECUTE stmt;
                 DEALLOCATE PREPARE stmt;
@@ -1004,16 +1014,17 @@ BEGIN
 			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _user_profile_avatarSrc can not be empty';
             LEAVE USER_user;
 		END IF;
-        update user_profile set user_profile_avatarSrc= _user_profile_avatarSrc where user_profile_userUUID= _userUUID;
-         		select u.user_userName , u.user_loginEmail, u.user_securityBitwise , u.user_individualSecurityBitwise, up.user_profile_avatarSrc, 
-        up.user_profile_phone, user_profile_locationUUID from user u left join user_profile up on u.userUUID = up.user_profile_userUUID where userUUID = _userUUID ;
+        update user_profile set user_profile_updatedTS =now(), user_profile_avatarSrc= _user_profile_avatarSrc where user_profile_userUUID= _userUUID;
+         select user_profile_avatarSrc from  user_profile where user_profile_userUUID = _userUUID;
 	ELSEIF(_action = 'GET_USERDETAILS') THEN
 		IF(_userUUID is null) THEN
 			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _userUUID can not be empty';
             LEAVE USER_user;
 		END IF;
 		select u.user_userName , u.user_loginEmail, u.user_securityBitwise , u.user_individualSecurityBitwise, up.user_profile_avatarSrc, 
-        up.user_profile_phone, user_profile_locationUUID from user u left join user_profile up on u.userUUID = up.user_profile_userUUID where userUUID = _userUUID ;
+        up.user_profile_phone, user_profile_locationUUID, up.user_profile_aboutme, up.user_profile_title, cb.brand_logo  from user u 
+        left join user_profile up on u.userUUID = up.user_profile_userUUID left join customer c on c.customerUUID=u.user_customerUUID 
+        left join customer_brand cb on c.customer_brandUUID = cb.brandUUID where u.userUUID = _userUUID ;
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
         LEAVE USER_user;
@@ -1081,7 +1092,7 @@ DELIMITER ;
 DROP procedure IF EXISTS `CUSTOMER_customer`;
 
 /*
-call USER_user(_action, _userUUID,_customerUUID,_customerBrandUUID,_customerStatusId,_customerName,
+call CUSTOMER_customer(_action, _userUUID,_customerUUID,_customerBrandUUID,_customerStatusId,_customerName,
 _customerLogo,_customerSecurityBitwise,_customerPreferenceJSON,_xRefName,_xRefId,
 _customer_externalName
 );
