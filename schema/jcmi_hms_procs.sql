@@ -2707,7 +2707,7 @@ DELIMITER ;
 -- call ASSETPART_assetpart('DELETE', '1', '3792f636d9a843d190b8425cc06257f5',  10, null,null, null, null,null,null,null,null,null,null,null,null, null,null,null);
 -- call ASSETPART_assetpart('SET_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null, null, 0, 'tesing_updated_dignosticUUID', null, null,null);
 -- call ASSETPART_assetpart('REMOVE_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null,null, 0, null, null, null,null);
-
+-- call ASSETPART_assetpart('DUPLICATE', '1', 'cust_test','444f47dd152e4aaa94377d0c01d21057',null,null, null, null, null,null, null, null, null,null, null, null, null, null,null);
 DROP procedure IF EXISTS `ASSETPART_assetpart`;
 
 DELIMITER $$
@@ -2935,6 +2935,26 @@ BEGIN
         where asset_partUUID = _asset_partUUID
           and asset_part_customerUUID = _customerUUID;
         -- TBD, figure out what cleanup may be involved
+    ELSEIF (_action = 'DUPLICATE') THEN
+        
+        IF (_customerUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _customerUUID missing';
+            LEAVE ASSETPART_assetpart;
+        END IF;
+		IF (_asset_partUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
+            LEAVE ASSETPART_assetpart;
+        END IF;
+        
+        SET @new_UUID = UUID();
+
+        INSERT INTO asset_part
+        (asset_partUUID, asset_part_template_part_sku, asset_part_customerUUID, asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_fabricId, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor, asset_part_createdByUUID, asset_part_updatedByUUID, asset_part_updatedTS, asset_part_createdTS, asset_part_deleteTS, asset_part_tags, asset_part_metaDataJSON)
+        SELECT @new_UUID,asset_part_template_part_sku, _customerUUID, asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_fabricId, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor, null, null, now(), now(), null, asset_part_tags, asset_part_metaDataJSON 
+        FROM asset_part 
+        WHERE asset_partUUID = _asset_partUUID;
+
+        SELECT @new_UUID as 'new_customer_id';
 
     END IF;
 
@@ -4752,25 +4772,27 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call ATTACHMENT_attachment(null,'5eb71fddbe04419bb7fda53fb0ef31ae','ASSET-PART', null,null, null, null, null, null, null)
--- call ATTACHMENT_attachment(null, '4e64ea9a159f45308019edcfd9dd9cd8','ASSET', null, null, null, null, null, null, null)
--- call ATTACHMENT_attachment('UPDATE_ATTACHMENT','2efb73617c614b1e8d686da738a3ed91', 'ASSET', '85a9fc657d60484eb35009250b50f9c7', 'HVAC Unit', null, null, null, null, null)
+-- call ATTACHMENT_attachment(null,'5eb71fddbe04419bb7fda53fb0ef31ae','ASSET-PART', null,null, null, null, null, null, null,null)
+-- call ATTACHMENT_attachment(null, '4e64ea9a159f45308019edcfd9dd9cd8','ASSET', null, null, null, null, null, null, null,null)
+-- call ATTACHMENT_attachment('UPDATE_ATTACHMENT','2efb73617c614b1e8d686da738a3ed91', 'ASSET', '85a9fc657d60484eb35009250b50f9c7', 'HVAC Unit', null, null, null, null, null,null)
 -- call ATTACHMENT_attachment('CREATE_ATTACHMENT','2efb73617c614b1e8d686da738a3ed91' , 'ASSET', null,'newly added features', 'HVAC Unit', '1',
 -- 'https://jcmi.sfo2.digitaloceanspaces.com/attachment-temp/87c7f772-8d9c-4cb2-b5f5-ed4fe03f9ee3_1614244345251.jpeg', 'a30af0ce5e07474487c39adab6269d5f',
--- '2')
+-- '2',null)
+-- call ATTACHMENT_attachment( 'DUPLICATE_ATTACHMENT', '8aef695dec754a99a2bb7f5077968d60', 'ASSET-PART', null, null, null, null, null, 'customer_id', null, null, 'NEW-PART-ID');
 
 DROP procedure IF EXISTS `ATTACHMENT_attachment`;
 
 DELIMITER $$
 CREATE PROCEDURE `ATTACHMENT_attachment`( IN _action char(32), IN _partId char(36),IN _partType char(36), IN _attachmentuuid CHAR(36), IN _attachment_description varchar(1000),
 											IN _attachment_shortName varchar(100), IN _attachmentStatus int, IN _attachment_fileURL varchar(255), IN _attachment_customerUUid varchar(36),
-                                            IN _attachment_createdByUUID varchar(36), IN _attachment_mineType varchar(50))
+                                            IN _attachment_createdByUUID varchar(36), IN _attachment_mineType varchar(50),IN _new_partId char(36))
 ATTACHMENT_attachment:
 BEGIN
 
     DECLARE DEBUG INT DEFAULT 0;
     DECLARE asset_part_id char(60);
     DECLARE template_part_id char(100);
+    
 	IF(_action = 'UPDATE_ATTACHMENT') THEN
 		IF(_attachmentuuid is null) THEN
 			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachmentuuid can not be empty';
@@ -4795,6 +4817,79 @@ BEGIN
         PREPARE stmt from @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
+    ELSEIF(_action = 'DUPLICATE_ATTACHMENT') THEN
+        -- duplicate attachments for given partId and return the list of newly created ids.
+        
+         IF(_attachment_customerUUid is NULL) THEN
+			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_customerUUid can not be empty';
+             LEAVE ATTACHMENT_attachment;
+		END IF;
+        
+        IF (_partId IS NULL) THEN
+			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partId can not be empty';
+			LEAVE ATTACHMENT_attachment;
+        END IF;
+
+        IF (_partType IS NULL) THEN
+			SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partType can not be empty';
+			LEAVE ATTACHMENT_attachment;
+        END IF;
+        
+		IF (_new_partId IS NULL) THEN
+			SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _new_partId can not be empty';
+			LEAVE ATTACHMENT_attachment;
+        END IF;
+
+		SET @now =now();
+
+        IF(_partType = 'ASSET-PART') THEN
+
+            set @attachment_ids = null;
+
+			IF(DEBUG =1 )THEN
+				select _partId as 'part id';
+			END IF;   
+
+            SELECT 
+                GROUP_CONCAT(concat('\'',apaj_attachmentUUID,'\''))
+            INTO @attachment_ids FROM
+                asset_part_attachment_join
+            WHERE
+                apaj_asset_partUUID = _partId;
+        
+        
+        
+           IF(@attachment_ids is null)THEN
+			SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: no attachment found for the ASSET-PART id';
+			LEAVE ATTACHMENT_attachment;
+           END IF;
+
+			IF(DEBUG =1 )THEN
+				select @now as 'now',_attachment_customerUUid as 'customer id';
+			END IF;            
+
+            set @l_SQL=	CONCAT('INSERT INTO attachment(attachmentUUID,attachment_statusId,attachment_fileURL,attachment_shortName,attachment_description,attachment_mimeType,attachment_customerUUID,attachment_createdByUUID,attachment_acknowledgedByUUID,attachment_updatedTS,attachment_createdTS,attachment_deleteTS)
+                SELECT UUID(),attachment_statusId,attachment_fileURL,attachment_shortName,attachment_description,attachment_mimeType,\'',_attachment_customerUUid,'\',null,attachment_acknowledgedByUUID,\'',@now,'\',');
+			
+            set @l_SQL=	CONCAT(@l_SQL,'\'',@now,'\', null FROM attachment WHERE');
+            
+            set @l_SQL=	CONCAT(@l_SQL,' attachmentUUID in (',@attachment_ids,');');
+            
+            IF(DEBUG =1 )THEN
+			select @attachment_ids as 'attachments ids',@l_SQL as 'query';
+			END IF;
+            
+            PREPARE stmt FROM @l_SQL;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+			
+            -- updatin in asset_attachment_join table
+			INSERT INTO asset_part_attachment_join(`apaj_asset_partUUID`, `apaj_attachmentUUID`, `apaj_createdTS`)
+			SELECT _new_partId,attachmentUUID,now() from attachment where attachment_createdTS = @now;
+            
+            LEAVE ATTACHMENT_attachment;
+            
+        END IF;
 	ELSEIF(_action = 'DELETE_ATTACHMENT') THEN
 		IF(_attachmentuuid is null) THEN
 			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachmentuuid can not be empty';
@@ -4846,6 +4941,7 @@ BEGIN
         LEAVE ATTACHMENT_attachment;
 		END IF;
 	END IF;
+    
 -- FOR _partType of ASSET, return records for ASSETS UNION ASSET_PART UNION PART_TEMPLATE
 -- FOR _partType of ASSET-PART, return records for ASSET-PART UNION PART_TEMPLATE
 -- FOR _partType of PART_TEMPLATE, return recors for PART_TEMPLATE
@@ -4902,6 +4998,7 @@ BEGIN
 END$$
 
 DELIMITER ;
+
 
 
 -- ==================================================================
