@@ -748,7 +748,7 @@ BEGIN
     IF (_action = 'GET-LIST') THEN
 
         set @l_sql = CONCAT(
-                'select c.customer_name, c.customerUUID, u.*,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
+                'select c.customer_name, c.customerUUID, u.userUUID, u.user_customerUUID, u.user_userName, u.user_loginEmail, u.user_loginLast, u.user_loginSession, u.user_loginSessionExpire, u.user_loginFailedAttempts, u.user_statusId, u.user_securityBitwise,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
 
 
         -- if (_groupUUID is not null) THEN
