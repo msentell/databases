@@ -217,7 +217,9 @@ CREATE PROCEDURE `USER_login`(IN _action VARCHAR(100),
                               IN _USER_loginPW VARCHAR(100),
                               IN _USER_loginEmailValidationCode VARCHAR(100),
                               IN _USER_loginEnabled INT,
-                              IN _USER_loginPWReset INT)
+                              IN _USER_loginPWReset INT,
+                              IN _user_name varchar(100),
+                              IN _user_customerUUID varchar(36))
 USER_login:
 BEGIN
 
@@ -663,13 +665,18 @@ BEGIN
         END IF;
 
         update `user` set user_updatedTS = now(), user_loginEmailValidationCode=null where userUUID = _entityId;
-	ELSE IF(_action = 'VERIFY_EMAIL') THEN
-		if(_USER_loginEmail is null) THEN
-			 SIGNAL SQLSTATE '45006' SET MESSAGE_TEXT = '_USER_loginEmail is required', MYSQL_ERRNO = 12;
+	ELSE IF(_action = 'VERIFY_USER_EMAIL') THEN
+		if(_USER_loginEmail is null or _user_name is null ) THEN
+			 SIGNAL SQLSTATE '45006' SET MESSAGE_TEXT = '_USER_loginEmail or _user_name is required', MYSQL_ERRNO = 12;
             LEAVE USER_login;
         END IF;
-		select count(*) into @count from user where user_loginEmail = _USER_loginEmail;
-        select @count as isAnyUsers;
+        if(_USER_loginEmail is not null) THEN
+		select count(*) into @emailCount from user where user_loginEmail = _USER_loginEmail;
+        END IF;
+        IF(_user_name is not null) THEN
+        select count(*) into @userCount from user where user_customerUUID = _user_customerUUID and  user_userName = _user_name;
+        END IF;
+        select  @emailCount as isAnyUserwithMail,  @userCount as isAnyUserwithName;
         END IF;
     END IF;
 
