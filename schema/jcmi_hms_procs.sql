@@ -2270,7 +2270,8 @@ CREATE PROCEDURE `LOCATION_Location`(IN _action VARCHAR(100),
                                      IN _location_contact_name VARCHAR(100),
                                      IN _location_contact_email VARCHAR(100),
                                      IN _location_contact_phone VARCHAR(50),
-                                     IN _location_fabricId VARCHAR(255))
+                                     IN _location_fabricId VARCHAR(255),
+                                     IN _location_new_customerUUID VARCHAR(100))
 LOCATION_Location:
 BEGIN
     DECLARE commaNeeded INT DEFAULT 0;
@@ -2363,7 +2364,7 @@ BEGIN
 
 
         IF (_locationUUID IS NULL) THEN
-            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_Location: _location_customerUUID missing';
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call LOCATION_Location: _locationUUID missing';
             LEAVE LOCATION_Location;
         END IF;
 
@@ -2376,6 +2377,9 @@ BEGIN
         END IF;
         if (_location_type is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',location_type = \'', _location_type, '\'');
+        END IF;
+        if (_location_new_customerUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',location_customerUUID = \'', _location_new_customerUUID, '\'');
         END IF;
         if (_location_name is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',location_name = \'', _location_name, '\'');
@@ -2460,12 +2464,13 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate);
--- call ASSET_asset('GET', '1', 'a30af'GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null, null);
--- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', null, null, '283821d8e6c647828eb01df0d82b0b74', null, null, null, null);
--- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now()));
--- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now()));
--- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null);
+-- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate,asset_metaDataJSON);
+-- call ASSET_asset('GET', '1', 'a30af'GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null);
+-- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', null, null, '283821d8e6c647828eb01df0d82b0b74', null, null, null, null,null);
+-- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now()),null);
+-- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now()),null);
+-- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null,null);
+-- call ASSET_asset('DUPLICATE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10,null, 'assetPart id', null, null, null, null, null);
 
 DROP procedure IF EXISTS `ASSET_asset`;
 
@@ -2590,6 +2595,30 @@ BEGIN
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
 
+    ELSEIF (_action = 'DUPLICATE') THEN
+            
+            IF (_customerUUID IS NULL) THEN
+                SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _customerUUID missing';
+                LEAVE ASSET_asset;
+            END IF;
+            IF (_assetUUID IS NULL) THEN
+                SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID missing';
+                LEAVE ASSET_asset;
+            END IF;
+            IF (_asset_partUUID IS NULL) THEN
+                SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _asset_partUUID missing';
+                LEAVE ASSET_asset;
+            END IF;
+
+            SET @new_UUID = UUID();
+
+            INSERT INTO asset
+            (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS, asset_metaDataJSON)
+            SELECT @new_UUID, asset_locationUUID, _asset_partUUID, _customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, _userUUID, _userUUID, null, now(), null, asset_metaDataJSON
+            FROM asset 
+            WHERE assetUUID = _assetUUID;
+
+            SELECT @new_UUID as 'new_assetUUID';
 
     ELSEIF (_action = 'DELETE') THEN
 
@@ -2954,7 +2983,7 @@ BEGIN
         FROM asset_part 
         WHERE asset_partUUID = _asset_partUUID;
 
-        SELECT @new_UUID as 'new_customer_id';
+        SELECT @new_UUID as 'new_asset_partUUID';
 
     END IF;
 
@@ -3054,16 +3083,14 @@ BEGIN
 
     IF (LOCATE('location', _tables) > 0) THEN
 
-        if (_customerId is null) Then
-            SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATT_getPicklist: _customerId can not be empty';
-            LEAVE getPicklist;
+        set @l_sql = 'select l.locationUUID as id, l.location_name as value, l.location_name as name,location_customerUUID as customerId
+        from location l left join asset a on(l.locationUUID = a.asset_locationUUID)';
+        
+        IF(_customerId is not null)THEN
+            set @l_sql = CONCAT(@l_sql,' where l.location_customerUUID =\'',_customerId,'\'');
         END IF;
 
-        set @l_sql = 'select l.locationUUID as id, l.location_name as value, l.location_name as name
-        from location l left join asset a on(l.locationUUID = a.asset_locationUUID)';
-        set @l_sql = CONCAT(@l_sql,' where l.location_customerUUID =\'',_customerId,'\'');
-
-        IF(_assetUUID is not null)THEN
+        IF(_customerId is not null  and _assetUUID is not null)THEN
              set @l_sql = CONCAT(@l_sql,' and a.assetUUID =\'',_assetUUID,'\'');
         END IF;
 
@@ -4890,7 +4917,7 @@ BEGIN
             LEAVE ATTACHMENT_attachment;
             
         END IF;
-	ELSEIF(_action = 'DELETE_ATTACHMENT') THEN
+		ELSEIF(_partType = 'ASSET') THEN
 		IF(_attachmentuuid is null) THEN
 			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachmentuuid can not be empty';
             LEAVE ATTACHMENT_attachment;
