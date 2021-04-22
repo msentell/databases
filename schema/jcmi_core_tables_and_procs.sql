@@ -238,6 +238,7 @@ BEGIN
     DECLARE _otp varchar(6);
     DECLARE _DISABLE_MFA INT default 1; -- 0 is enable MFA
     DECLARE _otpSessionTime int;
+    DECLARE _customerXref text;
 
     DECLARE DEBUG INT DEFAULT 0;
 
@@ -251,7 +252,7 @@ BEGIN
 
 
 		select count(*) into @count from user where user_loginEmail = _USER_loginEmail;
-        if(@count >1) THEN 
+        if(@count >1) THEN
 			  SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'call USER_login: Duplicate email found. Please contact support team';
             LEAVE USER_login;
          END IF;
@@ -266,7 +267,7 @@ BEGIN
         into _entityId, _customerUUID, _userName, _USER_loginEnabled,_password,_USER_loginEmailVerified, _securityBitwise, _individualSecurityBitwise
         from `user`
         where user_loginEmail = _USER_loginEmail;
-		
+
         if (DEBUG = 1) THEN
             select _action,
                    _USER_loginEmail,
@@ -296,11 +297,14 @@ BEGIN
             SIGNAL SQLSTATE '41007' SET MESSAGE_TEXT = 'call USER_login: password not correct';
             LEAVE USER_login;
         END IF;
-        
+
          select brand_preferenceJSON into _brand_preferenceJSON  from customer_brand left join customer on (customer_brand.brandUUID = customer.customer_brandUUID)
         where customer.customerUUID = _customerUUID;
-        select customerx_externalId into _magentoCustomerId from 
+        select customerx_externalId into _magentoCustomerId from
         customer_xref where customerx_externalName like '%magento%' and customerUUID = _customerUUID ;
+
+        select JSON_OBJECTAGG(x.customerx_externalName, x.customerx_externalId) into _customerXref
+        from customer_xref x where x.customerUUID = _customerUUID;
 
         if (_DISABLE_MFA = 0) THEN
             select SESSION_generateAccessCode(4) into _USER_loginEmailValidationCode;
@@ -353,7 +357,8 @@ BEGIN
                    _individualSecurityBitwise     as individualSecurityBitwise,
                    _brand_preferenceJSON         as brandpreferenceJSON,
                    _customerUUID                  as customerUUID,
-                   _magentoCustomerId			  as magentoCustomerId;
+                   _magentoCustomerId			  as magentoCustomerId,
+                   _customerXref                  as customerXref;
 
         ELSE
 
@@ -389,7 +394,8 @@ BEGIN
                    _individualSecurityBitwise     as individualSecurityBitwise,
                    _brand_preferenceJSON          as brandpreferenceJSON,
                    _customerUUID                  as customerUUID,
-                    _magentoCustomerId			  as magentoCustomerId;
+                    _magentoCustomerId			  as magentoCustomerId,
+                   _customerXref                  as customerXref;
 
         END IF;
 
@@ -458,7 +464,7 @@ BEGIN
 
     ELSEIF (_action = 'FORGOT_PASSWORD' and _USER_loginEmail is not null) THEN
 		select count(*) into @count from user where user_loginEmail = _USER_loginEmail;
-        if(@count >1) THEN 
+        if(@count >1) THEN
 			  SIGNAL SQLSTATE '41002' SET MESSAGE_TEXT = 'Duplicate email found. Please contact support team';
             LEAVE USER_login;
          END IF;
@@ -513,7 +519,7 @@ BEGIN
 				into _USER_loginEnabled,_password,_USER_loginEmailVerified
 				from `user`
 				where userUUID = _entityId;
-			ELSE 
+			ELSE
 				 select user_loginEnabled, user_loginPW, user_loginEmailVerified
 				into _USER_loginEnabled,_password,_USER_loginEmailVerified
 				from `user`
@@ -526,7 +532,7 @@ BEGIN
                 `user_loginPW`= _USER_loginPW,
                 user_loginFailedAttempts=0
             where userUUID = _entityId;
-		ELSe 
+		ELSe
         update `user`
             set user_loginEmailValidationCode=null,
                 `user_loginPW`= _USER_loginPW,
@@ -650,7 +656,7 @@ BEGIN
         from `user`
         where user_loginEmail = _USER_loginEmail
           and user_loginEmailValidationCode = _USER_loginEmailValidationCode;
-          
+
           select timediff(now(), @userUpdated ) into _otpSessionTime;
 
 		IF(minute(_otpSessionTime) >= 30 or hour(_otpSessionTime) >= 1 ) THEN
@@ -863,7 +869,7 @@ BEGIN
                     _userUUID, _userUUID, now(), now(), null);
 
         ELSE -- update
-        
+
             set @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID = \'', _userUUID, '\'');
 
             if (_user_userName is not null) THEN
@@ -880,7 +886,7 @@ BEGIN
             END IF;
 
                set @l_sql = CONCAT(@l_sql, ' where userUUID = \'', _user_userUUID, '\';');
-               
+
             IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
 
             PREPARE stmt FROM @l_sql;
@@ -896,14 +902,14 @@ BEGIN
 
 
             if (_user_profile_locationUUID is not null or _user_profile_phone is not null
-                or _user_profile_preferenceJSON is not null or _user_profile_avatarSrc is not null or 
+                or _user_profile_preferenceJSON is not null or _user_profile_avatarSrc is not null or
                 _aboutUser is not null or _userTitle is not null) THEN
 
                 set @l_sql = null;
 
                 set @l_sql =
                         CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID = \'', _userUUID, '\'');
-				
+
                 if (_user_profile_locationUUID is not null) THEN
                     set @l_sql = CONCAT(@l_sql, ',user_profile_locationUUID = \'', _user_profile_locationUUID, '\'');
                 END IF;
@@ -927,7 +933,7 @@ BEGIN
                 set @l_sql = CONCAT(@l_sql, ' where user_profile_userUUID = \'', _user_userUUID, '\';');
 
                 IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
-				
+
                 PREPARE stmt FROM @l_sql;
                 EXECUTE stmt;
                 DEALLOCATE PREPARE stmt;
@@ -988,8 +994,8 @@ BEGIN
         where user_customerUUID = _customerId
           and user_statusId = 1
         order by user_userName;
-        
-        select 'group' as tableName, groupUUID as id, group_name as value, group_name as name from jcmi_hms.user_group 
+
+        select 'group' as tableName, groupUUID as id, group_name as value, group_name as name from jcmi_hms.user_group
 		where group_customerUUID = _customerId order by group_name;
 
     ELSEIF (_action = 'GET_LIST_OF_USER') THEN
@@ -999,7 +1005,7 @@ BEGIN
         DEALLOCATE PREPARE stmt;
 	ELSEIF(_action = 'CREATE_USER') THEN
     set @createdUserId  = uuid();
-		insert into user(userUUID, user_customerUUID, user_userName, user_loginEmail, user_loginEmailVerified, user_loginEnabled, user_loginPW, user_securityBitwise, 
+		insert into user(userUUID, user_customerUUID, user_userName, user_loginEmail, user_loginEmailVerified, user_loginEnabled, user_loginPW, user_securityBitwise,
 		user_individualSecurityBitwise, user_createdByUUID, user_createdTS) values (@createdUserId, _customerId, _user_userName, _user_loginEmail,
 		now(),'1',_user_loginPW,null, null, _customerId, now());
         insert into user_profile(user_profile_userUUID,user_profile_avatarSrc, user_profile_phone,
@@ -1028,9 +1034,9 @@ BEGIN
 			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _userUUID can not be empty';
             LEAVE USER_user;
 		END IF;
-		select u.user_userName , u.user_loginEmail, u.user_securityBitwise , u.user_individualSecurityBitwise, up.user_profile_avatarSrc, 
-        up.user_profile_phone, user_profile_locationUUID, up.user_profile_aboutme, up.user_profile_title, cb.brand_logo  from user u 
-        left join user_profile up on u.userUUID = up.user_profile_userUUID left join customer c on c.customerUUID=u.user_customerUUID 
+		select u.user_userName , u.user_loginEmail, u.user_securityBitwise , u.user_individualSecurityBitwise, up.user_profile_avatarSrc,
+        up.user_profile_phone, user_profile_locationUUID, up.user_profile_aboutme, up.user_profile_title, cb.brand_logo  from user u
+        left join user_profile up on u.userUUID = up.user_profile_userUUID left join customer c on c.customerUUID=u.user_customerUUID
         left join customer_brand cb on c.customer_brandUUID = cb.brandUUID where u.userUUID = _userUUID ;
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
@@ -1153,7 +1159,7 @@ BEGIN
         END IF;
         SELECT * FROM customer WHERE customerUUID = _customerUUID;
     ELSEIF (_action = 'CREATE') THEN
-       
+
         -- _customerName is required
         IF (_customerName IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_customer: _customerName missing';
