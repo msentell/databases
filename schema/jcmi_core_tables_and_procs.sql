@@ -761,7 +761,7 @@ BEGIN
     IF (_action = 'GET-LIST') THEN
 
         set @l_sql = CONCAT(
-                'select c.customer_name, c.customerUUID, u.userUUID, u.user_customerUUID, u.user_userName, u.user_loginEmail, u.user_loginLast, u.user_loginSession, u.user_loginSessionExpire, u.user_loginFailedAttempts, u.user_statusId, u.user_securityBitwise,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc ');
+                'select c.customer_name, c.customerUUID, u.userUUID, u.user_customerUUID, u.user_userName, u.user_loginEmail, u.user_loginLast, u.user_loginSession, u.user_loginSessionExpire, u.user_loginFailedAttempts, u.user_statusId, u.user_securityBitwise,p.user_profile_phone,p.user_profile_preferenceJSON,p.user_profile_avatarSrc,p.user_profile_locationUUID ');
 
 
         -- if (_groupUUID is not null) THEN
@@ -869,7 +869,7 @@ BEGIN
                     _userUUID, _userUUID, now(), now(), null);
 
         ELSE -- update
-
+        
             set @l_sql = CONCAT('update user set user_updatedTS =now(), user_updatedByUUID = \'', _userUUID, '\'');
 
             if (_user_userName is not null) THEN
@@ -886,7 +886,7 @@ BEGIN
             END IF;
 
                set @l_sql = CONCAT(@l_sql, ' where userUUID = \'', _user_userUUID, '\';');
-
+               
             IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
 
             PREPARE stmt FROM @l_sql;
@@ -902,14 +902,14 @@ BEGIN
 
 
             if (_user_profile_locationUUID is not null or _user_profile_phone is not null
-                or _user_profile_preferenceJSON is not null or _user_profile_avatarSrc is not null or
+                or _user_profile_preferenceJSON is not null or _user_profile_avatarSrc is not null or 
                 _aboutUser is not null or _userTitle is not null) THEN
 
                 set @l_sql = null;
 
                 set @l_sql =
                         CONCAT('update user_profile set user_profile_updatedTS =now(), user_profile_updatedByUUID = \'', _userUUID, '\'');
-
+				
                 if (_user_profile_locationUUID is not null) THEN
                     set @l_sql = CONCAT(@l_sql, ',user_profile_locationUUID = \'', _user_profile_locationUUID, '\'');
                 END IF;
@@ -933,7 +933,7 @@ BEGIN
                 set @l_sql = CONCAT(@l_sql, ' where user_profile_userUUID = \'', _user_userUUID, '\';');
 
                 IF (_DEBUG = 1) THEN select _action, @l_SQL; END IF;
-
+				
                 PREPARE stmt FROM @l_sql;
                 EXECUTE stmt;
                 DEALLOCATE PREPARE stmt;
@@ -994,8 +994,8 @@ BEGIN
         where user_customerUUID = _customerId
           and user_statusId = 1
         order by user_userName;
-
-        select 'group' as tableName, groupUUID as id, group_name as value, group_name as name from jcmi_hms.user_group
+        
+        select 'group' as tableName, groupUUID as id, group_name as value, group_name as name from jcmi_hms.user_group 
 		where group_customerUUID = _customerId order by group_name;
 
     ELSEIF (_action = 'GET_LIST_OF_USER') THEN
@@ -1005,7 +1005,7 @@ BEGIN
         DEALLOCATE PREPARE stmt;
 	ELSEIF(_action = 'CREATE_USER') THEN
     set @createdUserId  = uuid();
-		insert into user(userUUID, user_customerUUID, user_userName, user_loginEmail, user_loginEmailVerified, user_loginEnabled, user_loginPW, user_securityBitwise,
+		insert into user(userUUID, user_customerUUID, user_userName, user_loginEmail, user_loginEmailVerified, user_loginEnabled, user_loginPW, user_securityBitwise, 
 		user_individualSecurityBitwise, user_createdByUUID, user_createdTS) values (@createdUserId, _customerId, _user_userName, _user_loginEmail,
 		now(),'1',_user_loginPW,null, null, _customerId, now());
         insert into user_profile(user_profile_userUUID,user_profile_avatarSrc, user_profile_phone,
@@ -1034,9 +1034,9 @@ BEGIN
 			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _userUUID can not be empty';
             LEAVE USER_user;
 		END IF;
-		select u.user_userName , u.user_loginEmail, u.user_securityBitwise , u.user_individualSecurityBitwise, up.user_profile_avatarSrc,
-        up.user_profile_phone, user_profile_locationUUID, up.user_profile_aboutme, up.user_profile_title, cb.brand_logo  from user u
-        left join user_profile up on u.userUUID = up.user_profile_userUUID left join customer c on c.customerUUID=u.user_customerUUID
+		select u.user_userName , u.user_loginEmail, u.user_securityBitwise , u.user_individualSecurityBitwise, up.user_profile_avatarSrc, 
+        up.user_profile_phone, user_profile_locationUUID, up.user_profile_aboutme, up.user_profile_title, cb.brand_logo  from user u 
+        left join user_profile up on u.userUUID = up.user_profile_userUUID left join customer c on c.customerUUID=u.user_customerUUID 
         left join customer_brand cb on c.customer_brandUUID = cb.brandUUID where u.userUUID = _userUUID ;
     ELSE
         SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call USER_user: _action is of type invalid';
