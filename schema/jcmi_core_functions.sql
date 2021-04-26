@@ -45,3 +45,35 @@ DECLARE x INT DEFAULT 1;
 RETURN _code;
 END //
 DELIMITER ;
+
+---------------------------------------------------------------------------------
+-- to get user permissions of user
+DROP FUNCTION IF EXISTS fetchUserPermissions;
+
+DELIMITER //
+
+CREATE FUNCTION fetchUserPermissions (
+_bitwise VARCHAR(100))
+RETURNS varchar(2000)
+BEGIN
+DECLARE biwiseArray varchar(2000) DEFAULT '';
+set @cnt  = 0;
+do_this:
+loop
+	set @num = POWER(2, @cnt);
+    IF(@num & _bitwise != 0) THEN
+		IF(biwiseArray= '') THEN
+			set biwiseArray =  @num;
+		ELSE
+			set biwiseArray = CONCAT(biwiseArray , ',' , @num);
+		END IF;
+	END IF;
+   set @cnt = @cnt + 1;
+    if(POWER(2, @cnt) > _bitwise) THEN
+		leave do_this;
+    END IF;
+END loop do_this ;
+ return biwiseArray;
+END; //
+
+DELIMITER ;
