@@ -17,6 +17,7 @@ DELIMITER ;
 - >call CUSTOMER_customer('CREATE',_userUUID,null,_customerBrandUUID,null,_customerName,null,null,null,null,null,null);
 -  call CUSTOMER_customer('CREATE','1',null,'1',null,'cus-5',null,null,null,null,null,null);
 */
+
 DROP procedure IF EXISTS `CUSTOMER_customer`;
 
 DELIMITER $$
@@ -62,7 +63,7 @@ BEGIN
            SELECT * FROM customer c INNER JOIN customer_xref x on c.customerUUID = x.customerUUID WHERE x.customerx_externalName = _xRefName AND x.customerx_externalId = _xRefId;
            LEAVE CUSTOMER_customer;
         END IF;
-        SELECT * FROM customer c LEFT JOIN customer_brand cb on (c.customer_brandUUID = cb.brandUUID) WHERE customerUUID = _customerUUID;
+        SELECT  brand_securityBitwise, customer_securityBitwise, fetchUserPermissions(brand_securityBitwise) as brandPrevilages, fetchUserPermissions(customer_securityBitwise) as customerPrevilages FROM customer c LEFT JOIN customer_brand cb on (c.customer_brandUUID = cb.brandUUID) WHERE customerUUID = _customerUUID;
        ELSEIF (_action = 'CREATE') THEN
         -- _customerName is required
         IF (_customerName IS NULL) THEN
