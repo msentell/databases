@@ -55,9 +55,15 @@ DELIMITER //
 CREATE FUNCTION fetchUserPermissions (
 _bitwise VARCHAR(100))
 RETURNS varchar(2000)
+fetchUserPermissions:
 BEGIN
 DECLARE biwiseArray varchar(2000) DEFAULT '';
 set @cnt  = 0;
+IF(_bitwise is null ) THEN 
+set biwiseArray = 0;
+return biwiseArray;
+leave fetchUserPermissions;
+END IF;
 do_this:
 loop
 	set @num = POWER(2, @cnt);
