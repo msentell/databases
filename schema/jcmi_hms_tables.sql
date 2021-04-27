@@ -407,6 +407,7 @@ CREATE TABLE `asset` (
    	asset_updatedTS datetime  NULL,
   	asset_createdTS datetime  NULL default now(),
    	asset_deleteTS datetime  NULL,
+   	asset_externalId CHAR(36) NULL,
 
   	PRIMARY KEY (assetUUID),
   	INDEX location_idx (asset_customerUUID,asset_locationUUID,assetUUID,asset_partUUID))

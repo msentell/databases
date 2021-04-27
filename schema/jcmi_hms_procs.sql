@@ -1113,7 +1113,7 @@ IF(_customerId IS NULL or _customerId = '') THEN
         PREPARE stmt FROM @l_sql;
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
-ELSEIF(_action = 'UPDATEALL') THEN 
+ELSEIF(_action = 'UPDATEALL') THEN
 	IF (_workorderUUID IS NULL) THEN
             SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call WORKORDER_workOrder: _workorderUUID is null for UPDATE action';
             LEAVE WORKORDER_workOrder;
@@ -1149,7 +1149,7 @@ ELSEIF(_action ='UPDATE' OR _action ='PARTIAL_UPDATE' OR _action = 'BATCH-UPDATE
             set workorder_checklistHistoryUUID = null
             where  workorderUUID = _workorderUUID; -- removed prevous checklistHistoryId
 		END IF;
-        
+
          set  @l_sql = CONCAT('update workorder set workorder_updatedTS = now(), workorder_updatedByUUID= \'', _userUUID,'\'');
 
         if (_workorder_status IS NOT NULL) THEN
@@ -2190,7 +2190,7 @@ BEGIN
             select locationUUID
             into _itemFound
             from location
-            where location_name = _name and location_customerUUID = _customerUUID;
+            where location_name = _name and location_customerUUID = _customerUUID and location_statusId = 1;
 
             if (_itemFound is not null) THEN
 
@@ -2485,6 +2485,7 @@ CREATE PROCEDURE `ASSET_asset`(IN _action VARCHAR(100),
                                IN _asset_name VARCHAR(255),
                                IN _asset_shortName VARCHAR(255),
                                IN _asset_installDate Date,
+                               IN _asset_externalId VARCHAR(100),
                                IN _asset_metaDataJSON TEXT)
 ASSET_asset:
 BEGIN
@@ -2538,6 +2539,7 @@ BEGIN
                    _asset_name,
                    _asset_shortName,
                    _asset_installDate,
+                   _asset_externalId,as
                    _asset_metaDataJSON;
         END IF;
 
@@ -2548,10 +2550,10 @@ BEGIN
 
         insert into asset
         (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName,
-         asset_installDate, asset_metaDataJSON,
+         asset_installDate, asset_externalId, asset_metaDataJSON,
          asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS)
         values (_assetUUID, _asset_locationUUID, _asset_partUUID, _customerUUID, _asset_statusId, _asset_name,
-                _asset_shortName, _asset_installDate, _asset_metaDataJSON,
+                _asset_shortName, _asset_installDate, _asset_externalId, _asset_metaDataJSON,
                 _userUUID, _userUUID, now(), now(), null);
 
     ELSEIF (_action = 'UPDATE') THEN
@@ -2582,6 +2584,9 @@ BEGIN
         if (_asset_name is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',asset_name = \'', _asset_name, '\'');
         END IF;
+        if (_asset_externalId is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',asset_externalID = \'', _asset_externalId, '\'');
+        END IF;
         if (_asset_metaDataJSON is not null) THEN
                     set @l_sql = CONCAT(@l_sql, ',asset_metaDataJSON = \'', _asset_metaDataJSON, '\'');
                 END IF;
@@ -2596,7 +2601,7 @@ BEGIN
         DEALLOCATE PREPARE stmt;
 
     ELSEIF (_action = 'DUPLICATE') THEN
-            
+
             IF (_customerUUID IS NULL) THEN
                 SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _customerUUID missing';
                 LEAVE ASSET_asset;
@@ -2613,9 +2618,9 @@ BEGIN
             SET @new_UUID = UUID();
 
             INSERT INTO asset
-            (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS, asset_metaDataJSON)
-            SELECT @new_UUID, asset_locationUUID, _asset_partUUID, _customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, _userUUID, _userUUID, null, now(), null, asset_metaDataJSON
-            FROM asset 
+            (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS, asset_externalId, asset_metaDataJSON)
+            SELECT @new_UUID, asset_locationUUID, _asset_partUUID, _customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, _userUUID, _userUUID, null, now(), null, asset_externalId, asset_metaDataJSON
+            FROM asset
             WHERE assetUUID = _assetUUID;
 
             SELECT @new_UUID as 'new_assetUUID';
@@ -2965,7 +2970,7 @@ BEGIN
           and asset_part_customerUUID = _customerUUID;
         -- TBD, figure out what cleanup may be involved
     ELSEIF (_action = 'DUPLICATE') THEN
-        
+
         IF (_customerUUID IS NULL) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _customerUUID missing';
             LEAVE ASSETPART_assetpart;
@@ -2974,13 +2979,13 @@ BEGIN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
             LEAVE ASSETPART_assetpart;
         END IF;
-        
+
         SET @new_UUID = UUID();
 
         INSERT INTO asset_part
         (asset_partUUID, asset_part_template_part_sku, asset_part_customerUUID, asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_fabricId, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor, asset_part_createdByUUID, asset_part_updatedByUUID, asset_part_updatedTS, asset_part_createdTS, asset_part_deleteTS, asset_part_tags, asset_part_metaDataJSON)
-        SELECT @new_UUID,asset_part_template_part_sku, _customerUUID, asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_fabricId, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor, null, null, now(), now(), null, asset_part_tags, asset_part_metaDataJSON 
-        FROM asset_part 
+        SELECT @new_UUID,asset_part_template_part_sku, _customerUUID, asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_fabricId, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor, null, null, now(), now(), null, asset_part_tags, asset_part_metaDataJSON
+        FROM asset_part
         WHERE asset_partUUID = _asset_partUUID;
 
         SELECT @new_UUID as 'new_asset_partUUID';
@@ -3085,7 +3090,7 @@ BEGIN
 
         set @l_sql = 'select l.locationUUID as id, l.location_name as value, l.location_name as name,location_customerUUID as customerId
         from location l left join asset a on(l.locationUUID = a.asset_locationUUID)';
-        
+
         IF(_customerId is not null)THEN
             set @l_sql = CONCAT(@l_sql,' where l.location_customerUUID =\'',_customerId,'\'');
         END IF;
@@ -3922,7 +3927,7 @@ fetchUserPermissions:
 BEGIN
 DECLARE biwiseArray varchar(2000) DEFAULT '';
 set @cnt  = 0;
-IF(_bitwise is null ) THEN 
+IF(_bitwise is null ) THEN
 set biwiseArray = 0;
 return biwiseArray;
 leave fetchUserPermissions;
@@ -4854,7 +4859,7 @@ BEGIN
     DECLARE DEBUG INT DEFAULT 0;
     DECLARE asset_part_id char(60);
     DECLARE template_part_id char(100);
-    
+
 	IF(_action = 'UPDATE_ATTACHMENT') THEN
 		IF(_attachmentuuid is null) THEN
 			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachmentuuid can not be empty';
@@ -4881,12 +4886,12 @@ BEGIN
         DEALLOCATE PREPARE stmt;
     ELSEIF(_action = 'DUPLICATE_ATTACHMENT') THEN
         -- duplicate attachments for given partId and return the list of newly created ids.
-        
+
          IF(_attachment_customerUUid is NULL) THEN
 			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_customerUUid can not be empty';
              LEAVE ATTACHMENT_attachment;
 		END IF;
-        
+
         IF (_partId IS NULL) THEN
 			SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partId can not be empty';
 			LEAVE ATTACHMENT_attachment;
@@ -4896,7 +4901,7 @@ BEGIN
 			SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _partType can not be empty';
 			LEAVE ATTACHMENT_attachment;
         END IF;
-        
+
 		IF (_new_partId IS NULL) THEN
 			SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: _new_partId can not be empty';
 			LEAVE ATTACHMENT_attachment;
@@ -4910,17 +4915,17 @@ BEGIN
 
 			IF(DEBUG =1 )THEN
 				select _partId as 'part id';
-			END IF;   
+			END IF;
 
-            SELECT 
+            SELECT
                 GROUP_CONCAT(concat('\'',apaj_attachmentUUID,'\''))
             INTO @attachment_ids FROM
                 asset_part_attachment_join
             WHERE
                 apaj_asset_partUUID = _partId;
-        
-        
-        
+
+
+
            IF(@attachment_ids is null)THEN
 			SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: no attachment found for the ASSET-PART id';
 			LEAVE ATTACHMENT_attachment;
@@ -4928,29 +4933,29 @@ BEGIN
 
 			IF(DEBUG =1 )THEN
 				select @now as 'now',_attachment_customerUUid as 'customer id';
-			END IF;            
+			END IF;
 
             set @l_SQL=	CONCAT('INSERT INTO attachment(attachmentUUID,attachment_statusId,attachment_fileURL,attachment_shortName,attachment_description,attachment_mimeType,attachment_customerUUID,attachment_createdByUUID,attachment_acknowledgedByUUID,attachment_updatedTS,attachment_createdTS,attachment_deleteTS)
                 SELECT UUID(),attachment_statusId,attachment_fileURL,attachment_shortName,attachment_description,attachment_mimeType,\'',_attachment_customerUUid,'\',null,attachment_acknowledgedByUUID,\'',@now,'\',');
-			
+
             set @l_SQL=	CONCAT(@l_SQL,'\'',@now,'\', null FROM attachment WHERE');
-            
+
             set @l_SQL=	CONCAT(@l_SQL,' attachmentUUID in (',@attachment_ids,');');
-            
+
             IF(DEBUG =1 )THEN
 			select @attachment_ids as 'attachments ids',@l_SQL as 'query';
 			END IF;
-            
+
             PREPARE stmt FROM @l_SQL;
             EXECUTE stmt;
             DEALLOCATE PREPARE stmt;
-			
+
             -- updatin in asset_attachment_join table
 			INSERT INTO asset_part_attachment_join(`apaj_asset_partUUID`, `apaj_attachmentUUID`, `apaj_createdTS`)
 			SELECT _new_partId,attachmentUUID,now() from attachment where attachment_createdTS = @now;
-            
+
             LEAVE ATTACHMENT_attachment;
-            
+
         END IF;
 		ELSEIF(_partType = 'ASSET') THEN
 		IF(_attachmentuuid is null) THEN
@@ -5003,7 +5008,7 @@ BEGIN
         LEAVE ATTACHMENT_attachment;
 		END IF;
 	END IF;
-    
+
 -- FOR _partType of ASSET, return records for ASSETS UNION ASSET_PART UNION PART_TEMPLATE
 -- FOR _partType of ASSET-PART, return records for ASSET-PART UNION PART_TEMPLATE
 -- FOR _partType of PART_TEMPLATE, return recors for PART_TEMPLATE
@@ -5048,7 +5053,7 @@ BEGIN
 #         ELSE
 #            set asset_part_id = _partId;
 #         END IF;
-#   
+#
 #         SELECT a.*, 'ASSET' as partType FROM attachment a LEFT JOIN asset_part_attachment_join apj ON (a.attachmentUUID = apj.apaj_attachmentUUID)
 #         WHERE apj.apaj_asset_partUUID = asset_part_id and attachment_deleteTS is null ;
 
