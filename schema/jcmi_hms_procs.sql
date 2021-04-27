@@ -5221,7 +5221,7 @@ BEGIN
     END IF;
 
     IF(_action = 'GET-LIST') THEN
-        SET @l_SQL = 'SELECT group_securityBitwise, fetchUserPermissions(group_securityBitwise) as previlages FROM user_group';
+        SET @l_SQL = 'SELECT *, group_securityBitwise, fetchUserPermissions(group_securityBitwise) as previlages FROM user_group';
 
         IF(_groupid IS NOT NULL)THEN
             -- filter group by _groupid
@@ -5235,7 +5235,7 @@ BEGIN
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
     ELSEIF(_action = 'GET-USER-GROUP') THEN
-        SET @l_SQL = 'SELECT groupUUID, group_name,group_securityBitwise, fetchUserPermissions(group_securityBitwise) as previlages FROM user_group';
+        SET @l_SQL = 'SELECT *, groupUUID, group_name,group_securityBitwise, fetchUserPermissions(group_securityBitwise) as previlages FROM user_group';
 
         -- left join user_group_join
         SET @l_SQL = CONCAT(@l_SQL,' ug left join user_group_join ugj on (ug.groupUUID = ugj.ugj_groupUUID)');
