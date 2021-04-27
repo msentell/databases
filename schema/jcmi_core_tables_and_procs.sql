@@ -1239,7 +1239,7 @@ BEGIN
     IF (_action = 'GET-LIST') THEN
         SELECT * FROM customer_brand;
     ELSEIF (_action = 'GET') THEN
-        set @l_sql = 'SELECT b.* FROM customer_brand b';
+        set @l_sql = 'SELECT b.brand_securityBitwise, fetchUserPermissions(b.brand_securityBitwise) as previlages  FROM customer_brand b';
         IF ((_brandUUID IS NULL OR _brandUUID = '') AND (_brandName IS NULL or _brandName = '')) THEN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call CUSTOMER_CustomerBrand: _brandUUID or _brandName missing';
             LEAVE CUSTOMER_CustomerBrand;
