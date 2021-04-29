@@ -2610,7 +2610,10 @@ BEGIN
                 SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID missing';
                 LEAVE ASSET_asset;
             END IF;
-            IF (_asset_partUUID IS NULL) THEN
+            IF(_asset_partUUID is null and _assetUUID is not null) THEN 
+				select asset_partUUID into _asset_partUUID from asset where assetUUID = _assetUUID ; 
+            END IF;
+            IF (_asset_partUUID IS NULL and _assetUUID is null) THEN
                 SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _asset_partUUID missing';
                 LEAVE ASSET_asset;
             END IF;
@@ -2623,8 +2626,9 @@ BEGIN
             FROM asset
             WHERE assetUUID = _assetUUID;
 
-            SELECT @new_UUID as 'new_assetUUID';
-
+            SELECT @new_UUID as 'new_assetUUID', _asset_partUUID as prevAssetPartId;
+            select asset_part_customerUUID as partCustomerId from asset_part where asset_partUUID = _asset_partUUID;
+			
     ELSEIF (_action = 'DELETE') THEN
 
         IF (DEBUG = 1) THEN select _action, _assetUUID; END IF;
@@ -2648,7 +2652,6 @@ END$$
 
 
 DELIMITER ;
-
 
 
 -- ==================================================================
@@ -2729,19 +2732,18 @@ END$$
 
 DELIMITER ;
 
-
 -- ==================================================================
 
--- call ASSETPART_assetpart(action, _userUUID, _customerUUID, asset_partUUID, asset_part_template_part_sku,asset_part_statusId, asset_part_sku,asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor,_asset_part_fabricId);
--- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5', null, null,null, null, null, null, null, null, null, null, null, null, null, null, null,null,null);
--- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5',  '0090d1d3b414471485c5e8b6f390a150', null,null, null, null, null, null, null, null, null, null, null, null, null, null,null);
--- call ASSETPART_assetpart('CREATE', '1', '3792f636d9a843d190b8425cc06257f5',  10, 'asset_part_template_part_sku',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 1, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor',null);
--- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, 'asset_part_template_part_sku2',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 0, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor',null);
--- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, null,null,null,null, null, null, null,'img url',null, null,null, null,null, null,'1');
--- call ASSETPART_assetpart('DELETE', '1', '3792f636d9a843d190b8425cc06257f5',  10, null,null, null, null,null,null,null,null,null,null,null,null, null,null,null);
--- call ASSETPART_assetpart('SET_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null, null, 0, 'tesing_updated_dignosticUUID', null, null,null);
--- call ASSETPART_assetpart('REMOVE_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null,null, 0, null, null, null,null);
--- call ASSETPART_assetpart('DUPLICATE', '1', 'cust_test','444f47dd152e4aaa94377d0c01d21057',null,null, null, null, null,null, null, null, null,null, null, null, null, null,null);
+-- call ASSETPART_assetpart(action, _userUUID, _customerUUID, asset_partUUID, asset_part_template_part_sku,asset_part_statusId, asset_part_sku,asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor,_asset_part_fabricId, _assetUUID);
+-- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5', null, null,null, null, null, null, null, null, null, null, null, null, null, null, null,null,null, null);
+-- call ASSETPART_assetpart('GET', '1', '3792f636d9a843d190b8425cc06257f5',  '0090d1d3b414471485c5e8b6f390a150', null,null, null, null, null, null, null, null, null, null, null, null, null, null,null, null);
+-- call ASSETPART_assetpart('CREATE', '1', '3792f636d9a843d190b8425cc06257f5',  10, 'asset_part_template_part_sku',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 1, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor',null, null);
+-- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, 'asset_part_template_part_sku2',1, 'asset_part_sku', 'asset_part_name', 'asset_part_description', 'asset_part_userInstruction', 'asset_part_shortName', 'asset_part_imageURL', 'asset_part_imageThumbURL', 'asset_part_hotSpotJSON', 0, 'asset_part_diagnosticUUID', 'asset_part_magentoUUID', 'asset_part_vendor',null, null);
+-- call ASSETPART_assetpart('UPDATE', '1', '3792f636d9a843d190b8425cc06257f5',   10, null,null,null,null, null, null, null,'img url',null, null,null, null,null, null,'1', null);
+-- call ASSETPART_assetpart('DELETE', '1', '3792f636d9a843d190b8425cc06257f5',  10, null,null, null, null,null,null,null,null,null,null,null,null, null,null,null, null);
+-- call ASSETPART_assetpart('SET_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null, null, 0, 'tesing_updated_dignosticUUID', null, null,null, null);
+-- call ASSETPART_assetpart('REMOVE_DIGNOSTIC', '1', null,null,'004301AU',null, null, null, null,null, null, null, null,null, 0, null, null, null,null, null);
+-- call ASSETPART_assetpart('DUPLICATE', '1', 'cust_test','444f47dd152e4aaa94377d0c01d21057',null,null, null, null, null,null, null, null, null,null, null, null, null, null,null, null);
 DROP procedure IF EXISTS `ASSETPART_assetpart`;
 
 DELIMITER $$
@@ -2763,7 +2765,8 @@ CREATE PROCEDURE `ASSETPART_assetpart`(IN _action VARCHAR(100),
                                        IN _asset_part_diagnosticUUID VARCHAR(255),
                                        IN _asset_part_magentoUUID VARCHAR(255),
                                        IN _asset_part_vendor VARCHAR(255),
-                                       IN _asset_part_fabricId VARCHAR(255))
+                                       IN _asset_part_fabricId VARCHAR(255),
+                                       IN _assetUUID varchar(36))
 ASSETPART_assetpart:
 BEGIN
 
@@ -2979,15 +2982,17 @@ BEGIN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
             LEAVE ASSETPART_assetpart;
         END IF;
-
+       
         SET @new_UUID = UUID();
-
+		
         INSERT INTO asset_part
         (asset_partUUID, asset_part_template_part_sku, asset_part_customerUUID, asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_fabricId, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor, asset_part_createdByUUID, asset_part_updatedByUUID, asset_part_updatedTS, asset_part_createdTS, asset_part_deleteTS, asset_part_tags, asset_part_metaDataJSON)
         SELECT @new_UUID,asset_part_template_part_sku, _customerUUID, asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_fabricId, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor, null, null, now(), now(), null, asset_part_tags, asset_part_metaDataJSON
         FROM asset_part
         WHERE asset_partUUID = _asset_partUUID;
-
+		IF(_assetUUID is not null) THEN
+			update asset set asset_partUUID = @new_UUID where assetUUID = _assetUUID ;
+        END IF;
         SELECT @new_UUID as 'new_asset_partUUID';
 
     END IF;
@@ -2996,7 +3001,6 @@ END$$
 
 
 DELIMITER ;
-
 
 -- ==================================================================
 
