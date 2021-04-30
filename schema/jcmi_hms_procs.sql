@@ -4960,13 +4960,13 @@ BEGIN
 
             LEAVE ATTACHMENT_attachment;
 
-        END IF;
 		ELSEIF(_partType = 'ASSET') THEN
 		IF(_attachmentuuid is null) THEN
 			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachmentuuid can not be empty';
             LEAVE ATTACHMENT_attachment;
         END IF;
        update attachment set attachment_deleteTS = now() where  attachmentuuid= _attachmentuuid;
+		END IF;
     ELSEIF(_action = 'CREATE_ATTACHMENT') THEN
         IF(_attachment_description is NULL) THEN
 			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachment_description can not be empty';
@@ -5069,7 +5069,6 @@ BEGIN
 END$$
 
 DELIMITER ;
-
 
 
 -- ==================================================================
