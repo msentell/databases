@@ -2526,6 +2526,14 @@ BEGIN
         EXECUTE stmt;
         DEALLOCATE PREPARE stmt;
 
+    ELSEIF (_action = 'GET-ALL') THEN
+        SET @l_SQL = 'SELECT * FROM asset ';
+        IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
+
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
     ELSEIF (_action = 'CREATE') THEN
 
         IF (DEBUG = 1) THEN
@@ -2539,7 +2547,7 @@ BEGIN
                    _asset_name,
                    _asset_shortName,
                    _asset_installDate,
-                   _asset_externalId,as
+                   _asset_externalId,
                    _asset_metaDataJSON;
         END IF;
 
@@ -2588,8 +2596,8 @@ BEGIN
             set @l_sql = CONCAT(@l_sql, ',asset_externalID = \'', _asset_externalId, '\'');
         END IF;
         if (_asset_metaDataJSON is not null) THEN
-                    set @l_sql = CONCAT(@l_sql, ',asset_metaDataJSON = \'', _asset_metaDataJSON, '\'');
-                END IF;
+            set @l_sql = CONCAT(@l_sql, ',asset_metaDataJSON = \'', _asset_metaDataJSON, '\'');
+        END IF;
 
 
         set @l_sql = CONCAT(@l_sql, ' where assetUUID = \'', _assetUUID, '\';');
@@ -2602,33 +2610,33 @@ BEGIN
 
     ELSEIF (_action = 'DUPLICATE') THEN
 
-            IF (_customerUUID IS NULL) THEN
-                SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _customerUUID missing';
-                LEAVE ASSET_asset;
-            END IF;
-            IF (_assetUUID IS NULL) THEN
-                SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID missing';
-                LEAVE ASSET_asset;
-            END IF;
-            IF(_asset_partUUID is null and _assetUUID is not null) THEN 
-				select asset_partUUID into _asset_partUUID from asset where assetUUID = _assetUUID ; 
-            END IF;
-            IF (_asset_partUUID IS NULL and _assetUUID is null) THEN
-                SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _asset_partUUID missing';
-                LEAVE ASSET_asset;
-            END IF;
+        IF (_customerUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _customerUUID missing';
+            LEAVE ASSET_asset;
+        END IF;
+        IF (_assetUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _assetUUID missing';
+            LEAVE ASSET_asset;
+        END IF;
+        IF(_asset_partUUID is null and _assetUUID is not null) THEN
+            select asset_partUUID into _asset_partUUID from asset where assetUUID = _assetUUID ;
+        END IF;
+        IF (_asset_partUUID IS NULL and _assetUUID is null) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _asset_partUUID missing';
+            LEAVE ASSET_asset;
+        END IF;
 
-            SET @new_UUID = UUID();
+        SET @new_UUID = UUID();
 
-            INSERT INTO asset
-            (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS, asset_externalId, asset_metaDataJSON)
-            SELECT @new_UUID, asset_locationUUID, _asset_partUUID, _customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, _userUUID, _userUUID, null, now(), null, asset_externalId, asset_metaDataJSON
-            FROM asset
-            WHERE assetUUID = _assetUUID;
+        INSERT INTO asset
+        (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS, asset_externalId, asset_metaDataJSON)
+        SELECT @new_UUID, asset_locationUUID, _asset_partUUID, _customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, _userUUID, _userUUID, null, now(), null, asset_externalId, asset_metaDataJSON
+        FROM asset
+        WHERE assetUUID = _assetUUID;
 
-            SELECT @new_UUID as 'new_assetUUID', _asset_partUUID as prevAssetPartId;
-            select asset_part_customerUUID as partCustomerId from asset_part where asset_partUUID = _asset_partUUID;
-			
+        SELECT @new_UUID as 'new_assetUUID', _asset_partUUID as prevAssetPartId;
+        select asset_part_customerUUID as partCustomerId from asset_part where asset_partUUID = _asset_partUUID;
+
     ELSEIF (_action = 'DELETE') THEN
 
         IF (DEBUG = 1) THEN select _action, _assetUUID; END IF;
@@ -2982,9 +2990,9 @@ BEGIN
             SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSETPART_assetpart: _asset_partUUID missing';
             LEAVE ASSETPART_assetpart;
         END IF;
-       
+
         SET @new_UUID = UUID();
-		
+
         INSERT INTO asset_part
         (asset_partUUID, asset_part_template_part_sku, asset_part_customerUUID, asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_fabricId, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor, asset_part_createdByUUID, asset_part_updatedByUUID, asset_part_updatedTS, asset_part_createdTS, asset_part_deleteTS, asset_part_tags, asset_part_metaDataJSON)
         SELECT @new_UUID,asset_part_template_part_sku, _customerUUID, asset_part_statusId, asset_part_sku, asset_part_name, asset_part_description, asset_part_userInstruction, asset_part_shortName, asset_part_imageURL, asset_part_fabricId, asset_part_imageThumbURL, asset_part_hotSpotJSON, asset_part_isPurchasable, asset_part_diagnosticUUID, asset_part_magentoUUID, asset_part_vendor, null, null, now(), now(), null, asset_part_tags, asset_part_metaDataJSON
