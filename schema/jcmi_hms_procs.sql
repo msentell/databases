@@ -4969,11 +4969,44 @@ BEGIN
             LEAVE ATTACHMENT_attachment;
 
 		ELSEIF(_partType = 'ASSET') THEN
-		IF(_attachmentuuid is null) THEN
-			SIGNAL SQLSTATE '45003' SET message_text = 'call ATTACHMENT_attachment: _attachmentuuid can not be empty';
-            LEAVE ATTACHMENT_attachment;
-        END IF;
-       update attachment set attachment_deleteTS = now() where  attachmentuuid= _attachmentuuid;
+         set @attachment_ids = null;
+
+			IF(DEBUG =1 )THEN
+				select _partId as 'asset id';
+			END IF;
+
+        SELECT GROUP_CONCAT(concat('\'',aaj_attachmentUUID,'\'')) 
+        INTO @attachment_ids
+        FROM asset_attachment_join WHERE aaj_asset_assetUUID = _partId;
+
+         IF(@attachment_ids is null)THEN
+			SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ATTACHMENT_attachment: no attachment found for the ASSET id';
+			LEAVE ATTACHMENT_attachment;
+           END IF;
+
+			IF(DEBUG =1 )THEN
+				select @now as 'now',_attachment_customerUUid as 'customer id';
+			END IF;
+
+             set @l_SQL= CONCAT('INSERT INTO attachment(attachmentUUID,attachment_statusId,attachment_fileURL,attachment_shortName,attachment_description,attachment_mimeType,attachment_customerUUID,attachment_createdByUUID,attachment_acknowledgedByUUID,attachment_updatedTS,attachment_createdTS,attachment_deleteTS)
+                SELECT UUID(),attachment_statusId,attachment_fileURL,attachment_shortName,attachment_description,attachment_mimeType,\'',_attachment_customerUUid,'\',null,attachment_acknowledgedByUUID,\'',@now,'\',');
+
+            set @l_SQL=	CONCAT(@l_SQL,'\'',@now,'\', null FROM attachment WHERE');
+
+            set @l_SQL=	CONCAT(@l_SQL,' attachmentUUID in (',@attachment_ids,');');
+
+            IF(DEBUG =1 )THEN
+			select @attachment_ids as 'attachments ids',@l_SQL as 'query';
+			END IF;
+
+            PREPARE stmt FROM @l_SQL;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+          -- updatin in asset_attachment_join table
+			insert into asset_attachment_join (aaj_asset_assetUUID, aaj_attachmentUUID, aaj_createdTS)
+			SELECT _new_partId,attachmentUUID,now() from attachment where attachment_createdTS = @now;
+
 		END IF;
     ELSEIF(_action = 'CREATE_ATTACHMENT') THEN
         IF(_attachment_description is NULL) THEN
