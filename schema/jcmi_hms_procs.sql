@@ -640,7 +640,7 @@ IN monthlyRecuttValue INT
 )
 WORKORDER_create: BEGIN
 
-DECLARE _DEBUG INT DEFAULT 1;
+DECLARE _DEBUG INT DEFAULT 0;
 
 DECLARE _dateFormat varchar(100) DEFAULT '%d-%m-%Y';
 DECLARE _maxWO INT;
@@ -666,17 +666,17 @@ IF(_action ='CREATE') THEN
     IF(_workorderUUID is NULL) THEN set _workorderUUID = UUID();END IF;
 
     -- RULES and CONVERSIONS
-if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_TO_DATE(_workorder_completeDate, '%d-%m-%Y'); END IF;
-    if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = STR_TO_DATE(_workorder_rescheduleDate, '%d-%m-%Y'); END IF;
+if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = cast(STR_TO_DATE(_workorder_completeDate, _dateFormat) as date); END IF;
+if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = cast(STR_TO_DATE(_workorder_rescheduleDate, _dateFormat)as date); END IF;
 
     if (_workorder_scheduleDate IS NOT NULL) THEN
-        set _workorder_scheduleDate = STR_TO_DATE(_workorder_scheduleDate, '%d-%m-%Y');
+        set _workorder_scheduleDate = cast(STR_TO_DATE(_workorder_scheduleDate, _dateFormat) as date);
     ELSE
         set _workorder_scheduleDate=DATE(now());
     END IF;
 
      if (_workorder_dueDate IS NOT NULL) THEN
-        set _workorder_dueDate = STR_TO_DATE(_workorder_dueDate, '%d-%m-%Y');
+        set _workorder_dueDate = cast(STR_TO_DATE(_workorder_dueDate, _dateFormat) as date);
     ELSE
         set _workorder_dueDate=DATE(now());
     END IF;
@@ -771,7 +771,9 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
         set _workorderUUID = null; -- force creating of new WO's
 
     ELSE -- just create one.  maybe turn the WO creation into a loop, and the above calculates the loop
-        set _woDates =  DATE_FORMAT(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d'), '%d-%m-%Y');
+
+        set _woDates =  DATE_FORMAT(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d'), _dateFormat);
+
     END IF;
 
     IF (_DEBUG=1) THEN select _action,_woDates; END IF;
@@ -803,11 +805,11 @@ if (_workorder_completeDate IS NOT NULL) THEN set _workorder_completeDate = STR_
     -- excluding first 3 charecters(CM-) and convert ti integer and get max number of workorder
     SELECT MAX(CAST(SUBSTRING(workorder_number, 4, length(workorder_number)-3) AS UNSIGNED))+1 into _maxWO FROM workorder;
     set _workorder_number = CONCAT(_workorder_definition,_maxWO);
-    set _workorder_scheduleDate = STR_TO_DATE(_date, '%d-%m-%Y');
+    set _workorder_scheduleDate = cast(STR_TO_DATE(_date, _dateFormat) as date);
     if (_workorderUUID is null) THEN set _workorderUUID=UUID(); END IF;
-    if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = STR_TO_DATE(_date, '%d-%m-%Y'); END IF;
+    if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = cast(STR_TO_DATE(_date, _dateFormat) as date); END IF;
     if (_workorder_priority is null) THEN set _workorder_priority='MEDIUM'; END IF;
-     if (_workorder_frequency > 0) THEN set _workorder_dueDate = STR_TO_DATE(_date, '%d-%m-%Y'); END IF;
+     if (_workorder_frequency > 0) THEN set _workorder_dueDate = cast(STR_TO_DATE(_date, _dateFormat) as date); END IF;    
     set _workorder_scheduleDate_withTime = ADDTIME(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d %H:%m'),'23:59');
     set _workorder_dueDate_withTime = ADDTIME(STR_TO_DATE(_workorder_dueDate, '%Y-%m-%d %H:%m'),'23:59');
 
