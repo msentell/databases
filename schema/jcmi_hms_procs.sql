@@ -2464,13 +2464,13 @@ DELIMITER ;
 
 -- ==================================================================
 
--- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate,asset_metaDataJSON);
--- call ASSET_asset('GET', '1', 'a30af'GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null);
--- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', null, null, '283821d8e6c647828eb01df0d82b0b74', null, null, null, null,null);
--- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now()),null);
--- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now()),null);
--- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null,null);
--- call ASSET_asset('DUPLICATE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10,null, 'assetPart id', null, null, null, null, null);
+-- call ASSET_asset(action, _userUUID, asset_customerUUID, assetUUID, asset_locationUUID, asset_partUUID, asset_statusId, asset_name, asset_shortName, asset_installDate,asset_externalId,asset_metaDataJSON);
+-- call ASSET_asset('GET', '1', 'a30af'GET', '1', 'a30af0ce5e07474487c39adab6269d5f',  '00c93791035c44fd98d4f40ff2cdfe0a', null, null, null, null, null,null);
+-- call ASSET_asset('GET', '1', 'a30af0ce5e07474487c39adab6269d5f', null, null, '283821d8e6c647828eb01df0d82b0b74', null, null, null, null,null,null);
+-- call ASSET_asset('CREATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID', 'asset_partUUID', 1, 'asset_name', 'asset_shortName', Date(now()),null,null);
+-- call ASSET_asset('UPDATE', '1', 'a30af0ce5e07474487c39adab6269d5f',  10, 'asset_locationUUID1', 'asset_partUUID2', 1, 'asset_name3', 'asset_shortName4', Date(now()),null,null);
+-- call ASSET_asset('DELETE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10, null, null, null, null, null, null,null,null);
+-- call ASSET_asset('DUPLICATE', '1', 'a30af0ce5e07474487c39adab6269d5f', 10,null, 'assetPart id', null, null, null, null, null,null);
 
 DROP procedure IF EXISTS `ASSET_asset`;
 
@@ -2502,7 +2502,7 @@ BEGIN
         LEAVE ASSET_asset;
     END IF;
 
-    IF (_customerUUID IS NULL) THEN
+    IF (_customerUUID IS NULL and _action not like 'GET-ALL' and _action not like 'UPDATE') THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call ASSET_asset: _customerUUID missing';
         LEAVE ASSET_asset;
     END IF;
@@ -2597,6 +2597,9 @@ BEGIN
         END IF;
         if (_asset_metaDataJSON is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',asset_metaDataJSON = \'', _asset_metaDataJSON, '\'');
+        END IF;
+        if (_customerUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',asset_customerUUID = \'', _customerUUID, '\'');
         END IF;
 
 
