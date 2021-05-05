@@ -809,7 +809,7 @@ if (_workorder_rescheduleDate IS NOT NULL) THEN set _workorder_rescheduleDate = 
     if (_workorderUUID is null) THEN set _workorderUUID=UUID(); END IF;
     if (_workorder_dueDate IS NULL) THEN set _workorder_dueDate = cast(STR_TO_DATE(_date, _dateFormat) as date); END IF;
     if (_workorder_priority is null) THEN set _workorder_priority='MEDIUM'; END IF;
-     if (_workorder_frequency > 0) THEN set _workorder_dueDate = cast(STR_TO_DATE(_date, _dateFormat) as date); END IF;    
+     if (_workorder_frequency > 0) THEN set _workorder_dueDate = cast(STR_TO_DATE(_date, _dateFormat) as date); END IF;
     set _workorder_scheduleDate_withTime = ADDTIME(STR_TO_DATE(_workorder_scheduleDate, '%Y-%m-%d %H:%m'),'23:59');
     set _workorder_dueDate_withTime = ADDTIME(STR_TO_DATE(_workorder_dueDate, '%Y-%m-%d %H:%m'),'23:59');
 
@@ -2487,6 +2487,7 @@ CREATE PROCEDURE `ASSET_asset`(IN _action VARCHAR(100),
                                IN _asset_shortName VARCHAR(255),
                                IN _asset_installDate Date,
                                IN _asset_externalId VARCHAR(100),
+                               IN _asset_externalLocationId VARCHAR(100),
                                IN _asset_metaDataJSON TEXT)
 ASSET_asset:
 BEGIN
@@ -2549,6 +2550,7 @@ BEGIN
                    _asset_shortName,
                    _asset_installDate,
                    _asset_externalId,
+                   _asset_externalLocationId,
                    _asset_metaDataJSON;
         END IF;
 
@@ -2559,10 +2561,10 @@ BEGIN
 
         insert into asset
         (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName,
-         asset_installDate, asset_externalId, asset_metaDataJSON,
+         asset_installDate, asset_externalId, asset_externalLocationId, asset_metaDataJSON,
          asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS)
         values (_assetUUID, _asset_locationUUID, _asset_partUUID, _customerUUID, _asset_statusId, _asset_name,
-                _asset_shortName, _asset_installDate, _asset_externalId, _asset_metaDataJSON,
+                _asset_shortName, _asset_installDate, _asset_externalId, _asset_externalLocationId, _asset_metaDataJSON,
                 _userUUID, _userUUID, now(), now(), null);
 
     ELSEIF (_action = 'UPDATE') THEN
@@ -2595,6 +2597,9 @@ BEGIN
         END IF;
         if (_asset_externalId is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',asset_externalID = \'', _asset_externalId, '\'');
+        END IF;
+        if (_asset_externalLocationId is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',asset_externalLocationID = \'', _asset_externalLocationId, '\'');
         END IF;
         if (_asset_metaDataJSON is not null) THEN
             set @l_sql = CONCAT(@l_sql, ',asset_metaDataJSON = \'', _asset_metaDataJSON, '\'');
@@ -2633,8 +2638,8 @@ BEGIN
         SET @new_UUID = UUID();
 
         INSERT INTO asset
-        (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS, asset_externalId, asset_metaDataJSON)
-        SELECT @new_UUID, asset_locationUUID, _asset_partUUID, _customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, _userUUID, _userUUID, null, now(), null, asset_externalId, asset_metaDataJSON
+        (assetUUID, asset_locationUUID, asset_partUUID, asset_customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, asset_createdByUUID, asset_updatedByUUID, asset_updatedTS, asset_createdTS, asset_deleteTS, asset_externalId, asset_externalLocationId, asset_metaDataJSON)
+        SELECT @new_UUID, asset_locationUUID, _asset_partUUID, _customerUUID, asset_statusId, asset_name, asset_shortName, asset_installDate, _userUUID, _userUUID, null, now(), null, asset_externalId, asset_externalLocationId, asset_metaDataJSON
         FROM asset
         WHERE assetUUID = _assetUUID;
 
@@ -2665,6 +2670,274 @@ END$$
 
 DELIMITER ;
 
+
+-- ==================================================================
+# scadagraphUUID INT NOT NULL AUTO_INCREMENT,
+#                                scadagraph_customerUUID CHAR(36) NULL,
+#                                scadagraph_brandUUID CHAR(36) NULL,
+#                                scadagraph_userUUID CHAR(36) NULL,
+#                                scadagraph_name CHAR(50) NOT NULL,
+#                                scadagraph_definitionJSON TEXT,
+#                                scadagraph_createdByUUID CHAR(36)  NULL,
+#                                scadagraph_updatedByUUID CHAR(36)  NULL,
+#                                scadagraph_updatedTS datetime  NULL,
+#                                scadagraph_createdTS datetime  NULL default now(),
+DROP procedure IF EXISTS `SCADA_graph`;
+
+DELIMITER $$
+CREATE PROCEDURE `SCADA_graph`(IN _action VARCHAR(100),
+                               IN _userUUID VARCHAR(100),
+                               IN _customerUUID VARCHAR(100),
+                               IN _brandUUID VARCHAR(100),
+                               IN _graphUUID VARCHAR(100),
+                               IN _graph_name VARCHAR(255),
+                               IN _graph_definitionJSON TEXT,
+                               IN _graph_visibility INT
+                               )
+SCADA_graph:
+BEGIN
+
+    DECLARE DEBUG INT DEFAULT 0;
+
+    IF (_action IS NULL OR _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SCADA_graph: _action can not be empty';
+        LEAVE SCADA_graph;
+    END IF;
+
+    IF (_userUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call SCADA_graph: _userUUID missing';
+        LEAVE SCADA_graph;
+    END IF;
+
+
+    IF (_action = 'GET') THEN
+
+        SET @l_SQL = 'SELECT * FROM scada_graph ';
+
+        SET @l_SQL = CONCAT(@l_SQL, '  WHERE scadagraphUUID =\'', _graphUUID, '\'');
+
+        IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
+
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    ELSEIF (_action = 'GET-ALL') THEN
+        IF (_userUUID IS NOT NULL and _userUUID != '') THEN
+            SET @l_SQL = CONCAT('SELECT * FROM scada_graph where scadagraph_userUUID = \'',_userUUID,'\'');
+        END IF;
+
+        IF (_brandUUID IS NOT NULL AND _brandUUID != '') THEN
+            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_graph where scadagraph_brandUUID = \'',_brandUUID,'\' AND scadagraph_userUUID is null');
+        END IF;
+
+        IF (_customerUUID IS NOT NULL AND _customerUUID != '') THEN
+            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_graph where scadagraph_customerUUID = \'',_customerUUID,'\' AND scadagraph_customerUUID is null');
+        END IF;
+
+        IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
+
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    ELSEIF (_action = 'CREATE') THEN
+
+        IF (DEBUG = 1) THEN
+            select _action,
+                   _userUUID,
+                   _customerUUID,
+                   _brandUUID,
+                   _graphUUID,
+                   _graph_name,
+                   _graph_definitionJSON,
+                   _graph_visibility;
+        END IF;
+
+        insert into scada_graph
+        (scadagraph_customerUUID, scadagraph_brandUUID, scadagraph_userUUID, scadagraph_name, scadagraph_definitionJSON,
+         scadagraph_visibility, scadagraph_createdByUUID,scadagraph_updatedByUUID, scadagraph_updatedTS, scadagraph_createdTS)
+        values (_customerUUID, _brandUUID, _userUUID, _graph_name, _graph_definitionJSON, _graph_visibility,
+                _userUUID, _userUUID, now(), now());
+
+    ELSEIF (_action = 'UPDATE') THEN
+
+
+        IF (_graphUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call SCADA_graph: _graphUUID missing';
+            LEAVE SCADA_graph;
+        END IF;
+
+        set @l_sql = CONCAT('update scada_graph set scadagraph_updatedTS=now(), scadagraph_updatedByUUID=\'', _userUUID, '\'');
+
+        if (_userUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadagraph_userUUID = \'', _userUUID, '\'');
+        END IF;
+        if (_customerUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadagraph_customerUUID = \'', _customerUUID, '\'');
+        END IF;
+        if (_brandUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadagraph_brandUUID = \'', _brandUUID, '\'');
+        END IF;
+        if (_graph_name is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadagraph_name = ', _graph_name);
+        END IF;
+        if (_graph_definitionJSON is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadagraph_definitionJSON = \'', _graph_definitionJSON, '\'');
+        END IF;
+        if (_graph_visibility is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadagraph_visibility = ', _graph_visibility);
+        END IF;
+
+        set @l_sql = CONCAT(@l_sql, ' where scadagraphUUID = \'', _graphUUID, '\';');
+
+        IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    END IF;
+
+END$$
+
+
+DELIMITER ;
+
+
+# scadalayoutUUID INT NOT NULL AUTO_INCREMENT,
+#                                scadalayout_customerUUID CHAR(36) NULL,
+#                                scadalayout_brandUUID CHAR(36) NULL,
+#                                scadalayout_userUUID CHAR(36) NULL,
+#                                scadalayout_name CHAR(50) NOT NULL,
+#                                scadalayout_definitionJSON TEXT,
+#                                scadalayout_visibility INT DEFAULT 7,
+#                                scadalayout_createdByUUID CHAR(36)  NULL,
+#                                scadalayout_updatedByUUID CHAR(36)  NULL,
+#                                scadalayout_updatedTS datetime  NULL,
+#                                scadalayout_createdTS datetime  NULL default now(),
+#                                PRIMARY KEY (scadalayoutUUID))
+DROP procedure IF EXISTS `SCADA_layout`;
+
+DELIMITER $$
+CREATE PROCEDURE `SCADA_layout`(IN _action VARCHAR(100),
+                               IN _userUUID VARCHAR(100),
+                               IN _customerUUID VARCHAR(100),
+                               IN _brandUUID VARCHAR(100),
+                               IN _layoutUUID VARCHAR(100),
+                               IN _layout_name VARCHAR(255),
+                               IN _layout_definitionJSON TEXT,
+                               IN _layout_visibility INT
+)
+SCADA_layout:
+BEGIN
+
+    DECLARE DEBUG INT DEFAULT 0;
+
+    IF (_action IS NULL OR _action = '') THEN
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'call SCADA_layout: _action can not be empty';
+        LEAVE SCADA_layout;
+    END IF;
+
+    IF (_userUUID IS NULL) THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call SCADA_layout: _userUUID missing';
+        LEAVE SCADA_layout;
+    END IF;
+
+
+    IF (_action = 'GET') THEN
+
+        SET @l_SQL = 'SELECT * FROM scada_layout ';
+
+        SET @l_SQL = CONCAT(@l_SQL, '  WHERE scadalayoutUUID =\'', _layoutUUID, '\'');
+
+        IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
+
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    ELSEIF (_action = 'GET-ALL') THEN
+        IF (_userUUID IS NOT NULL and _userUUID != '') THEN
+            SET @l_SQL = CONCAT('SELECT * FROM scada_layout where scadalayout_userUUID = \'',_userUUID,'\'');
+        END IF;
+
+        IF (_brandUUID IS NOT NULL AND _brandUUID != '') THEN
+            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_layout where scadalayout_brandUUID = \'',_brandUUID,'\' AND scadalayout_userUUID is null');
+        END IF;
+
+        IF (_customerUUID IS NOT NULL AND _customerUUID != '') THEN
+            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_layout where scadalayout_customerUUID = \'',_customerUUID,'\' AND scadalayout_customerUUID is null');
+        END IF;
+
+        IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
+
+        PREPARE stmt FROM @l_SQL;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    ELSEIF (_action = 'CREATE') THEN
+
+        IF (DEBUG = 1) THEN
+            select _action,
+                   _userUUID,
+                   _customerUUID,
+                   _brandUUID,
+                   _layoutUUID,
+                   _layout_name,
+                   _layout_definitionJSON,
+                   _layout_visibility;
+        END IF;
+
+        insert into scada_layout
+        (scadalayout_customerUUID, scadalayout_brandUUID, scadalayout_userUUID, scadalayout_name, scadalayout_definitionJSON,
+         scadalayout_visibility, scadalayout_createdByUUID,scadalayout_updatedByUUID, scadalayout_updatedTS, scadalayout_createdTS)
+        values (_customerUUID, _brandUUID, _userUUID, _layout_name, _layout_definitionJSON, _layout_visibility,
+                _userUUID, _userUUID, now(), now());
+
+    ELSEIF (_action = 'UPDATE') THEN
+
+
+        IF (_layoutUUID IS NULL) THEN
+            SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'call SCADA_layout: _layoutUUID missing';
+            LEAVE SCADA_layout;
+        END IF;
+
+        set @l_sql = CONCAT('update scada_layout set scadalayout_updatedTS=now(), scadalayout_updatedByUUID=\'', _userUUID, '\'');
+
+        if (_userUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadalayout_userUUID = \'', _userUUID, '\'');
+        END IF;
+        if (_customerUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadalayout_customerUUID = \'', _customerUUID, '\'');
+        END IF;
+        if (_brandUUID is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadalayout_brandUUID = \'', _brandUUID, '\'');
+        END IF;
+        if (_layout_name is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadalayout_name = ', _layout_name);
+        END IF;
+        if (_layout_definitionJSON is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadalayout_definitionJSON = \'', _layout_definitionJSON, '\'');
+        END IF;
+        if (_layout_visibility is not null) THEN
+            set @l_sql = CONCAT(@l_sql, ',scadalayout_visibility = ', _layout_visibility);
+        END IF;
+
+        set @l_sql = CONCAT(@l_sql, ' where scadalayoutUUID = \'', _layoutUUID, '\';');
+
+        IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
+
+        PREPARE stmt FROM @l_sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+    END IF;
+
+END$$
+
+
+DELIMITER ;
 
 -- ==================================================================
 
@@ -4979,7 +5252,7 @@ BEGIN
 				select _partId as 'asset id';
 			END IF;
 
-        SELECT GROUP_CONCAT(concat('\'',aaj_attachmentUUID,'\'')) 
+        SELECT GROUP_CONCAT(concat('\'',aaj_attachmentUUID,'\''))
         INTO @attachment_ids
         FROM asset_attachment_join WHERE aaj_asset_assetUUID = _partId;
 

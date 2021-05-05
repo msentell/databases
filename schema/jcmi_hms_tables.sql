@@ -408,6 +408,7 @@ CREATE TABLE `asset` (
   	asset_createdTS datetime  NULL default now(),
    	asset_deleteTS datetime  NULL,
    	asset_externalId CHAR(36) NULL,
+   	asset_externalLocationId CHAR(36) NULL
 
   	PRIMARY KEY (assetUUID),
   	INDEX location_idx (asset_customerUUID,asset_locationUUID,assetUUID,asset_partUUID))
@@ -965,9 +966,49 @@ CREATE TABLE `languages` (
     )
 ENGINE = InnoDB ;
 
+
+
 insert into languages (languageCode) values ('en-IN');
 insert into languages (languageCode) values ('fr-FR');
 insert into languages (languageCode) values ('de-DE');
+
+
+DROP TABLE IF EXISTS scada_graph;
+
+CREATE TABLE `scada_graph` (
+                               scadagraphUUID INT NOT NULL AUTO_INCREMENT,
+                               scadagraph_customerUUID CHAR(36) NULL,
+                               scadagraph_brandUUID CHAR(36) NULL,
+                               scadagraph_userUUID CHAR(36) NULL,
+                               scadagraph_name CHAR(50) NOT NULL,
+                               scadagraph_definitionJSON TEXT,
+                               scadagraph_visibility INT DEFAULT 7,
+                               scadagraph_createdByUUID CHAR(36)  NULL,
+                               scadagraph_updatedByUUID CHAR(36)  NULL,
+                               scadagraph_updatedTS datetime  NULL,
+                               scadagraph_createdTS datetime  NULL default now(),
+                               PRIMARY KEY (scadagraphUUID))
+    -- UNIQUE INDEX assetnotes_assetUUID_unique (assetnotes_assetUUID))
+                               ENGINE = InnoDB AUTO_INCREMENT=1000;
+
+DROP TABLE IF EXISTS scada_layout;
+
+CREATE TABLE `scada_layout` (
+                               scadalayoutUUID INT NOT NULL AUTO_INCREMENT,
+                               scadalayout_customerUUID CHAR(36) NULL,
+                               scadalayout_brandUUID CHAR(36) NULL,
+                               scadalayout_userUUID CHAR(36) NULL,
+                               scadalayout_name CHAR(50) NOT NULL,
+                               scadalayout_definitionJSON TEXT,
+                               scadalayout_visibility INT DEFAULT 7,
+                               scadalayout_createdByUUID CHAR(36)  NULL,
+                               scadalayout_updatedByUUID CHAR(36)  NULL,
+                               scadalayout_updatedTS datetime  NULL,
+                               scadalayout_createdTS datetime  NULL default now(),
+                               PRIMARY KEY (scadalayoutUUID))
+    -- UNIQUE INDEX assetnotes_assetUUID_unique (assetnotes_assetUUID))
+                               ENGINE = InnoDB AUTO_INCREMENT=1000;
+
 
 TRUNCATE jcmi_hms.privilege_bitwise;
 INSERT INTO jcmi_hms.privilege_bitwise (privilege_key, privilege_category, privilege_bitWise, privilege_description) VALUES ('ACCT_CREATEBRAND', 'ACCT', 2199023255552, 'ACCT-Can create brands');
