@@ -1282,6 +1282,7 @@ ELSEIF(_action ='START') THEN
             'UPDATE_HISTORY',_userUUID,_customerId,
             _workorder_checklistUUID, _workorder_assetUUID,_checklist_historyUUID,
             _workorderUUID, null,null, null,null,null,null,null, null, null, null, null, null, null, null
+            , null, null, null
             );
 
         END IF;
@@ -1323,7 +1324,7 @@ ELSEIF(_action ='COMPLETE' or _action ='BATCH-COMPLETE') THEN
         if (_workorder_checklistHistoryUUID is not null) THEN
             call CHECKLIST_checklist(
             'PASS_CHECKLIST',_userUUID,null,
-            null, null, _workorder_checklistHistoryUUID, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null
+            null, null, _workorder_checklistHistoryUUID, null,null,null, null,null,null,null,null, null, null, null, null, null, null, null, null, null, null
                 );
 
         END IF;
