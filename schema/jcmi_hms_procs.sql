@@ -2728,11 +2728,13 @@ BEGIN
         END IF;
 
         IF (_brandUUID IS NOT NULL AND _brandUUID != '') THEN
-            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_graph where scadagraph_brandUUID = \'',_brandUUID,'\' AND scadagraph_userUUID is null');
+            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_graph ' ||
+                                        'where scadagraph_brandUUID = \'',_brandUUID,'\' AND scadagraph_userUUID=\'\'' ||
+                                                                                     'AND scadagraph_customerUUID=\'\'');
         END IF;
 
         IF (_customerUUID IS NOT NULL AND _customerUUID != '') THEN
-            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_graph where scadagraph_customerUUID = \'',_customerUUID,'\' AND scadagraph_customerUUID is null');
+            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_graph where scadagraph_customerUUID = \'',_customerUUID,'\' AND scadagraph_userUUID=\'\'');
         END IF;
 
         IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
@@ -2863,11 +2865,13 @@ BEGIN
         END IF;
 
         IF (_brandUUID IS NOT NULL AND _brandUUID != '') THEN
-            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_layout where scadalayout_brandUUID = \'',_brandUUID,'\' AND scadalayout_userUUID is null');
+            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_layout ' ||
+                                        'where scadalayout_brandUUID = \'',_brandUUID,'\' AND scadalayout_userUUID=\'\'' ||
+                                                                                     'AND scadalayout_customerUUID=\'\'');
         END IF;
 
         IF (_customerUUID IS NOT NULL AND _customerUUID != '') THEN
-            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_layout where scadalayout_customerUUID = \'',_customerUUID,'\' AND scadalayout_customerUUID is null');
+            SET @l_SQL = CONCAT(@l_SQL, 'UNION SELECT * FROM scada_layout where scadalayout_customerUUID = \'',_customerUUID,'\' AND scadalayout_userUUID=\'\'');
         END IF;
 
         IF (DEBUG = 1) THEN select _action, @l_SQL; END IF;
